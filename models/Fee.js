@@ -1,0 +1,95 @@
+import mongoose from "mongoose"
+
+const feeSchema = new mongoose.Schema(
+  {
+    student: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Student",
+      required: true,
+    },
+    studentName: String,
+    rollNumber: String,
+    class: String,
+    section: String,
+    academicYear: {
+      type: String,
+      required: true,
+    },
+    month: {
+      type: String,
+      required: true,
+    },
+    feeStructure: {
+      tuitionFee: { type: Number, default: 0 },
+      admissionFee: { type: Number, default: 0 },
+      examFee: { type: Number, default: 0 },
+      labFee: { type: Number, default: 0 },
+      libraryFee: { type: Number, default: 0 },
+      sportsFee: { type: Number, default: 0 },
+      transportFee: { type: Number, default: 0 },
+      computerFee: { type: Number, default: 0 },
+      otherFee: { type: Number, default: 0 },
+    },
+    totalAmount: {
+      type: Number,
+      required: true,
+    },
+    discount: {
+      type: Number,
+      default: 0,
+    },
+    discountReason: String,
+    fine: {
+      type: Number,
+      default: 0,
+    },
+    fineReason: String,
+    netAmount: {
+      type: Number,
+      required: true,
+    },
+    paidAmount: {
+      type: Number,
+      default: 0,
+    },
+    dueAmount: {
+      type: Number,
+      required: true,
+    },
+    status: {
+      type: String,
+      enum: ["Pending", "Partial", "Paid", "Overdue"],
+      default: "Pending",
+    },
+    dueDate: {
+      type: Date,
+      required: true,
+    },
+    payments: [
+      {
+        amount: Number,
+        paymentDate: Date,
+        paymentMethod: {
+          type: String,
+          enum: ["Cash", "Card", "Bank Transfer", "Cheque", "Online"],
+        },
+        receiptNumber: String,
+        collectedBy: String,
+        remarks: String,
+      },
+    ],
+    invoiceNumber: {
+      type: String,
+      unique: true,
+    },
+  },
+  {
+    timestamps: true,
+  },
+)
+
+feeSchema.index({ student: 1, academicYear: 1, month: 1 })
+feeSchema.index({ status: 1 })
+feeSchema.index({ dueDate: 1 })
+
+export default mongoose.models.Fee || mongoose.model("Fee", feeSchema)

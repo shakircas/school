@@ -1,0 +1,52 @@
+"use client"
+
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { MainLayout } from "@/components/layout/main-layout"
+import { PageHeader } from "@/components/ui/page-header"
+import { StudentForm } from "@/components/forms/student-form"
+import { useToast } from "@/hooks/use-toast"
+
+export default function AddStudentPage() {
+  const router = useRouter()
+  const { toast } = useToast()
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleSubmit = async (data) => {
+    setIsLoading(true)
+
+    try {
+      const response = await fetch("/api/students", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      })
+
+      if (response.ok) {
+        toast({
+          title: "Student added",
+          description: "The student has been added successfully.",
+        })
+        router.push("/students")
+      } else {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to add student")
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <MainLayout>
+      <PageHeader title="Add New Student" description="Fill in the details to register a new student" />
+      <StudentForm onSubmit={handleSubmit} isLoading={isLoading} />
+    </MainLayout>
+  )
+}
