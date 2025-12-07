@@ -88,6 +88,13 @@ const studentSchema = new mongoose.Schema(
     previousSchool: {
       type: String,
     },
+
+    // ADMISSIONS STATUS
+    admissionStatus: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
+    },
     status: {
       type: String,
       enum: ["Active", "Inactive", "Graduated", "Transferred", "Expelled"],
@@ -127,8 +134,8 @@ const studentSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  },
-)
+  }
+);
 
 studentSchema.index({ name: "text", rollNumber: "text", registrationNumber: "text" })
 studentSchema.index({ class: 1, section: 1 })

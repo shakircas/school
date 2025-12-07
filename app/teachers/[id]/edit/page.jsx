@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { StudentForm } from "@/components/forms/student-form";
 import { useToast } from "@/hooks/use-toast";
 import { TeacherForm } from "@/components/forms/teacher-form";
+import { LoadingPage, LoadingSpinner } from "@/components/ui/loading-spinner";
 
 export default function UpdateStudentPage({ params }) {
   const router = useRouter();
@@ -75,7 +76,9 @@ export default function UpdateStudentPage({ params }) {
     return (
       <MainLayout>
         <PageHeader title="Update Student" description="Loading student..." />
-        <p className="text-center py-10 text-muted-foreground">Loading...</p>
+        {/* <p className="text-center py-10 text-muted-foreground">Loading...</p> */}
+        <LoadingSpinner />
+        <LoadingPage />
       </MainLayout>
     );
   }

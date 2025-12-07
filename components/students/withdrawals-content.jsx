@@ -32,7 +32,7 @@ const fetcher = (url) => fetch(url).then((res) => res.json())
 export function WithdrawalsContent() {
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
-  const { data: students } = useSWR("/api/students?status=active", fetcher)
+  const { data: students } = useSWR("/api/students?status=Active", fetcher)
   const { data: withdrawals, isLoading, mutate } = useSWR("/api/students?status=withdrawn", fetcher)
 
   const {

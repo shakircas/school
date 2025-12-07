@@ -1,72 +1,103 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import useSWR from "swr"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { PageHeader } from "@/components/ui/page-header"
-import { LoadingSpinner } from "@/components/ui/loading-spinner"
-import { EmptyState } from "@/components/ui/empty-state"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Plus, Search, UserPlus, Eye, CheckCircle, XCircle } from "lucide-react"
-import { toast } from "sonner"
+import { useState } from "react";
+import useSWR from "swr";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { PageHeader } from "@/components/ui/page-header";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Plus,
+  Search,
+  UserPlus,
+  Eye,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
+import { toast } from "sonner";
 
-const fetcher = (url) => fetch(url).then((res) => res.json())
+const fetcher = (url) => fetch(url).then((res) => res.json());
 
 export function AdmissionsContent() {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [filterStatus, setFilterStatus] = useState("all")
-  const { data: students, isLoading, mutate } = useSWR("/api/students?status=pending", fetcher)
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const {
+    data: students,
+    isLoading,
+    mutate,
+  } = useSWR("/api/students?status=pending", fetcher);
 
   const handleApprove = async (id) => {
     try {
       await fetch(`/api/students/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "active" }),
-      })
-      toast.success("Admission approved")
-      mutate()
+        body: JSON.stringify({ status: "Active" }),
+      });
+      toast.success("Admission approved");
+      mutate();
     } catch (error) {
-      toast.error("Failed to approve")
+      toast.error("Failed to approve");
     }
-  }
+  };
 
   const handleReject = async (id) => {
-    if (!confirm("Reject this admission?")) return
+    if (!confirm("Reject this admission?")) return;
     try {
       await fetch(`/api/students/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "rejected" }),
-      })
-      toast.success("Admission rejected")
-      mutate()
+      });
+      toast.success("Admission rejected");
+      mutate();
     } catch (error) {
-      toast.error("Failed to reject")
+      toast.error("Failed to reject");
     }
-  }
+  };
 
   const filteredStudents =
     students?.data?.filter((student) => {
-      if (searchQuery && !student.name.toLowerCase().includes(searchQuery.toLowerCase())) return false
-      return true
-    }) || []
+      if (
+        searchQuery &&
+        !student.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+        return false;
+      return true;
+    }) || [];
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <LoadingSpinner size="lg" />
       </div>
-    )
+    );
   }
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Admissions" description="Manage new student admissions">
+      <PageHeader
+        title="Admissions"
+        description="Manage new student admissions"
+      >
         <Button asChild>
           <Link href="/students/add">
             <Plus className="h-4 w-4 mr-2" />
@@ -79,7 +110,9 @@ export function AdmissionsContent() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold">{students?.data?.length || 0}</div>
+            <div className="text-2xl font-bold">
+              {students?.data?.length || 0}
+            </div>
             <p className="text-sm text-muted-foreground">Pending Admissions</p>
           </CardContent>
         </Card>
@@ -116,7 +149,9 @@ export function AdmissionsContent() {
       <Card>
         <CardHeader>
           <CardTitle>Pending Applications</CardTitle>
-          <CardDescription>Review and process admission applications</CardDescription>
+          <CardDescription>
+            Review and process admission applications
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {!filteredStudents.length ? (
@@ -143,19 +178,27 @@ export function AdmissionsContent() {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar>
-                          <AvatarImage src={student.photo || "/placeholder.svg"} />
-                          <AvatarFallback>{student.name?.charAt(0)}</AvatarFallback>
+                          <AvatarImage
+                            src={student.photo || "/placeholder.svg"}
+                          />
+                          <AvatarFallback>
+                            {student.name?.charAt(0)}
+                          </AvatarFallback>
                         </Avatar>
                         <div>
                           <p className="font-medium">{student.name}</p>
-                          <p className="text-sm text-muted-foreground">{student.email}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {student.email}
+                          </p>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>Class {student.class}</TableCell>
                     <TableCell>{student.fatherName}</TableCell>
                     <TableCell>{student.phone}</TableCell>
-                    <TableCell>{new Date(student.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      {new Date(student.createdAt).toLocaleDateString()}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
                         <Button variant="ghost" size="icon" asChild>
@@ -189,5 +232,5 @@ export function AdmissionsContent() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
