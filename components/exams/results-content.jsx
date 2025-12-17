@@ -36,7 +36,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trophy } from "lucide-react";
+import { Download, Plus, Trophy } from "lucide-react";
 import { toast } from "sonner";
 
 const fetcher = (url) => fetch(url).then((r) => r.json());
@@ -286,7 +286,7 @@ export function ResultsContent() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {fields.map((f, i) => (
-                  <div key={f.id} className="grid grid-cols-4 gap-2">
+                  <div key={f._id} className="grid grid-cols-4 gap-2">
                     {/* SUBJECT DROPDOWN */}
                     <Select
                       value={f.subject}
