@@ -17,60 +17,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { useEffect } from "react";
 
-const classes = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
+// const classes = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
 const sections = ["A", "B", "C", "D"];
 const genders = ["Male", "Female", "Other"];
 const bloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+const statuses = [
+  "Active",
+  "Inactive",
+  "Graduated",
+  "Transferred",
+  "Expelled",
+  "Withdrawn",
+  "Pending",
+];
 
-export function StudentForm({ defaultValues, onSubmit, isLoading }) {
-  // const {
-  //   register,
-  //   handleSubmit,
-  //   watch,
-  //   setValue,
-  //   formState: { errors },
-  // } = useForm({
-  //   defaultValues: defaultValues || {
-  //     name: "",
-  //     email: "",
-  //     phone: "",
-  //     dateOfBirth: "",
-  //     gender: "",
-  //     bloodGroup: "",
-  //     class: "",
-  //     section: "",
-  //     rollNumber: "",
-  //     registrationNumber: "",
-  //     fatherName: "",
-  //     fatherPhone: "",
-  //     fatherOccupation: "",
-  //     motherName: "",
-  //     motherPhone: "",
-  //     guardianName: "",
-  //     guardianPhone: "",
-  //     guardianRelation: "",
-  //     address: {
-  //       street: "",
-  //       city: "",
-  //       state: "",
-  //       zipCode: "",
-  //       country: "Pakistan",
-  //     },
-  //     admissionDate: new Date().toISOString().split("T")[0],
-  //     previousSchool: "",
-  //     emergencyContact: {
-  //       name: "",
-  //       relation: "",
-  //       phone: "",
-  //     },
-  //     medicalInfo: {
-  //       allergies: "",
-  //       conditions: "",
-  //       medications: "",
-  //     },
-  //   },
-  // })
-
+export function StudentForm({ defaultValues, onSubmit, isLoading, classes }) {
   const {
     register,
     handleSubmit,
@@ -85,8 +46,9 @@ export function StudentForm({ defaultValues, onSubmit, isLoading }) {
       dateOfBirth: "",
       gender: "",
       bloodGroup: "",
-      class: "",
-      section: "",
+      status: "",
+      classId: "",
+      sectionId: "",
       rollNumber: "",
       registrationNumber: "",
       fatherName: "",
@@ -119,32 +81,58 @@ export function StudentForm({ defaultValues, onSubmit, isLoading }) {
     },
   });
 
- useEffect(() => {
-   if (!defaultValues) return;
+  // useEffect(() => {
+  //   if (!defaultValues) return;
 
-   Object.keys(defaultValues).forEach((key) => {
-     const value = defaultValues[key];
+  //   Object.keys(defaultValues).forEach((key) => {
+  //     const value = defaultValues[key];
 
-     if (value && typeof value === "object" && !Array.isArray(value)) {
-       Object.keys(value).forEach((subKey) => {
-         setValue(`${key}.${subKey}`, value[subKey] ?? "");
-       });
-     } else {
-       setValue(key, value ?? "");
-     }
-   });
+  //     if (value && typeof value === "object" && !Array.isArray(value)) {
+  //       Object.keys(value).forEach((subKey) => {
+  //         setValue(`${key}.${subKey}`, value[subKey] ?? "");
+  //       });
+  //     } else {
+  //       setValue(key, value ?? "");
+  //     }
+  //   });
 
-   // Selects
-   setValue("gender", defaultValues.gender ?? "");
-   setValue("bloodGroup", defaultValues.bloodGroup ?? "");
-   setValue("class", defaultValues.class ?? "");
-   setValue("section", defaultValues.section ?? "");
+  //   // Selects
+  //   setValue("gender", defaultValues.gender ?? "");
+  //   setValue("bloodGroup", defaultValues.bloodGroup ?? "");
+  //   setValue("class", defaultValues.class ?? "");
+  //   setValue("section", defaultValues.section ?? "");
+  //   setValue("status", defaultValues.status ?? "");
 
-   // Image
-   if (defaultValues.photo?.url) {
-     setValue("photo", { url: defaultValues.photo.url });
-   }
- }, [defaultValues, setValue]);
+  //   // Image
+  //   if (defaultValues.photo?.url) {
+  //     setValue("photo", { url: defaultValues.photo.url });
+  //   }
+  // }, [defaultValues, setValue]);
+  useEffect(() => {
+    if (!defaultValues) return;
+
+    Object.keys(defaultValues).forEach((key) => {
+      if (
+        typeof defaultValues[key] === "object" &&
+        defaultValues[key] !== null
+      ) {
+        Object.keys(defaultValues[key]).forEach((subKey) => {
+          setValue(`${key}.${subKey}`, defaultValues[key][subKey] ?? "");
+        });
+      } else {
+        setValue(key, defaultValues[key] ?? "");
+      }
+    });
+
+    // CRITICAL
+    setValue("classId", defaultValues.classId ?? "");
+    setValue("sectionId", defaultValues.sectionId ?? "");
+
+    // Image
+    if (defaultValues.photo?.url) {
+      setValue("photo", { url: defaultValues.photo.url });
+    }
+  }, [defaultValues, setValue]);
 
   const watchedValues = watch();
 
@@ -263,6 +251,24 @@ export function StudentForm({ defaultValues, onSubmit, isLoading }) {
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select
+                  value={watchedValues.status}
+                  onValueChange={(value) => setValue("status", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statuses.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {status}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="address.street">Street Address</Label>
@@ -445,16 +451,19 @@ export function StudentForm({ defaultValues, onSubmit, isLoading }) {
                 <div className="space-y-2">
                   <Label>Class *</Label>
                   <Select
-                    value={watchedValues.class}
-                    onValueChange={(value) => setValue("class", value)}
+                    value={watchedValues.classId}
+                    onValueChange={(value) => {
+                      setValue("classId", value);
+                      setValue("sectionId", ""); // reset section when class changes
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select class" />
                     </SelectTrigger>
                     <SelectContent>
                       {classes.map((cls) => (
-                        <SelectItem key={cls} value={cls}>
-                          Class {cls}
+                        <SelectItem key={cls._id} value={cls._id}>
+                          {cls.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -464,18 +473,21 @@ export function StudentForm({ defaultValues, onSubmit, isLoading }) {
                 <div className="space-y-2">
                   <Label>Section *</Label>
                   <Select
-                    value={watchedValues.section}
-                    onValueChange={(value) => setValue("section", value)}
+                    value={watchedValues.sectionId}
+                    onValueChange={(value) => setValue("sectionId", value)}
+                    disabled={!watchedValues.classId}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select section" />
                     </SelectTrigger>
                     <SelectContent>
-                      {sections.map((section) => (
-                        <SelectItem key={section} value={section}>
-                          Section {section}
-                        </SelectItem>
-                      ))}
+                      {classes
+                        .find((c) => c._id === watchedValues.classId)
+                        ?.sections.map((sec) => (
+                          <SelectItem key={sec._id} value={sec.name}>
+                            Section {sec.name}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>

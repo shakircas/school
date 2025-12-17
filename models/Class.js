@@ -1,4 +1,4 @@
-import mongoose from "mongoose"
+import mongoose from "mongoose";
 
 const classSchema = new mongoose.Schema(
   {
@@ -8,14 +8,19 @@ const classSchema = new mongoose.Schema(
     },
     sections: [
       {
-        name: String,
-        capacity: Number,
+        _id: {
+          type: mongoose.Schema.Types.ObjectId,
+          auto: true, // 👈 IMPORTANT
+        },
+        name: { type: String, required: true },
+        capacity: { type: Number, default: 40 },
         classTeacher: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "Teacher",
         },
       },
     ],
+
     academicYear: {
       type: String,
       required: true,
@@ -48,7 +53,10 @@ const classSchema = new mongoose.Schema(
           {
             time: String,
             subject: String,
-            teacher: String,
+            teacher: {
+              type: mongoose.Schema.Types.ObjectId,
+              ref: "Teacher",
+            },
           },
         ],
       },
@@ -61,9 +69,9 @@ const classSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  },
-)
+  }
+);
 
-classSchema.index({ name: 1, academicYear: 1 })
+classSchema.index({ name: 1, academicYear: 1 });
 
-export default mongoose.models.Class || mongoose.model("Class", classSchema)
+export default mongoose.models.Class || mongoose.model("Class", classSchema);

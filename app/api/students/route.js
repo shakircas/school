@@ -82,39 +82,73 @@
 //   }
 // }
 
-import { NextResponse } from "next/server";
-import connectDB from "@/lib/db";
-import Student from "@/models/Student";
+// import { NextResponse } from "next/server";
+// import connectDB from "@/lib/db";
+// import Student from "@/models/Student";
 
 // =========================
 //        GET STUDENTS
 // =========================
+import { NextResponse } from "next/server";
+import connectDB from "@/lib/db";
+import Student from "@/models/Student";
+import mongoose from "mongoose";
+
 export async function GET(request) {
   try {
     await connectDB();
 
     const { searchParams } = new URL(request.url);
+
     const search = searchParams.get("search");
-    const classFilter = searchParams.get("class");
-    const section = searchParams.get("section");
-    const status = searchParams.get("status"); // "Admitted", "Active", "Inactive"
-    const page = Number.parseInt(searchParams.get("page")) || 1;
-    const limit = Number.parseInt(searchParams.get("limit")) || 50;
+    const classId = searchParams.get("classId");
+    const sectionId = searchParams.get("sectionId");
+    const status = searchParams.get("status");
+
+    const page = parseInt(searchParams.get("page")) || 1;
+    const limit = parseInt(searchParams.get("limit")) || 50;
 
     const query = {};
 
-    // 🔍 Search by text (name, father name, phone, etc.)
-    if (search) query.$text = { $search: search };
+    /* 🔍 SEARCH (safe regex instead of $text) */
+    // if (search) {
+    //   query.$or = [
+    //     { name: { $regex: search, $options: "i" } },
+    //     { fatherName: { $regex: search, $options: "i" } },
+    //     { rollNumber: { $regex: search, $options: "i" } },
+    //     { registrationNumber: { $regex: search, $options: "i" } },
+    //     { phone: { $regex: search, $options: "i" } },
+    //   ];
+    // }
 
-    if (classFilter) query.class = classFilter;
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { rollNumber: { $regex: search, $options: "i" } },
+        { registrationNumber: { $regex: search, $options: "i" } },
+        { fatherName: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } },
+      ];
+    }
 
-    if (section) query.section = section;
+    /* 🏫 CLASS FILTER */
+    if (
+      classId &&
+      classId !== "all" &&
+      mongoose.Types.ObjectId.isValid(classId)
+    ) {
+      query.classId = classId;
+    }
 
-    // ⭐ ADMISSION-RELATED LOGIC
-    if (status) {
-      query.status = status; // "Admitted", "Active", "Inactive"
+    /* 🅰️ SECTION FILTER */
+    if (sectionId && sectionId !== "all") {
+      query.sectionId = sectionId;
+    }
+
+    /* ⭐ STATUS FILTER */
+    if (status && status !== "all") {
+      query.status = status;
     } else {
-      // Default: show only current/active admission students
       query.status = { $in: ["Admitted", "Active"] };
     }
 
@@ -180,7 +214,7 @@ export async function POST(request) {
     // ⭐ Automatic admission logic
     const student = new Student({
       ...data,
-      status: "Active", // Default status for new admissions
+      // status: "Active", // Default status for new admissions
       admissionDate: data.admissionDate || new Date(),
       admissionYear: new Date().getFullYear(),
     });

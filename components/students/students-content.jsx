@@ -1,21 +1,39 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import useSWR from "swr"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { PageHeader } from "@/components/ui/page-header"
-import { LoadingSpinner } from "@/components/ui/loading-spinner"
-import { EmptyState } from "@/components/ui/empty-state"
-import { useToast } from "@/hooks/use-toast"
-import { exportToExcel, exportToCSV, importFromExcel } from "@/lib/excel-utils"
+import { useEffect, useState } from "react";
+import useSWR from "swr";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { PageHeader } from "@/components/ui/page-header";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { EmptyState } from "@/components/ui/empty-state";
+import { useToast } from "@/hooks/use-toast";
+import { exportToExcel, exportToCSV, importFromExcel } from "@/lib/excel-utils";
 import {
   Plus,
   Search,
@@ -27,95 +45,147 @@ import {
   Upload,
   FileSpreadsheet,
   GraduationCap,
-} from "lucide-react"
+  Loader2,
+} from "lucide-react";
+import { useClasses } from "../hooks/useClasses";
+import { useStudents } from "../hooks/useStudents";
+import { useDebounce } from "@/hooks/useDebounce";
 
-const fetcher = (url) => fetch(url).then((res) => res.json())
+const fetcher = (url) => fetch(url).then((res) => res.json());
 
-const classes = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]
-const sections = ["A", "B", "C", "D"]
-const statuses = ["Active", "Inactive", "Graduated", "Transferred"]
+// const classes = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]
+const sections = ["A", "B", "C", "D"];
+const statuses = ["Active", "Inactive", "Graduated", "Transferred"];
 
 export function StudentsContent() {
-  const router = useRouter()
-  const { toast } = useToast()
-  const [search, setSearch] = useState("")
-  const [classFilter, setClassFilter] = useState("")
-  const [sectionFilter, setSectionFilter] = useState("")
-  const [statusFilter, setStatusFilter] = useState("Active")
+  const router = useRouter();
+  const { toast } = useToast();
+  const [search, setSearch] = useState("");
+  const [classFilter, setClassFilter] = useState("");
+  const [sectionFilter, setSectionFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("Active");
+  const [page, setPage] = useState(1);
+  const limit = 10;
 
-  const queryParams = new URLSearchParams()
-  if (search) queryParams.set("search", search)
-  if (classFilter) queryParams.set("class", classFilter)
-  if (sectionFilter) queryParams.set("section", sectionFilter)
-  if (statusFilter) queryParams.set("status", statusFilter)
+  const queryParams = new URLSearchParams();
+  if (search) queryParams.set("search", search);
+  if (classFilter) queryParams.set("classId", classFilter);
+  if (sectionFilter) queryParams.set("sectionId", sectionFilter);
 
-  const { data, isLoading, mutate } = useSWR(`/api/students?${queryParams.toString()}`, fetcher)
+  if (statusFilter) queryParams.set("status", statusFilter);
 
-  const students = data?.students || []
+  queryParams.set("page", page);
+  queryParams.set("limit", limit);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, classFilter, sectionFilter, statusFilter]);
+
+
+  const debouncedSearch = useDebounce(search, 300);
+
+  if (debouncedSearch) {
+    queryParams.set("search", debouncedSearch);
+  }
+
+const params = useSearchParams();
+
+useEffect(() => {
+  setSearch(params.get("search") || "");
+  setClassFilter(params.get("classId") || "all");
+  setSectionFilter(params.get("sectionId") || "all");
+  setStatusFilter(params.get("status") || "Active");
+  setPage(Number(params.get("page")) || 1);
+}, []);
+
+  const getClassById = (classId) => classes?.find((c) => c._id === classId);
+
+  const getSectionName = (classId, sectionId) => {
+    const cls = getClassById(classId);
+    return cls?.sections?.find((s) => s.name === sectionId)?.name;
+  };
+
+  const {
+    data,
+    isLoading: studentsLoading,
+    mutate,
+  } = useSWR(`/api/students?${queryParams.toString()}`, fetcher);
+  // const { data: classes, isLoading: classesLoading } = useSWR(
+  //   "/api/academics/classes",
+  //   fetcher
+  // );
+  const { classes, classesLoading } = useClasses();
+  console.log("classes", classes);
+  const students = data?.students || [];
+  // const { students, loading: studentsLoading } = useStudents();
 
   const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to delete this student?")) return
+    if (!confirm("Are you sure you want to delete this student?")) return;
 
     try {
       const response = await fetch(`/api/students/${id}`, {
         method: "DELETE",
-      })
+      });
 
       if (response.ok) {
         toast({
           title: "Student deleted",
           description: "The student has been removed successfully.",
-        })
-        mutate()
+        });
+        mutate();
       } else {
-        throw new Error("Failed to delete")
+        throw new Error("Failed to delete");
       }
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to delete student. Please try again.",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
+
+  console.log("students", students);
 
   const handleExport = (format) => {
     const exportData = students.map((s) => ({
       "Roll Number": s.rollNumber,
       "Registration Number": s.registrationNumber,
       Name: s.name,
-      Class: s.class,
-      Section: s.section,
+      Class: getClassById(s.classId)?.name,
+      Section: s.sectionId,
+
       "Father Name": s.fatherName,
       Phone: s.phone || s.fatherPhone,
       Email: s.email,
       Status: s.status,
       "Admission Date": new Date(s.admissionDate).toLocaleDateString(),
-    }))
+    }));
 
     if (format === "excel") {
-      exportToExcel(exportData, "students", "Students")
+      exportToExcel(exportData, "students", "Students");
     } else {
-      exportToCSV(exportData, "students")
+      exportToCSV(exportData, "students");
     }
 
     toast({
       title: "Export successful",
       description: `Students data exported as ${format.toUpperCase()}`,
-    })
-  }
+    });
+  };
 
   const handleImport = async (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const file = e.target.files?.[0];
+    if (!file) return;
 
     try {
-      const data = await importFromExcel(file)
+      const data = await importFromExcel(file);
 
       // Process and validate imported data
       const students = data.map((row) => ({
         rollNumber: row["Roll Number"] || row.rollNumber,
-        registrationNumber: row["Registration Number"] || row.registrationNumber,
+        registrationNumber:
+          row["Registration Number"] || row.registrationNumber,
         name: row["Name"] || row.name,
         class: String(row["Class"] || row.class),
         section: row["Section"] || row.section,
@@ -124,7 +194,7 @@ export function StudentsContent() {
         email: row["Email"] || row.email,
         dateOfBirth: row["Date of Birth"] || row.dateOfBirth || new Date(),
         gender: row["Gender"] || row.gender || "Male",
-      }))
+      }));
 
       // Bulk create students
       for (const student of students) {
@@ -132,29 +202,34 @@ export function StudentsContent() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(student),
-        })
+        });
       }
 
       toast({
         title: "Import successful",
         description: `${students.length} students imported successfully.`,
-      })
+      });
 
-      mutate()
+      mutate();
     } catch (error) {
       toast({
         title: "Import failed",
         description: "Please check your file format and try again.",
         variant: "destructive",
-      })
+      });
     }
 
-    e.target.value = ""
-  }
+    e.target.value = "";
+  };
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Students" description={`Manage all ${data?.total || 0} students in your school`}>
+      <PageHeader
+        title="Students"
+        description={`Manage all ${
+          students?.total || 0
+        } students in your school`}
+      >
         <div className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -176,7 +251,12 @@ export function StudentsContent() {
           </DropdownMenu>
 
           <label>
-            <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImport} />
+            <input
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              className="hidden"
+              onChange={handleImport}
+            />
             <Button variant="outline" asChild>
               <span>
                 <Upload className="h-4 w-4 mr-2" />
@@ -206,29 +286,42 @@ export function StudentsContent() {
           />
         </div>
 
-        <Select value={classFilter} onValueChange={setClassFilter}>
+        <Select
+          value={classFilter}
+          onValueChange={(value) => {
+            setClassFilter(value);
+            setSectionFilter(""); // reset section
+          }}
+        >
           <SelectTrigger className="w-full sm:w-32">
             <SelectValue placeholder="Class" />
           </SelectTrigger>
+
           <SelectContent>
             <SelectItem value="all">All Classes</SelectItem>
-            {classes.map((cls) => (
-              <SelectItem key={cls} value={cls}>
-                Class {cls}
+            {classes?.map((cls) => (
+              <SelectItem key={cls._id} value={cls._id}>
+                {cls.name}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
-        <Select value={sectionFilter} onValueChange={setSectionFilter}>
+        <Select
+          value={sectionFilter}
+          onValueChange={setSectionFilter}
+          disabled={!classFilter}
+        >
           <SelectTrigger className="w-full sm:w-32">
             <SelectValue placeholder="Section" />
           </SelectTrigger>
+
           <SelectContent>
             <SelectItem value="all">All Sections</SelectItem>
-            {sections.map((section) => (
-              <SelectItem key={section} value={section}>
-                Section {section}
+
+            {getClassById(classFilter)?.sections?.map((sec) => (
+              <SelectItem key={sec._id} value={sec.name}>
+                Section {sec.name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -250,7 +343,7 @@ export function StudentsContent() {
       </div>
 
       {/* Table */}
-      {isLoading ? (
+      {studentsLoading ? (
         <div className="flex items-center justify-center py-12">
           <LoadingSpinner size="lg" />
         </div>
@@ -283,63 +376,115 @@ export function StudentsContent() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {students.map((student) => (
-                <TableRow key={student._id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar>
-                        <AvatarImage src={student.photo?.url || "/placeholder.svg"} />
-                        <AvatarFallback>{student.name?.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">{student.name}</p>
-                        <p className="text-sm text-muted-foreground">{student.registrationNumber}</p>
+              {students &&
+                students.length > 0 &&
+                students.map((student) => (
+                  <TableRow key={student._id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar>
+                          <AvatarImage
+                            src={student.photo?.url || "/placeholder.svg"}
+                          />
+                          <AvatarFallback>
+                            {student.name?.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">{student.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {student.registrationNumber}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{student.rollNumber}</TableCell>
-                  <TableCell>
-                    {student.class} - {student.section}
-                  </TableCell>
-                  <TableCell>{student.fatherName}</TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <p>{student.phone || student.fatherPhone}</p>
-                      <p className="text-muted-foreground">{student.email}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={student.status === "Active" ? "default" : "secondary"}>{student.status}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => router.push(`/students/${student._id}`)}>
-                          <Eye className="h-4 w-4 mr-2" />
-                          View Profile
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => router.push(`/students/${student._id}/edit`)}>
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(student._id)} className="text-destructive">
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+                    <TableCell>{student.rollNumber}</TableCell>
+                    <TableCell>
+                      {getClassById(student.classId)?.name ?? "—"} -{" "}
+                      {student.sectionId ?? "—"}
+                    </TableCell>
+
+                    <TableCell>{student.fatherName}</TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        <p>{student.phone || student.fatherPhone}</p>
+                        <p className="text-muted-foreground">{student.email}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          student.status === "Active" ? "default" : "secondary"
+                        }
+                      >
+                        {student.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() =>
+                              router.push(`/students/${student._id}`)
+                            }
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Profile
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              router.push(`/students/${student._id}/edit`)
+                            }
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDelete(student._id)}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
             </TableBody>
           </Table>
         </div>
       )}
+      <div className="flex items-center justify-between px-4 py-3 border-t">
+        <p className="text-sm text-muted-foreground">
+          Page {data?.page} of {data?.totalPages}
+        </p>
+
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page === 1}
+            onClick={() => setPage((p) => p - 1)}
+          >
+            Previous
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page === data?.totalPages}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            Next
+          </Button>
+        </div>
+      </div>
     </div>
-  )
+  );
 }

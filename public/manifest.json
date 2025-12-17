@@ -1,0 +1,9 @@
+{
+  "name": "School MIS",
+  "short_name": "MIS",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1a73e8",
+  "icons": []
+}

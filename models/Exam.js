@@ -1,4 +1,5 @@
-import mongoose from "mongoose"
+
+import mongoose from "mongoose";
 
 const examSchema = new mongoose.Schema(
   {
@@ -6,35 +7,56 @@ const examSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+
     examType: {
       type: String,
-      enum: ["Monthly", "Quarterly", "Mid Term", "Final", "Unit Test", "Practice"],
+      enum: [
+        "Monthly",
+        "Quarterly",
+        "Mid Term",
+        "Final",
+        "Unit Test",
+        "Practice",
+      ],
       required: true,
     },
+
     academicYear: {
       type: String,
       required: true,
     },
-    class: {
+
+    // ✅ SAME AS STUDENT
+    classId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Class",
+      required: true,
+      index: true,
+    },
+
+    // ✅ SAME AS STUDENT (string section _id)
+    sectionId: {
       type: String,
       required: true,
+      index: true,
     },
-    section: {
-      type: String,
-    },
+
     startDate: {
       type: Date,
       required: true,
     },
+
     endDate: {
       type: Date,
       required: true,
     },
+
     status: {
       type: String,
       enum: ["Scheduled", "Ongoing", "Completed", "Cancelled"],
       default: "Scheduled",
     },
+
     schedule: [
       {
         subject: String,
@@ -44,23 +66,25 @@ const examSchema = new mongoose.Schema(
         venue: String,
         totalMarks: Number,
         passingMarks: Number,
-        invigilator: String,
+        invigilator: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Teacher",
+        },
       },
     ],
-    instructions: {
-      type: String,
-    },
+
+    instructions: String,
+
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Teacher",
     },
   },
-  {
-    timestamps: true,
-  },
-)
+  { timestamps: true }
+);
 
-examSchema.index({ academicYear: 1, class: 1 })
-examSchema.index({ status: 1 })
+// ✅ indexes aligned with queries
+examSchema.index({ academicYear: 1, classId: 1, sectionId: 1 });
+examSchema.index({ status: 1 });
 
-export default mongoose.models.Exam || mongoose.model("Exam", examSchema)
+export default mongoose.models.Exam || mongoose.model("Exam", examSchema);

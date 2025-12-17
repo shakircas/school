@@ -1,5 +1,5 @@
 import { MainLayout } from "@/components/layout/main-layout"
-import { StudentAttendanceContent } from "@/components/attendance/student-attendance-content"
+import StudentAttendanceContent  from "@/components/attendance/student-attendance-content"
 
 export const metadata = {
   title: "Student Attendance - EduManage Pro",

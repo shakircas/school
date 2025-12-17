@@ -41,7 +41,7 @@ const navigation = [
     children: [
       { name: "All Students", href: "/students" },
       { name: "Add Student", href: "/students/add" },
-      { name: "Admissions", href: "/admissions" },
+      { name: "Admissions", href: "/students/admissions" },
       { name: "Withdrawals", href: "/students/withdrawals" },
     ],
   },
@@ -69,6 +69,8 @@ const navigation = [
       { name: "Classes", href: "/academics/classes" },
       { name: "Subjects", href: "/academics/subjects" },
       { name: "Timetable", href: "/academics/timetable" },
+      { name: "Teacher Timetable", href: "/academics/teacher-timetable" },
+      {name: "Timetable Builder", href:"/academics/timetable-builder"}
     ],
   },
   {

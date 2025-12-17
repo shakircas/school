@@ -1,30 +1,44 @@
-import mongoose from "mongoose"
+import mongoose from "mongoose";
 
 const subjectSchema = new mongoose.Schema(
   {
     name: {
       type: String,
       required: true,
+      trim: true,
     },
+
     code: {
       type: String,
       required: true,
+      uppercase: true,
+      trim: true,
       unique: true,
     },
+
     description: String,
     department: String,
     type: {
       type: String,
-      enum: ["Core", "Elective", "Optional"],
-      default: "Core",
+      enum: ["Compulsory", "Elective", "Optional"],
+      default: "Compulsory",
     },
-    classes: [String],
+
+    // ✅ Use Class references (NOT strings)
+    classes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Class",
+      },
+    ],
+
     teachers: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Teacher",
       },
     ],
+
     syllabus: [
       {
         chapter: String,
@@ -32,18 +46,18 @@ const subjectSchema = new mongoose.Schema(
         estimatedHours: Number,
       },
     ],
+
     status: {
       type: String,
       enum: ["Active", "Inactive"],
       default: "Active",
     },
   },
-  {
-    timestamps: true,
-  },
-)
+  { timestamps: true }
+);
 
-subjectSchema.index({ name: 1 })
-subjectSchema.index({ code: 1 })
+/* ---- Indexes ---- */
+subjectSchema.index({ name: 1 });
 
-export default mongoose.models.Subject || mongoose.model("Subject", subjectSchema)
+export default mongoose.models.Subject ||
+  mongoose.model("Subject", subjectSchema);

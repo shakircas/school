@@ -1,87 +1,162 @@
-import { NextResponse } from "next/server"
-import connectDB from "@/lib/db"
-import Result from "@/models/Result"
+import { NextResponse } from "next/server";
+import connectDB from "@/lib/db";
+import Result from "@/models/Result";
+import Exam from "@/models/Exam";
+import Student from "@/models/Student";
+import Class from "@/models/Class";
 
 export async function GET(request) {
   try {
-    await connectDB()
+    await connectDB();
 
-    const { searchParams } = new URL(request.url)
-    const examId = searchParams.get("examId")
-    const studentId = searchParams.get("studentId")
-    const classFilter = searchParams.get("class")
-    const academicYear = searchParams.get("academicYear")
+    const { searchParams } = new URL(request.url);
 
-    const query = {}
+    const examId = searchParams.get("examId");
+    const classId = searchParams.get("classId");
+    const sectionId = searchParams.get("sectionId");
+    const student = searchParams.get("student"); // name / roll search
+    const academicYear = searchParams.get("academicYear");
 
-    if (examId) {
-      query.exam = examId
-    }
+    const query = {};
 
-    if (studentId) {
-      query.student = studentId
-    }
+    if (examId) query.exam = examId;
+    if (classId) query.classId = classId;
+    if (sectionId) query.sectionId = sectionId;
+    if (academicYear) query.academicYear = academicYear;
 
-    if (classFilter) {
-      query.class = classFilter
-    }
-
-    if (academicYear) {
-      query.academicYear = academicYear
-    }
-
-    const results = await Result.find(query)
+    let results = await Result.find(query)
       .populate("exam", "name examType")
       .populate("student", "name rollNumber")
-      .sort({ rank: 1 })
-      .lean()
+      .populate("classId", "name")
+      .sort({ createdAt: -1 })
+      .lean();
 
-    return NextResponse.json(results)
+    // 🔍 Student name / roll search (safe)
+    if (student) {
+      const term = student.toLowerCase();
+      results = results.filter(
+        (r) =>
+          r.student?.name?.toLowerCase().includes(term) ||
+          r.student?.rollNumber?.toLowerCase().includes(term)
+      );
+    }
+
+    return NextResponse.json(results);
   } catch (error) {
-    console.error("Error fetching results:", error)
-    return NextResponse.json({ error: "Failed to fetch results" }, { status: 500 })
+    console.error(error);
+    return NextResponse.json(
+      { error: "Failed to fetch results" },
+      { status: 500 }
+    );
   }
 }
 
-export async function POST(request) {
+
+export async function POST(req) {
   try {
-    await connectDB()
+    await connectDB();
+    const body = await req.json();
 
-    const data = await request.json()
+    const { exam, student, classId, sectionId, academicYear, subjects } = body;
 
-    // Calculate totals and grade
-    let totalMarks = 0
-    let obtainedMarks = 0
+    if (!exam || !student || !classId || !sectionId)
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
 
-    data.subjects.forEach((subject) => {
-      totalMarks += subject.totalMarks
-      obtainedMarks += subject.obtainedMarks
-      subject.percentage = (subject.obtainedMarks / subject.totalMarks) * 100
-      subject.grade = calculateGrade(subject.percentage)
-    })
+    let totalMarks = 0;
+    let obtainedMarks = 0;
 
-    data.totalMarks = totalMarks
-    data.obtainedMarks = obtainedMarks
-    data.percentage = (obtainedMarks / totalMarks) * 100
-    data.grade = calculateGrade(data.percentage)
-    data.status = data.percentage >= 33 ? "Pass" : "Fail"
+    const processedSubjects = subjects.map((s) => {
+      const percentage = (s.obtainedMarks / s.totalMarks) * 100;
+      totalMarks += s.totalMarks;
+      obtainedMarks += s.obtainedMarks;
 
-    const result = new Result(data)
-    await result.save()
+      return {
+        ...s,
+        percentage,
+        grade: calculateGrade(percentage),
+      };
+    });
 
-    return NextResponse.json(result, { status: 201 })
-  } catch (error) {
-    console.error("Error creating result:", error)
-    return NextResponse.json({ error: "Failed to create result" }, { status: 500 })
+    const percentage = (obtainedMarks / totalMarks) * 100;
+
+    const result = await Result.create({
+      exam,
+      student,
+      classId,
+      sectionId,
+      academicYear,
+      subjects: processedSubjects,
+      totalMarks,
+      obtainedMarks,
+      percentage,
+      grade: calculateGrade(percentage),
+      status: percentage >= 33 ? "Pass" : "Fail",
+    });
+
+    return NextResponse.json({ data: result }, { status: 201 });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json(
+      { error: "Failed to create result" },
+      { status: 500 }
+    );
   }
 }
 
 function calculateGrade(percentage) {
-  if (percentage >= 90) return "A+"
-  if (percentage >= 80) return "A"
-  if (percentage >= 70) return "B"
-  if (percentage >= 60) return "C"
-  if (percentage >= 50) return "D"
-  if (percentage >= 33) return "E"
-  return "F"
+  if (percentage >= 90) return "A+";
+  if (percentage >= 80) return "A";
+  if (percentage >= 70) return "B";
+  if (percentage >= 60) return "C";
+  if (percentage >= 50) return "D";
+  if (percentage >= 33) return "E";
+  return "F";
+}
+
+export async function PUT(req) {
+  await connectDB();
+  const { id, subjects } = await req.json();
+
+  let totalMarks = 0;
+  let obtainedMarks = 0;
+
+  const processedSubjects = subjects.map((s) => {
+    totalMarks += s.totalMarks;
+    obtainedMarks += s.obtainedMarks;
+    const percentage = (s.obtainedMarks / s.totalMarks) * 100;
+
+    return {
+      ...s,
+      percentage,
+      grade: calculateGrade(percentage),
+    };
+  });
+
+  const percentage = (obtainedMarks / totalMarks) * 100;
+
+  const result = await Result.findByIdAndUpdate(
+    id,
+    {
+      subjects: processedSubjects,
+      totalMarks,
+      obtainedMarks,
+      percentage,
+      grade: calculateGrade(percentage),
+      status: percentage >= 33 ? "Pass" : "Fail",
+    },
+    { new: true }
+  );
+
+  return NextResponse.json({ data: result });
+}
+
+export async function DELETE(req) {
+  await connectDB();
+  const { id } = await req.json();
+
+  await Result.findByIdAndDelete(id);
+  return NextResponse.json({ success: true });
 }

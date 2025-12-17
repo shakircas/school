@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { StudentForm } from "@/components/forms/student-form";
 import { useToast } from "@/hooks/use-toast";
 import { LoadingPage } from "@/components/ui/loading-spinner";
+import { useClasses } from "@/components/hooks/useClasses";
 
 export default function UpdateStudentPage({ params }) {
   const router = useRouter();
@@ -17,7 +18,9 @@ export default function UpdateStudentPage({ params }) {
   const [student, setStudent] = useState(null);
   const [loadingStudent, setLoadingStudent] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+ const { classes, classesLoading } = useClasses();
 
+  console.log(classes);
   useEffect(() => {
     const fetchStudent = async () => {
       try {
@@ -91,6 +94,7 @@ export default function UpdateStudentPage({ params }) {
         defaultValues={student}
         onSubmit={handleSubmit}
         isLoading={isLoading}
+        classes={classes}
       />
     </MainLayout>
   );

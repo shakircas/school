@@ -1,4 +1,4 @@
-import mongoose from "mongoose"
+import mongoose from "mongoose";
 
 const attendanceSchema = new mongoose.Schema(
   {
@@ -11,12 +11,16 @@ const attendanceSchema = new mongoose.Schema(
       enum: ["Student", "Teacher"],
       required: true,
     },
-    class: {
-      type: String,
+    classId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Class",
+      required: true,
     },
-    section: {
+    sectionId: {
       type: String,
+      required: true,
     },
+
     records: [
       {
         personId: {
@@ -47,9 +51,15 @@ const attendanceSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  },
-)
+  }
+);
 
-attendanceSchema.index({ date: 1, type: 1, class: 1, section: 1 })
+attendanceSchema.index({
+  date: 1,
+  type: 1,
+  classId: 1,
+  sectionId: 1,
+});
 
-export default mongoose.models.Attendance || mongoose.model("Attendance", attendanceSchema)
+export default mongoose.models.Attendance ||
+  mongoose.model("Attendance", attendanceSchema);
