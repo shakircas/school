@@ -29,6 +29,7 @@ const subjectsKPK = [
   { value: "biology", label: "Biology" },
   { value: "islamiyat", label: "Islamiyat" },
   { value: "pak_studies", label: "Pakistan Studies" },
+  { value: "drawing", label: "Drawing" },
   { value: "computer_science", label: "Computer Science" },
   { value: "geography", label: "Geography" },
   { value: "history", label: "History" },

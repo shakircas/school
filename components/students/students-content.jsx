@@ -45,7 +45,7 @@ import {
   Upload,
   FileSpreadsheet,
   GraduationCap,
-  Loader2,
+
 } from "lucide-react";
 import { useClasses } from "../hooks/useClasses";
 import { useStudents } from "../hooks/useStudents";
@@ -53,8 +53,6 @@ import { useDebounce } from "@/hooks/useDebounce";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
-// const classes = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]
-const sections = ["A", "B", "C", "D"];
 const statuses = ["Active", "Inactive", "Graduated", "Transferred"];
 
 export function StudentsContent() {

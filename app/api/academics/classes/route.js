@@ -135,6 +135,7 @@ import Class from "@/models/Class";
 import Teacher from "@/models/Teacher";
 import Student from "@/models/Student";
 import mongoose from "mongoose";
+import Subject from "@/models/Subject";
 
 /* -------------------------------------------------
    HELPERS
@@ -169,16 +170,17 @@ export async function GET(req) {
       ];
     }
 
-    const [classes, total] = await Promise.all([
-      Class.find(query)
-        .populate("sections.classTeacher", "name")
-        .populate("subjects.teacher", "name")
-        .sort(sort)
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .lean(),
-      Class.countDocuments(query),
-    ]);
+   const [classes, total] = await Promise.all([
+     Class.find(query)
+       .populate("sections.classTeacher", "name")
+       .populate("subjects.teacher", "name")
+       .sort(sort)
+       .skip((page - 1) * limit)
+       .limit(limit)
+       .lean(),
+     Class.countDocuments(query),
+   ]);
+
 
     /* ---- student count (optimized & safe) ---- */
     const classIds = classes.map(c => c._id);
@@ -243,26 +245,28 @@ export async function POST(req) {
     });
 
     /* ---- Subject validation ---- */
-    subjects.forEach(sub => {
-      if (!sub.name) throw new Error("Subject name required");
-      if (!isValidObjectId(sub.teacher)) {
-        throw new Error(`Invalid teacher for subject ${sub.name}`);
-      }
-      if (sub.periods <= 0 || sub.periods > 10) {
-        throw new Error(`Invalid periods for subject ${sub.name}`);
-      }
-    });
+    
+    // subjects.forEach(sub => {
+    //   if (!sub.name) throw new Error("Subject name required");
+    //   if (!isValidObjectId(sub.teacher)) {
+    //     throw new Error(`Invalid teacher for subject ${sub.name}`);
+    //   }
+    //   if (sub.periods <= 0 || sub.periods > 10) {
+    //     throw new Error(`Invalid periods for subject ${sub.name}`);
+    //   }
+    // });
 
     /* ---- Teacher existence check ---- */
-    const teacherIds = [
-      ...sections.map(s => s.classTeacher).filter(Boolean),
-      ...subjects.map(s => s.teacher),
-    ];
+  const teacherIds = [
+    ...sections.map((s) => s.classTeacher).filter(Boolean),
+    ...subjects.map((s) => s.teacher).filter(Boolean), // 👈 ADD THIS
+  ];
 
-    const teacherCount = await Teacher.countDocuments({ _id: { $in: teacherIds } });
-    if (teacherCount !== teacherIds.length) {
-      return error("One or more assigned teachers do not exist");
-    }
+
+    // const teacherCount = await Teacher.countDocuments({ _id: { $in: teacherIds } });
+    // if (teacherCount !== teacherIds.length) {
+    //   return error("One or more assigned teachers do not exist");
+    // }
 
     const created = await Class.create({
       ...body,

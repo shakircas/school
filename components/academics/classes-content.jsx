@@ -52,6 +52,22 @@ import {
   XAxis,
   Bar,
 } from "recharts";
+import ClassFormDialog from "./ClassFormDialog";
+
+const classes = [
+  //  {_id:"class-1", name:"Class 1"},
+  //  {_id:"class-2", name:"Class 2"},
+  //  {_id:"class-3", name:"Class 3"},
+  //  {_id:"class-4", name:"Class 4"},
+  //  {_id:"class-5", name:"Class 5"},
+  { _id: "class-6", name: "Class 6" },
+  { _id: "class-7", name: "Class 7" },
+  { _id: "class-8", name: "Class 8" },
+  { _id: "class-9", name: "Class 9" },
+  { _id: "class-10", name: "Class 10" },
+  //  {_id:"class-11", name:"Class 11"},
+  //  {_id:"class-12", name:"Class 12"},
+];
 
 const fetcher = (url) => fetch(url).then((r) => r.json());
 
@@ -61,7 +77,7 @@ export function ClassesContent() {
   // UI state
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState(null);
-
+  const [open, setOpen] = useState(false);
   // Filters & independent pagination state (separate for list & export maybe)
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -82,15 +98,23 @@ export function ClassesContent() {
   const { data, isLoading, mutate } = useSWR(
     `/api/academics/classes?${params}`,
     fetcher,
-    { revalidateOnFocus: false }
+    // { revalidateOnFocus: false }
   );
+
   const { data: teachersRes, isLoading: teachersLoading } = useSWR(
     `/api/teachers?${params.toString()}`,
     fetcher
   );
 
+  console.log(data?.data);
+
   const teachers = teachersRes?.teachers || [];
   console.log(teachers);
+  const { data: subjectsRes, isLoading: subjectsLoading } = useSWR(
+    `/api/academics/subjects?${params.toString()}`,
+    fetcher
+  );
+  const subjects = subjectsRes?.subjects || [];
   // RHF form
   const { register, control, handleSubmit, reset, watch } = useForm({
     defaultValues: {
@@ -124,32 +148,8 @@ export function ClassesContent() {
   }, [isAddOpen, reset]);
 
   async function onSubmit(form) {
+    console.log("form", form);
     try {
-      if (!teachers || teachers.length === 0) {
-        throw new Error("No teachers available to assign.");
-      }
-
-      // Create a set of valid teacher IDs
-      const validTeacherIds = new Set(teachers.map((t) => t._id));
-
-      // Validate sections – only check if classTeacher is filled
-      form.sections.forEach((s, idx) => {
-        if (s.classTeacher && !validTeacherIds.has(s.classTeacher)) {
-          throw new Error(
-            `Invalid class teacher for section ${s.name || idx + 1}`
-          );
-        }
-      });
-
-      // Validate subjects – only check if teacher is filled
-      form.subjects.forEach((subj, idx) => {
-        if (subj.teacher && !validTeacherIds.has(subj.teacher)) {
-          throw new Error(
-            `Invalid teacher for subject ${subj.name || idx + 1}`
-          );
-        }
-      });
-
       // Determine if adding or updating
       const method = selectedClass ? "PUT" : "POST";
       const url = "/api/academics/classes";
@@ -307,7 +307,6 @@ export function ClassesContent() {
           </Button>
         </div>
       </PageHeader>
-
       {/* Filters + Pagination controls */}
       <Card>
         <CardContent className="flex flex-wrap gap-3 items-center">
@@ -323,9 +322,12 @@ export function ClassesContent() {
           </div>
 
           <Select
+            value={String(limit)}
             onValueChange={(v) => {
               setLimit(Number(v));
               setPage(1);
+              setSearch("");
+              reset();
             }}
           >
             <SelectTrigger className="w-32">
@@ -341,6 +343,7 @@ export function ClassesContent() {
           </Select>
 
           <Select
+            value="-createdAt"
             onValueChange={(v) => {
               setSort(v);
               setPage(1);
@@ -358,7 +361,6 @@ export function ClassesContent() {
           </Select>
         </CardContent>
       </Card>
-
       {/* Classes table */}
       <Card>
         <CardHeader>
@@ -398,13 +400,39 @@ export function ClassesContent() {
                       <TableCell className="font-medium">{cls.name}</TableCell>
                       <TableCell>{cls.academicYear}</TableCell>
                       <TableCell>
-                        {(cls.sections || []).map((s) => s.name).join(", ") ||
-                          "-"}
+                        {(cls.sections || []).length > 0
+                          ? cls.sections.map((s, i) => (
+                              <div key={i} className="text-sm">
+                                <span className="font-medium">
+                                  Section {s.name}
+                                </span>
+                                {s.classTeacher?.name && (
+                                  <span className="text-muted-foreground">
+                                    {" "}
+                                    ({s.classTeacher.name})
+                                  </span>
+                                )}
+                              </div>
+                            ))
+                          : "-"}
                       </TableCell>
+
                       <TableCell>
-                        {(cls.subjects || []).map((s) => s.name).join(", ") ||
-                          "-"}
+                        {(cls.subjects || []).length > 0
+                          ? cls.subjects.map((s, i) => (
+                              <div key={i} className="text-sm">
+                                <span className="font-medium">{s.name}</span>
+                                {s.teacher?.name && (
+                                  <span className="text-muted-foreground">
+                                    {" "}
+                                    ({s.teacher.name})
+                                  </span>
+                                )}
+                              </div>
+                            ))
+                          : "-"}
                       </TableCell>
+
                       <TableCell>
                         {(cls.sections || []).reduce(
                           (acc, s) => acc + (s.capacity || 0),
@@ -459,7 +487,6 @@ export function ClassesContent() {
           )}
         </CardContent>
       </Card>
-
       {/* Attendance pie & teacher report */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
@@ -539,235 +566,13 @@ export function ClassesContent() {
           </CardContent>
         </Card>
       </div>
-
-      <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-        <DialogContent className="max-w-4xl w-full p-6 scrollbar">
-          <DialogHeader>
-            <DialogTitle>
-              {selectedClass ? "Edit Class" : "Add Class"}
-            </DialogTitle>
-          </DialogHeader>
-
-          <form
-            onSubmit={handleSubmit(onSubmit)}
-            className="space-y-6 grid grid-cols-1 gap-4 md:grid-cols-2"
-          >
-            {/* Class Name & Academic Year */}
-            <div className="flex flex-col gap-2">
-              <Label>Class Name</Label>
-              <Controller
-                name="name"
-                control={control}
-                rules={{ required: "Class Name is required" }}
-                render={({ field }) => (
-                  <Select {...field} disabled={isLoading || teachersLoading}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Class" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {["Class 1", "Class 2", "Class 3"].map((cls) => (
-                        <SelectItem key={cls} value={cls}>
-                          {cls}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label>Academic Year</Label>
-              <Input
-                {...register("academicYear", {
-                  required: "Academic Year is required",
-                })}
-                placeholder="2025-2026"
-                disabled={isLoading || teachersLoading}
-              />
-            </div>
-
-            {/* Sections */}
-            <div className="col-span-2">
-              <Label>Sections</Label>
-              <div className="flex flex-col gap-2">
-                {sectionsFieldArray.fields.map((field, idx) => (
-                  <div
-                    key={field.id}
-                    className="grid grid-cols-1 md:grid-cols-4 gap-2 items-center"
-                  >
-                    <Input
-                      {...register(`sections.${idx}.name`, {
-                        required: "Section name required",
-                      })}
-                      placeholder="Section (A)"
-                      disabled={teachersLoading}
-                    />
-                    <Input
-                      type="number"
-                      {...register(`sections.${idx}.capacity`, {
-                        required: "Capacity required",
-                        valueAsNumber: true,
-                        min: 1,
-                      })}
-                      placeholder="Capacity"
-                      disabled={teachersLoading}
-                    />
-                    <Controller
-                      control={control}
-                      name={`sections.${idx}.classTeacher`}
-                      rules={{ required: "Select a teacher" }}
-                      render={({ field }) => (
-                        <Select
-                          {...field}
-                          value={field.value || ""}
-                          onValueChange={field.onChange}
-                          disabled={teachersLoading || !teachers.length}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select Class Teacher" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {teachers.map((t) => (
-                              <SelectItem key={t._id} value={t._id}>
-                                {t.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      onClick={() => sectionsFieldArray.remove(idx)}
-                      disabled={teachersLoading}
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                ))}
-              </div>
-              <Button
-                type="button"
-                className="mt-2"
-                onClick={() =>
-                  sectionsFieldArray.append({
-                    name: "",
-                    capacity: 40,
-                    classTeacher: "",
-                  })
-                }
-                disabled={teachersLoading}
-              >
-                Add Section
-              </Button>
-            </div>
-
-            {/* Subjects */}
-            <div className="col-span-2">
-              <Label>Subjects</Label>
-              <div className="flex flex-col gap-2">
-                {subjectsFieldArray.fields.map((field, idx) => (
-                  <div
-                    key={field.id}
-                    className="grid grid-cols-1 md:grid-cols-5 gap-2 items-center"
-                  >
-                    <Input
-                      {...register(`subjects.${idx}.name`, {
-                        required: "Subject name required",
-                      })}
-                      placeholder="Subject Name"
-                      disabled={teachersLoading}
-                    />
-                    <Input
-                      {...register(`subjects.${idx}.code`, {
-                        required: "Code required",
-                      })}
-                      placeholder="Code"
-                      disabled={teachersLoading}
-                    />
-                    <Controller
-                      control={control}
-                      name={`subjects.${idx}.teacher`}
-                      rules={{ required: "Select a teacher" }}
-                      render={({ field }) => (
-                        <Select
-                          {...field}
-                          value={field.value || ""}
-                          onValueChange={field.onChange}
-                          disabled={teachersLoading || !teachers.length}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select Teacher" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {teachers.map((t) => (
-                              <SelectItem key={t._id} value={t._id}>
-                                {t.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                    <Input
-                      type="number"
-                      {...register(`subjects.${idx}.periods`, {
-                        required: "Periods required",
-                        valueAsNumber: true,
-                        min: 1,
-                      })}
-                      placeholder="Periods"
-                      disabled={teachersLoading}
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      onClick={() => subjectsFieldArray.remove(idx)}
-                      disabled={teachersLoading}
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                ))}
-              </div>
-              <Button
-                type="button"
-                className="mt-2"
-                onClick={() =>
-                  subjectsFieldArray.append({
-                    name: "",
-                    code: "",
-                    teacher: "",
-                    periods: 1,
-                  })
-                }
-                disabled={teachersLoading}
-              >
-                Add Subject
-              </Button>
-            </div>
-
-            {/* Dialog Footer */}
-            <div className="col-span-2 flex justify-end gap-2 mt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsAddOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={teachersLoading || !teachers.length}
-              >
-                {selectedClass ? "Update Class" : "Add Class"}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <ClassFormDialog
+        open={isAddOpen}
+        onOpenChange={setIsAddOpen}
+        onSubmit={onSubmit}
+        defaultValues={selectedClass}
+        isLoading={isLoading}
+      />
     </div>
   );
 }
