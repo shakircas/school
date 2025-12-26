@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import TimetableBoard from "@/components/timetable/TimetableBoard";
 import TimetableToolbar from "@/components/timetable/TimetableToolbar";
-import { detectClashes } from "@/lib/timetable/clashDetector";
+import { detectClashes } from "@/lib/timetable/detectTeacherClashes";
 import ClashWarnings from "@/components/timetable/ClashWarnings";
 import TeacherLoadAnalytics from "@/components/timetable/TeacherLoadAnalytics";
 import { calculateTeacherLoad } from "@/lib/timetable/teacherLoad";

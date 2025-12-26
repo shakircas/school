@@ -1,12 +1,55 @@
-import mongoose from "mongoose"
+import mongoose from "mongoose";
+
+const KP_DESIGNATIONS = [
+  "PST (Primary School Teacher)",
+  "CT (Certified Teacher)",
+  "AT (Arabic Teacher)",
+  "DM (Drawing Master)",
+  "PET (Physical Education Teacher)",
+
+  "SST (General)",
+  "SST (Biology)",
+  "SST (Physics)",
+  "SST (Chemistry)",
+  "SST (Mathematics)",
+  "SST (English)",
+  "SST (Urdu)",
+  "SST (Islamiyat)",
+  "SST (Computer Science)",
+
+  "Head Teacher (HT)",
+  "Head Master (HM)",
+  "Principal",
+  "Vice Principal",
+];
+
+const ACADEMIC_QUALIFICATIONS = [
+  "Matric",
+  "Intermediate",
+  "BA",
+  "BSc",
+  "BS",
+  "MA",
+  "MSc",
+  "B.Ed",
+  "M.Ed",
+  "MPhil",
+  "PhD",
+];
+
+const PROFESSIONAL_QUALIFICATIONS = [
+  "PTC",
+  "CT",
+  "ADE",
+  "B.Ed",
+  "M.Ed",
+  "Teaching Diploma",
+];
+
+const genders = ["Male", "Female", "Other"];
 
 const teacherSchema = new mongoose.Schema(
   {
-    employeeId: {
-      type: String,
-      required: true,
-      unique: true,
-    },
     name: {
       type: String,
       required: true,
@@ -23,6 +66,27 @@ const teacherSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+
+    /* =====================
+       GOVT IDENTIFIERS
+       ===================== */
+
+    nic: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
+      match: [/^[0-9]{5}-[0-9]{7}-[0-9]{1}$/, "Invalid NIC format"],
+    },
+
+    personalNo: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
+      match: [/^[0-9]{8}$/, "Personal No must be 8 digits"],
+    },
+
     dateOfBirth: {
       type: Date,
       required: true,
@@ -41,8 +105,29 @@ const teacherSchema = new mongoose.Schema(
     },
     qualification: {
       type: String,
+      enum: ACADEMIC_QUALIFICATIONS,
       required: true,
     },
+
+    professionalQualification: [
+      {
+        type: String,
+        enum: PROFESSIONAL_QUALIFICATIONS,
+      },
+    ],
+
+    designation: {
+      type: String,
+      enum: KP_DESIGNATIONS,
+      required: true,
+    },
+
+    // department: {
+    //   type: String,
+    //   enum: KP_DEPARTMENTS,
+    //   required: true,
+    // },
+
     specialization: {
       type: String,
     },
@@ -54,14 +139,7 @@ const teacherSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
-    department: {
-      type: String,
-      required: true,
-    },
-    designation: {
-      type: String,
-      required: true,
-    },
+
     subjects: [
       {
         type: String,
@@ -109,11 +187,12 @@ const teacherSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  },
-)
+  }
+);
 
-teacherSchema.index({ name: "text", employeeId: "text", email: "text" })
-teacherSchema.index({ department: 1 })
-teacherSchema.index({ status: 1 })
+teacherSchema.index({ name: "text", personalNo: "text", email: "text" });
+teacherSchema.index({ department: 1 });
+teacherSchema.index({ status: 1 });
 
-export default mongoose.models.Teacher || mongoose.model("Teacher", teacherSchema)
+export default mongoose.models.Teacher ||
+  mongoose.model("Teacher", teacherSchema);

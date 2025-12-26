@@ -1,22 +1,34 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { useForm, useFieldArray } from "react-hook-form"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { PageHeader } from "@/components/ui/page-header"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Plus, Trash2, Save, ArrowLeft, Wand2 } from "lucide-react"
-import { toast } from "sonner"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useForm, useFieldArray } from "react-hook-form";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { PageHeader } from "@/components/ui/page-header";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Plus, Trash2, Save, ArrowLeft, Wand2 } from "lucide-react";
+import { toast } from "sonner";
 
 export function CreateQuizContent() {
-  const router = useRouter()
-  const [isGenerating, setIsGenerating] = useState(false)
+  const router = useRouter();
+  const [isGenerating, setIsGenerating] = useState(false);
   const {
     register,
     handleSubmit,
@@ -31,42 +43,55 @@ export function CreateQuizContent() {
       class: "",
       subject: "",
       duration: 30,
-      questions: [{ question: "", options: ["", "", "", ""], correctAnswer: 0 }],
+      questions: [
+        { question: "", options: ["", "", "", ""], correctAnswer: 0 },
+      ],
     },
-  })
+  });
 
   const { fields, append, remove } = useFieldArray({
     control,
     name: "questions",
-  })
+  });
 
-  const onSubmit = async (data) => {
-    try {
-      const response = await fetch("/api/quizzes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, status: "active" }),
-      })
+ const onSubmit = async (data) => {
+   try {
+     const totalMarks = data.questions.length; // 1 mark per MCQ
+     const passingMarks = Math.ceil(totalMarks * 0.4); // 40%
 
-      if (!response.ok) throw new Error("Failed to create quiz")
+     const payload = {
+       ...data,
+       totalMarks,
+       passingMarks,
+       status: "Active", // ✅ ENUM MATCH
+     };
 
-      toast.success("Quiz created successfully")
-      router.push("/quizzes")
-    } catch (error) {
-      toast.error("Failed to create quiz")
-    }
-  }
+     const response = await fetch("/api/quizzes", {
+       method: "POST",
+       headers: { "Content-Type": "application/json" },
+       body: JSON.stringify(payload),
+     });
+
+     if (!response.ok) throw new Error("Failed to create quiz");
+
+     toast.success("Quiz created successfully");
+     router.push("/quizzes");
+   } catch (error) {
+     toast.error("Failed to create quiz");
+   }
+ };
+
 
   const handleGenerateQuestions = async () => {
-    const subject = watch("subject")
-    const classLevel = watch("class")
+    const subject = watch("subject");
+    const classLevel = watch("class");
 
     if (!subject || !classLevel) {
-      toast.error("Please select class and subject first")
-      return
+      toast.error("Please select class and subject first");
+      return;
     }
 
-    setIsGenerating(true)
+    setIsGenerating(true);
     try {
       const response = await fetch("/api/ai/generate", {
         method: "POST",
@@ -75,32 +100,38 @@ export function CreateQuizContent() {
           type: "quiz",
           subject,
           class: classLevel,
-          count: 5,
+          count: 15,
         }),
-      })
+      });
 
-      const result = await response.json()
+      const result = await response.json();
 
       if (result.questions) {
         result.questions.forEach((q) => {
           append({
             question: q.question,
             options: q.options,
-            correctAnswer: q.correctAnswer,
-          })
-        })
-        toast.success("Questions generated successfully")
+            correctAnswer:
+              typeof q.correctAnswer === "number"
+                ? q.correctAnswer
+                : q.options.indexOf(q.correctAnswer),
+          });
+        });
+        toast.success("Questions generated successfully");
       }
     } catch (error) {
-      toast.error("Failed to generate questions")
+      toast.error("Failed to generate questions");
     } finally {
-      setIsGenerating(false)
+      setIsGenerating(false);
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Create Quiz" description="Create a new quiz for students">
+      <PageHeader
+        title="Create Quiz"
+        description="Create a new quiz for students"
+      >
         <Button variant="outline" onClick={() => router.back()}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
@@ -123,11 +154,20 @@ export function CreateQuizContent() {
                   {...register("title", { required: "Title is required" })}
                   placeholder="Enter quiz title"
                 />
-                {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
+                {errors.title && (
+                  <p className="text-sm text-destructive">
+                    {errors.title.message}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="duration">Duration (minutes)</Label>
-                <Input id="duration" type="number" {...register("duration")} placeholder="30" />
+                <Input
+                  id="duration"
+                  type="number"
+                  {...register("duration")}
+                  placeholder="30"
+                />
               </div>
             </div>
 
@@ -186,9 +226,16 @@ export function CreateQuizContent() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle>Questions</CardTitle>
-                <CardDescription>Add quiz questions with multiple choice answers</CardDescription>
+                <CardDescription>
+                  Add quiz questions with multiple choice answers
+                </CardDescription>
               </div>
-              <Button type="button" variant="outline" onClick={handleGenerateQuestions} disabled={isGenerating}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleGenerateQuestions}
+                disabled={isGenerating}
+              >
                 <Wand2 className="h-4 w-4 mr-2" />
                 {isGenerating ? "Generating..." : "AI Generate"}
               </Button>
@@ -198,9 +245,16 @@ export function CreateQuizContent() {
             {fields.map((field, index) => (
               <div key={field.id} className="p-4 border rounded-lg space-y-4">
                 <div className="flex items-start justify-between">
-                  <Label className="text-lg font-medium">Question {index + 1}</Label>
+                  <Label className="text-lg font-medium">
+                    Question {index + 1}
+                  </Label>
                   {fields.length > 1 && (
-                    <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => remove(index)}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   )}
@@ -208,7 +262,9 @@ export function CreateQuizContent() {
 
                 <div className="space-y-2">
                   <Textarea
-                    {...register(`questions.${index}.question`, { required: true })}
+                    {...register(`questions.${index}.question`, {
+                      required: true,
+                    })}
                     placeholder="Enter your question"
                     rows={2}
                   />
@@ -218,20 +274,35 @@ export function CreateQuizContent() {
                   <Label>Options</Label>
                   <RadioGroup
                     defaultValue={field.correctAnswer?.toString()}
-                    onValueChange={(value) => setValue(`questions.${index}.correctAnswer`, Number.parseInt(value))}
+                    onValueChange={(value) =>
+                      setValue(
+                        `questions.${index}.correctAnswer`,
+                        Number.parseInt(value)
+                      )
+                    }
                   >
                     {[0, 1, 2, 3].map((optIndex) => (
                       <div key={optIndex} className="flex items-center gap-3">
-                        <RadioGroupItem value={optIndex.toString()} id={`q${index}-opt${optIndex}`} />
+                        <RadioGroupItem
+                          value={optIndex.toString()}
+                          id={`q${index}-opt${optIndex}`}
+                        />
                         <Input
-                          {...register(`questions.${index}.options.${optIndex}`, { required: true })}
-                          placeholder={`Option ${String.fromCharCode(65 + optIndex)}`}
+                          {...register(
+                            `questions.${index}.options.${optIndex}`,
+                            { required: true }
+                          )}
+                          placeholder={`Option ${String.fromCharCode(
+                            65 + optIndex
+                          )}`}
                           className="flex-1"
                         />
                       </div>
                     ))}
                   </RadioGroup>
-                  <p className="text-xs text-muted-foreground">Select the correct answer</p>
+                  <p className="text-xs text-muted-foreground">
+                    Select the correct answer
+                  </p>
                 </div>
               </div>
             ))}
@@ -239,7 +310,13 @@ export function CreateQuizContent() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => append({ question: "", options: ["", "", "", ""], correctAnswer: 0 })}
+              onClick={() =>
+                append({
+                  question: "",
+                  options: ["", "", "", ""],
+                  correctAnswer: 0,
+                })
+              }
               className="w-full"
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -260,5 +337,5 @@ export function CreateQuizContent() {
         </div>
       </form>
     </div>
-  )
+  );
 }

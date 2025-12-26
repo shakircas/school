@@ -63,15 +63,24 @@ export default function ClassFormDialog({
 
   const teachers = teachersRes?.teachers || [];
   const subjects = subjectsRes?.data || [];
-  console.log("subj", subjects);
-  console.log("res", subjectsRes);
-
-  const { control, register, handleSubmit, setValue } = useForm({
+  
+  const { control, register, handleSubmit, setValue, reset } = useForm({
     defaultValues: defaultValues || {
       name: "",
       academicYear: "",
-      sections: [],
-      subjects: [],
+      sections: [{ name: "A", capacity: 40, classTeacher: "" }],
+      subjects: [{ name: "", code: "", teacher: "", periods: 0 }],
+      feeStructure: {
+        tuitionFee: 0,
+        admissionFee: 0,
+        examFee: 0,
+        labFee: 0,
+        libraryFee: 0,
+        sportsFee: 0,
+        computerFee: 0,
+        otherFee: 0,
+      },
+      schedule: [],
     },
   });
 
@@ -114,6 +123,36 @@ export default function ClassFormDialog({
 
     return timetable;
   }
+
+  useEffect(() => {
+    if (!defaultValues || !subjects.length) return;
+
+    reset({
+      name: defaultValues.name,
+      academicYear: defaultValues.academicYear,
+      sections: defaultValues.sections?.map((s) => ({
+        name: s.name,
+        capacity: s.capacity,
+        classTeacher: s.classTeacher?._id || s.classTeacher || "",
+      })),
+
+      subjects: defaultValues.subjects?.map((s) => {
+        const meta = subjects.find(
+          (x) => x.name === s.name && x.code === s.code
+        );
+
+        return {
+          subjectId: meta?._id || "",
+          teacher: s.teacher?._id || s.teacher || "",
+          periods: s.periods,
+        };
+      }),
+
+      feeStructure: defaultValues.feeStructure || {},
+      schedule: defaultValues.schedule || [],
+    });
+  }, [defaultValues, subjects, reset]);
+
 
   /* =========================
      RENDER

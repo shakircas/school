@@ -1,12 +1,12 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
   LayoutDashboard,
   Users,
@@ -27,7 +27,7 @@ import {
   Bell,
   BookOpenCheck,
   School,
-} from "lucide-react"
+} from "lucide-react";
 
 const navigation = [
   {
@@ -70,7 +70,7 @@ const navigation = [
       { name: "Subjects", href: "/academics/subjects" },
       { name: "Timetable", href: "/academics/timetable" },
       { name: "Teacher Timetable", href: "/academics/teacher-timetable" },
-      {name: "Timetable Builder", href:"/academics/timetable-builder"}
+      { name: "Timetable Builder", href: "/academics/timetable-builder" },
     ],
   },
   {
@@ -125,6 +125,7 @@ const navigation = [
     children: [
       { name: "Generate Papers", href: "/ai/papers" },
       { name: "Generate Notes", href: "/ai/notes" },
+      { name: "Generate MCQs", href: "/ai/mcqs" },
       { name: "Auto Marking", href: "/ai/marking" },
     ],
   },
@@ -153,12 +154,14 @@ const navigation = [
     icon: Settings,
     href: "/settings",
   },
-]
+];
 
 function NavItem({ item, pathname, collapsed }) {
-  const [isOpen, setIsOpen] = useState(false)
-  const isActive = item.href === pathname || item.children?.some((child) => child.href === pathname)
-  const Icon = item.icon
+  const [isOpen, setIsOpen] = useState(false);
+  const isActive =
+    item.href === pathname ||
+    item.children?.some((child) => child.href === pathname);
+  const Icon = item.icon;
 
   if (item.children) {
     return (
@@ -169,14 +172,19 @@ function NavItem({ item, pathname, collapsed }) {
             "flex items-center justify-between w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors",
             isActive
               ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-sidebar-foreground hover:bg-sidebar-accent/50",
+              : "text-sidebar-foreground hover:bg-sidebar-accent/50"
           )}
         >
           <div className="flex items-center gap-3">
             <Icon className="h-5 w-5" />
             {!collapsed && <span>{item.name}</span>}
           </div>
-          {!collapsed && (isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />)}
+          {!collapsed &&
+            (isOpen ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronRight className="h-4 w-4" />
+            ))}
         </button>
         {isOpen && !collapsed && (
           <div className="ml-8 mt-1 space-y-1">
@@ -188,7 +196,7 @@ function NavItem({ item, pathname, collapsed }) {
                   "block px-3 py-2 text-sm rounded-lg transition-colors",
                   pathname === child.href
                     ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                    : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50",
+                    : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50"
                 )}
               >
                 {child.name}
@@ -197,7 +205,7 @@ function NavItem({ item, pathname, collapsed }) {
           </div>
         )}
       </div>
-    )
+    );
   }
 
   return (
@@ -207,17 +215,17 @@ function NavItem({ item, pathname, collapsed }) {
         "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors",
         isActive
           ? "bg-sidebar-primary text-sidebar-primary-foreground"
-          : "text-sidebar-foreground hover:bg-sidebar-accent/50",
+          : "text-sidebar-foreground hover:bg-sidebar-accent/50"
       )}
     >
       <Icon className="h-5 w-5" />
       {!collapsed && <span>{item.name}</span>}
     </Link>
-  )
+  );
 }
 
 function SidebarContent({ collapsed = false }) {
-  const pathname = usePathname()
+  const pathname = usePathname();
 
   return (
     <div className="flex flex-col h-full bg-sidebar">
@@ -225,8 +233,12 @@ function SidebarContent({ collapsed = false }) {
         <School className="h-8 w-8 text-sidebar-primary" />
         {!collapsed && (
           <div>
-            <h1 className="text-lg font-bold text-sidebar-foreground">EduManage</h1>
-            <p className="text-xs text-sidebar-foreground/60">School Management</p>
+            <h1 className="text-lg font-bold text-sidebar-foreground">
+              EduManage
+            </h1>
+            <p className="text-xs text-sidebar-foreground/60">
+              School Management
+            </p>
           </div>
         )}
       </div>
@@ -234,12 +246,17 @@ function SidebarContent({ collapsed = false }) {
       <ScrollArea className="flex-1 px-3 py-4">
         <nav className="space-y-1">
           {navigation.map((item) => (
-            <NavItem key={item.name} item={item} pathname={pathname} collapsed={collapsed} />
+            <NavItem
+              key={item.name}
+              item={item}
+              pathname={pathname}
+              collapsed={collapsed}
+            />
           ))}
         </nav>
       </ScrollArea>
     </div>
-  )
+  );
 }
 
 export function Sidebar() {
@@ -253,7 +270,11 @@ export function Sidebar() {
       {/* Mobile Sidebar */}
       <Sheet>
         <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="lg:hidden fixed top-3 left-3 z-40">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden fixed top-3 left-3 z-40"
+          >
             <Menu className="h-6 w-6" />
           </Button>
         </SheetTrigger>
@@ -262,5 +283,5 @@ export function Sidebar() {
         </SheetContent>
       </Sheet>
     </>
-  )
+  );
 }

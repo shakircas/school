@@ -45,11 +45,11 @@ import {
   Upload,
   FileSpreadsheet,
   GraduationCap,
-
 } from "lucide-react";
 import { useClasses } from "../hooks/useClasses";
 import { useStudents } from "../hooks/useStudents";
 import { useDebounce } from "@/hooks/useDebounce";
+import { generateStudentListPDF } from "@/lib/pdf-generator";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -79,22 +79,21 @@ export function StudentsContent() {
     setPage(1);
   }, [search, classFilter, sectionFilter, statusFilter]);
 
-
   const debouncedSearch = useDebounce(search, 300);
 
   if (debouncedSearch) {
     queryParams.set("search", debouncedSearch);
   }
 
-const params = useSearchParams();
+  const params = useSearchParams();
 
-useEffect(() => {
-  setSearch(params.get("search") || "");
-  setClassFilter(params.get("classId") || "all");
-  setSectionFilter(params.get("sectionId") || "all");
-  setStatusFilter(params.get("status") || "Active");
-  setPage(Number(params.get("page")) || 1);
-}, []);
+  useEffect(() => {
+    setSearch(params.get("search") || "");
+    setClassFilter(params.get("classId") || "all");
+    setSectionFilter(params.get("sectionId") || "all");
+    setStatusFilter(params.get("status") || "Active");
+    setPage(Number(params.get("page")) || 1);
+  }, []);
 
   const getClassById = (classId) => classes?.find((c) => c._id === classId);
 
@@ -162,8 +161,11 @@ useEffect(() => {
 
     if (format === "excel") {
       exportToExcel(exportData, "students", "Students");
-    } else {
+    } else if (format === "csv") {
       exportToCSV(exportData, "students");
+    } else if (format === "pdf") {
+      const doc = generateStudentListPDF(students);
+      doc.save("students.pdf");
     }
 
     toast({
@@ -185,8 +187,8 @@ useEffect(() => {
         registrationNumber:
           row["Registration Number"] || row.registrationNumber,
         name: row["Name"] || row.name,
-        class: String(row["Class"] || row.class),
-        section: row["Section"] || row.section,
+        class: String(row["Class"] || getClassById(row.classId).name),
+        section: row["Section"] || row.sectionId,
         fatherName: row["Father Name"] || row.fatherName,
         phone: row["Phone"] || row.phone,
         email: row["Email"] || row.email,
@@ -225,7 +227,7 @@ useEffect(() => {
       <PageHeader
         title="Students"
         description={`Manage all ${
-          students?.total || 0
+          students?.length || 0
         } students in your school`}
       >
         <div className="flex items-center gap-2">
@@ -244,6 +246,10 @@ useEffect(() => {
               <DropdownMenuItem onClick={() => handleExport("csv")}>
                 <FileSpreadsheet className="h-4 w-4 mr-2" />
                 Export as CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport("pdf")}>
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Export as PDF
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -398,7 +404,8 @@ useEffect(() => {
                     </TableCell>
                     <TableCell>{student.rollNumber}</TableCell>
                     <TableCell>
-                      {getClassById(student.classId)?.name ?? "—"} -{" "}
+                      {/* {getClassById(student.classId)?.name ?? "—"} -{" "}  */}
+                      {student.classId.name} {" "}
                       {student.sectionId ?? "—"}
                     </TableCell>
 

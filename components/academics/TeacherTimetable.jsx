@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Clock, BookOpen, Calendar } from "lucide-react";
+import { LoadingSpinner } from "../ui/loading-spinner";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -32,22 +33,50 @@ const WEEKDAYS = [
 ];
 
 export default function TeacherTimetable() {
-  const { data, isLoading } = useSWR("/api/academics/timetable", fetcher);
+  const { data, isLoading, error } = useSWR("/api/academics/timetable", fetcher);
 
   const [selectedTeacher, setSelectedTeacher] = useState("");
+if (error) {
+  return <p className="text-red-500">Failed to load timetable</p>;
+}
 
-  if (!data?.data) return <p>Loading...</p>;
+  // ✅ 1. Loading first
+  if (isLoading) {
+    return <LoadingSpinner className="mx-auto mt-10 mb-10"/>;
+  }
 
+  // ✅ 2. Data safety check
+  if (!data?.data) {
+    return (
+      <p className="text-center text-gray-500">No timetable data available</p>
+    );
+  }
+
+  // ✅ 3. Data safety check
   const classes = data.data;
+  console.log(classes.map((cls) => cls.schedule));
 
   // Extract unique teachers from schedules
-  const uniqueTeachers = Array.from(
-    new Set(
-      classes.flatMap((cls) =>
-        cls.schedule?.flatMap((d) => d.periods?.map((p) => p.teacher) || [])
-      )
-    )
-  ).filter(Boolean);
+  const teacherMap = new Map();
+
+  classes.forEach((cls) => {
+    cls.schedule?.forEach((d) => {
+      d.periods?.forEach((p) => {
+        if (!p.teacher) return;
+
+        const id = typeof p.teacher === "object" ? p.teacher._id : p.teacher;
+
+        if (!teacherMap.has(id)) {
+          teacherMap.set(id, {
+            _id: id,
+            name: typeof p.teacher === "object" ? p.teacher.name : "Teacher",
+          });
+        }
+      });
+    });
+  });
+
+  const uniqueTeachers = Array.from(teacherMap.values());
 
   const getTeacherPeriodsForDay = (day) => {
     let periods = [];
@@ -55,17 +84,22 @@ export default function TeacherTimetable() {
     classes.forEach((cls) => {
       const dayEntry = cls.schedule?.find((d) => d.day === day);
 
-      if (dayEntry) {
-        dayEntry.periods.forEach((p) => {
-          if (p.teacher === selectedTeacher) {
-            periods.push({
-              className: cls.name,
-              time: p.time,
-              subject: p.subject,
-            });
-          }
-        });
-      }
+      if (!dayEntry) return;
+
+      dayEntry.periods.forEach((p) => {
+        if (!p.teacher) return;
+
+        const teacherId =
+          typeof p.teacher === "object" ? p.teacher._id : p.teacher;
+
+        if (teacherId === selectedTeacher) {
+          periods.push({
+            className: cls.name,
+            time: p.time,
+            subject: p.subjectName,
+          });
+        }
+      });
     });
 
     return periods;
@@ -81,6 +115,10 @@ export default function TeacherTimetable() {
           <CardDescription>
             View weekly & daily schedules based on teacher name
           </CardDescription>
+          <CardTitle>
+            Timetable —{" "}
+            {uniqueTeachers.find((t) => t._id === selectedTeacher)?.name}
+          </CardTitle>
         </CardHeader>
 
         <CardContent className="space-y-4">
@@ -91,8 +129,8 @@ export default function TeacherTimetable() {
             </SelectTrigger>
             <SelectContent>
               {uniqueTeachers.map((t) => (
-                <SelectItem key={t} value={t}>
-                  {t}
+                <SelectItem key={t._id} value={t._id}>
+                  {t.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -130,9 +168,9 @@ export default function TeacherTimetable() {
                                 No periods
                               </p>
                             ) : (
-                              periods.map((p, i) => (
+                              periods?.map((p, i) => (
                                 <motion.div
-                                  key={i}
+                                  key={`${day}-${p.time}-${p.className}`}
                                   initial={{ opacity: 0, y: 5 }}
                                   animate={{ opacity: 1, y: 0 }}
                                   className="p-2 mb-2 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg shadow-sm"
@@ -144,7 +182,7 @@ export default function TeacherTimetable() {
 
                                   <div className="font-medium text-gray-800">
                                     <BookOpen className="inline w-3 h-3 mr-1" />
-                                    {p.subject}
+                                    {p.subjectName || p.subject}
                                   </div>
 
                                   <div className="text-[11px] text-gray-600">
@@ -176,13 +214,13 @@ export default function TeacherTimetable() {
                       ) : (
                         getTeacherPeriodsForDay(today).map((p, i) => (
                           <div
-                            key={i}
+                            key={`${today}-${p.time}-${p.className}`}
                             className="p-3 bg-blue-50 rounded-lg shadow-sm border"
                           >
                             <div className="text-sm font-semibold flex gap-2 items-center">
                               <Clock className="w-4 h-4" /> {p.time}
                             </div>
-                            <div className="mt-1">📘 {p.subject}</div>
+                            <div className="mt-1">📘 {p.subjectName || p.subject}</div>
                             <div className="text-xs text-gray-500">
                               Class: {p.className}
                             </div>

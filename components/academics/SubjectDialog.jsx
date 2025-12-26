@@ -21,19 +21,34 @@ import {
 import { MultiSelect } from "./MultiSelect";
 
 const subjectsKPK = [
-  { value: "urdu", label: "Urdu" },
-  { value: "english", label: "English" },
-  { value: "mathematics", label: "Mathematics" },
-  { value: "physics", label: "Physics" },
-  { value: "chemistry", label: "Chemistry" },
-  { value: "biology", label: "Biology" },
-  { value: "islamiyat", label: "Islamiyat" },
-  { value: "pak_studies", label: "Pakistan Studies" },
-  { value: "drawing", label: "Drawing" },
-  { value: "computer_science", label: "Computer Science" },
-  { value: "geography", label: "Geography" },
-  { value: "history", label: "History" },
+  { value: "urdu", label: "Urdu", code: "URD" },
+  { value: "english", label: "English", code: "ENG" },
+  { value: "mathematics", label: "Mathematics", code: "MATH" },
+  { value: "physics", label: "Physics", code: "PHY" },
+  { value: "chemistry", label: "Chemistry", code: "CHEM" },
+  { value: "biology", label: "Biology", code: "BIO" },
+  { value: "islamiyat", label: "Islamiyat", code: "ISL" },
+  { value: "pak_studies", label: "Pakistan Studies", code: "PAK" },
+  { value: "drawing", label: "Drawing", code: "DRAW" },
+  { value: "computer_science", label: "Computer Science", code: "CS" },
+  { value: "geography", label: "Geography", code: "GEO" },
+  { value: "history", label: "History", code: "HIST" },
+  { value: "Mutala_Quran", label: "Mutala Quran", code: "MQ" },
 ];
+
+function generateSubjectCode(subjectValue, classIds, classes) {
+  if (!subjectValue || !classIds?.length) return "";
+
+  const subject = subjectsKPK.find((s) => s.value === subjectValue);
+  if (!subject) return "";
+
+  // take first class (subject usually linked to many, but code is per class)
+  const cls = classes.find((c) => c._id === classIds[0]);
+  if (!cls) return subject.code;
+
+  const classNumber = cls.name.match(/\d+/)?.[0];
+  return classNumber ? `${subject.code}-${classNumber}` : subject.code;
+}
 
 export default function SubjectDialog({
   open,
@@ -49,14 +64,23 @@ export default function SubjectDialog({
 }) {
   // Populate form when editing
   useEffect(() => {
-    if (selectedSubject) {
-      setValue("name", selectedSubject.name || "");
-      setValue("code", selectedSubject.code || "");
-      setValue("type", selectedSubject.type || "Compulsory");
-      setValue("classes", selectedSubject.classes?.map((c) => c._id) || []);
-      setValue("teachers", selectedSubject.teachers?.map((t) => t._id) || []);
-    }
+    if (!selectedSubject) return;
+
+    setValue("name", selectedSubject.name);
+    setValue("code", selectedSubject.code);
+    setValue("type", selectedSubject.type || "Compulsory");
+    setValue("classes", selectedSubject.classes?.map((c) => c._id) || []);
+    setValue("teachers", selectedSubject.teachers?.map((t) => t._id) || []);
   }, [selectedSubject, setValue]);
+
+  useEffect(() => {
+    const subjectValue = watch("name");
+    const classIds = watch("classes");
+
+    const code = generateSubjectCode(subjectValue, classIds, classes);
+    setValue("code", code);
+  }, [watch("name"), watch("classes"), classes, setValue]);
+
   console.log(teachers);
 
   return (
@@ -73,9 +97,14 @@ export default function SubjectDialog({
           <div className="space-y-2">
             <Label>Subject Name</Label>
             <Select
-              onValueChange={(value) => setValue("name", value)}
-              defaultValue={selectedSubject?.name || ""}
               value={watch("name")}
+              onValueChange={(value) => {
+                const selected = subjectsKPK.find((s) => s.value === value);
+                setValue("name", value, { shouldValidate: true });
+                setValue("code", selected?.code || "", {
+                  shouldValidate: true,
+                });
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select Subject" />
@@ -88,6 +117,7 @@ export default function SubjectDialog({
                 ))}
               </SelectContent>
             </Select>
+
             {errors.subject && (
               <p className="text-sm text-destructive">
                 {errors.subject.message}
@@ -96,9 +126,21 @@ export default function SubjectDialog({
           </div>
 
           {/* Subject Code */}
+
           <div className="space-y-2">
             <Label>Subject Code</Label>
-            <Input {...register("code")} placeholder="e.g. MATH-101" />
+            <Select value={watch("code")} disabled>
+              <SelectTrigger>
+                <SelectValue placeholder="Auto-generated code" />
+              </SelectTrigger>
+              <SelectContent>
+                {subjectsKPK.map((sub) => (
+                  <SelectItem key={sub.code} value={sub.code}>
+                    {sub.code}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Subject Type */}

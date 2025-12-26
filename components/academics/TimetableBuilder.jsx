@@ -1,12 +1,10 @@
-// /components/TimetableBuilder.jsx
+// // /components/TimetableBuilder.jsx
 "use client";
 
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
-import { useOfflineResource } from "@/lib/offline-hooks";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -21,8 +19,10 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Edit, Drag, User } from "lucide-react";
+import { Plus, Trash2, Edit, GripVertical } from "lucide-react";
 import { toast } from "sonner";
+
+const fetcher = (url) => fetch(url).then((r) => r.json());
 
 const WEEKDAYS = [
   "Monday",
@@ -33,416 +33,427 @@ const WEEKDAYS = [
   "Saturday",
 ];
 
-const fetcher = (url) => fetch(url).then((r) => r.json());
-
-function uid() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-}
+const TIME_SLOTS = [
+  "08:00 - 08:40",
+  "08:40 - 09:20",
+  "09:20 - 10:00",
+  "10:00 - 10:40",
+  "11:00 - 11:40",
+  "11:40 - 12:20",
+  "12:20 - 01:00",
+];
 
 export default function TimetableBuilder() {
-  // classes come from server but we also use offline resource for save
-  const { data: classesRes } = useSWR("/api/academics/classes", fetcher);
-  const classes = classesRes?.data || [];
+  /* ================= DATA ================= */
+  const { data, isLoading, mutate } = useSWR(
+    "/api/academics/timetable",
+    fetcher
+  );
+  console.log(data);
+  const { data: teachersRes } = useSWR("/api/teachers", fetcher);
+  const { data: subjectsRes } = useSWR("/api/academics/subjects", fetcher);
 
-  // offline resource wrapper for classes (schedule is inside class doc)
-  const {
-    items: localClasses,
-    loading,
-    saveItem,
-    refreshFromServer,
-    online,
-    forceSync,
-  } = useOfflineResource("classes");
+  const classes = data?.data || [];
+  const teachers = teachersRes?.teachers || [];
+  const subjects = subjectsRes?.data || [];
 
-  // select class to edit
-  const [selectedClassId, setSelectedClassId] = useState(null);
+  /* ================= STATE ================= */
+  const [selectedClassId, setSelectedClassId] = useState("");
   const selectedClass = useMemo(
-    () =>
-      localClasses.find((c) => c._id === selectedClassId) ||
-      classes.find((c) => c._id === selectedClassId),
-    [localClasses, classes, selectedClassId]
+    () => classes.find((c) => c._id === selectedClassId),
+    [classes, selectedClassId]
   );
 
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [editorDay, setEditorDay] = useState(WEEKDAYS[0]);
-  const [editorTime, setEditorTime] = useState("");
-  const [editorSubject, setEditorSubject] = useState("");
-  const [editorTeacher, setEditorTeacher] = useState("");
-  const [editingPeriod, setEditingPeriod] = useState(null);
-
-  // local schedule working copy for editing so UI feels instant
   const [workSchedule, setWorkSchedule] = useState([]);
 
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editorDay, setEditorDay] = useState("");
+  const [editorTime, setEditorTime] = useState("");
+  // const [editorSubject, setEditorSubject] = useState("");
+  const [editorTeacher, setEditorTeacher] = useState("");
+  const [editingIndex, setEditingIndex] = useState(null);
+  const [editorSubjectId, setEditorSubjectId] = useState("");
+  const [editorSubjectName, setEditorSubjectName] = useState("");
+
+  /* ================= INIT ================= */
   useEffect(() => {
-    if (selectedClass) {
-      setWorkSchedule(
-        selectedClass.schedule
-          ? JSON.parse(JSON.stringify(selectedClass.schedule))
-          : []
-      );
+    if (selectedClass?.schedule) {
+      setWorkSchedule(structuredClone(selectedClass.schedule));
     } else {
       setWorkSchedule([]);
     }
-  }, [selectedClassId, selectedClass]);
+  }, [selectedClass]);
 
-  // helpers
-  const ensureDay = (sch, day) => {
-    const s = sch.find((d) => d.day === day);
-    if (!s) {
-      sch.push({ day, periods: [] });
+  useEffect(() => {
+    if (!selectedClassId && classes.length) {
+      setSelectedClassId(classes[0]._id);
     }
+  }, [classes, selectedClassId]);
+
+  /* ================= HELPERS ================= */
+  const ensureDay = (sch, day) => {
+    let d = sch.find((x) => x.day === day);
+    if (!d) {
+      d = { day, periods: [] };
+      sch.push(d);
+    }
+    return d;
   };
 
+  const subjectObj = subjects.find((s) => s._id === editorSubjectId);
+
+  const safeSubjectName =
+    subjectObj?.name || editorSubjectName || editorSubjectId || "Unknown Subject";
+
+
+  /* ================= CRUD ================= */
   const openAdd = (day) => {
     setEditorDay(day);
     setEditorTime("");
-    setEditorSubject("");
+    setEditorSubjectId("");
+    setEditorSubjectName("");
+    // setEditorSubject("");
     setEditorTeacher("");
-    setEditingPeriod(null);
+    setEditingIndex(null);
     setIsEditorOpen(true);
   };
 
-  const onAddOrUpdate = () => {
-    if (!editorTime || !editorSubject) {
-      toast.error("Time and Subject are required");
-      return;
-    }
-    const sch = Array.isArray(workSchedule) ? [...workSchedule] : [];
-    ensureDay(sch, editorDay);
-    const dayObj = sch.find((d) => d.day === editorDay);
-
-    if (editingPeriod) {
-      // update period in place (editingPeriod stores { day, index })
-      dayObj.periods[editingPeriod.index] = {
-        ...dayObj.periods[editingPeriod.index],
-        time: editorTime,
-        subject: editorSubject,
-        teacher: editorTeacher || "",
-      };
-      toast.success("Period updated (local)");
-    } else {
-      dayObj.periods.push({
-        _id: uid(),
-        time: editorTime,
-        subject: editorSubject,
-        teacher: editorTeacher || "",
-      });
-      toast.success("Period added (local)");
-    }
-
-    setWorkSchedule(sch);
-    setIsEditorOpen(false);
-  };
-
-  const onEditPeriod = (day, index) => {
-    const dayObj = workSchedule.find((d) => d.day === day);
-    const p = dayObj.periods[index];
+  const openEdit = (day, index) => {
+    const p = workSchedule.find((d) => d.day === day).periods[index];
     setEditorDay(day);
     setEditorTime(p.time);
-    setEditorSubject(p.subject);
+    setEditorSubjectId(p.subjectId || "");
+    setEditorSubjectName(p.subjectName || p.subject || "");
+    // setEditorSubject(p.subject);
     setEditorTeacher(p.teacher || "");
-    setEditingPeriod({ day, index });
+    setEditingIndex(index);
     setIsEditorOpen(true);
   };
 
-  const onDeletePeriod = (day, index) => {
+  /* ================= CLASH CHECK ================= */
+  const hasTeacherClash = (teacherId, day, time, ignoreIndex = null) => {
+    for (const cls of classes) {
+      for (const d of cls.schedule || []) {
+        if (d.day !== day) continue;
+        for (let i = 0; i < d.periods.length; i++) {
+          const p = d.periods[i];
+          if (
+            p.teacher?._id === teacherId &&
+            p.time === time &&
+            !(cls._id === selectedClassId && i === ignoreIndex)
+          ) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  };
+
+  const savePeriod = async () => {
+    if (!editorDay || !editorTime || !editorSubjectId || !editorTeacher) {
+      return toast.error("All fields are required");
+    }
+
+    //  if (teacher && hasTeacherClash(teacher, day, time, index)) {
+    //    return toast.error("Teacher clash detected!");
+    //  }
+    const subjectObj = subjects.find((s) => s._id === editorSubjectId);
+
+    try {
+      if (editingIndex !== null) {
+        await fetch(`/api/academics/timetable/${selectedClassId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            day: editorDay,
+            index: editingIndex,
+            time: editorTime,
+            subjectId: editorSubjectId,
+            subjectName: safeSubjectName,
+            teacher: editorTeacher,
+          }),
+        });
+        toast.success("Period updated");
+      } else {
+        const sch = structuredClone(workSchedule);
+        ensureDay(sch, editorDay).periods.push({
+          time: editorTime,
+          // subject: editorSubject,
+          subjectId: editorSubjectId,
+          subjectName: subjectObj?.name || editorSubjectName,
+          teacher: editorTeacher,
+        });
+
+        await fetch("/api/academics/timetable", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            classId: selectedClassId,
+            schedule: sch,
+          }),
+        });
+        toast.success("Period added");
+      }
+
+      setIsEditorOpen(false);
+      mutate();
+    } catch {
+      toast.error("Failed to save period");
+    }
+  };
+
+  const deletePeriod = async (day, index) => {
     if (!confirm("Delete this period?")) return;
-    const sch = workSchedule.map((d) => ({
-      day: d.day,
-      periods: [...d.periods],
-    }));
-    const dayObj = sch.find((d) => d.day === day);
-    dayObj.periods.splice(index, 1);
-    setWorkSchedule(sch);
-    toast.success("Period removed (local)");
+
+    await fetch(`/api/academics/timetable/${selectedClassId}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ day, index }),
+    });
+
+    toast.success("Period deleted");
+    mutate();
   };
 
-  // Drag & Drop (native)
-  const dragData = useRef(null);
+  /* ================= DRAG & DROP ================= */
+  const dragRef = useRef(null);
 
-  const onDragStart = (e, fromDay, index) => {
-    dragData.current = { fromDay, index };
-    e.dataTransfer.effectAllowed = "move";
+  const onDragStart = (day, index) => {
+    dragRef.current = { day, index };
   };
 
-  const onDropToDay = (e, toDay) => {
-    e.preventDefault();
-    const d = dragData.current;
-    if (!d) return;
-    if (d.fromDay === toDay && d.index == null) return;
+  const onDrop = async (toDay) => {
+    const d = dragRef.current;
+    if (!d || !selectedClassId) return;
 
-    const sch = workSchedule.map((dd) => ({
-      day: dd.day,
-      periods: [...dd.periods],
-    }));
-    ensureDay(sch, d.fromDay);
-    ensureDay(sch, toDay);
+    const sch = structuredClone(workSchedule);
 
-    const from = sch.find((x) => x.day === d.fromDay);
-    const to = sch.find((x) => x.day === toDay);
+    const from = sch.find((x) => x.day === d.day);
+    let to = sch.find((x) => x.day === toDay);
+
+    if (!to) {
+      to = { day: toDay, periods: [] };
+      sch.push(to);
+    }
 
     const [moved] = from.periods.splice(d.index, 1);
     to.periods.push(moved);
 
+    // if (moved.teacher && hasTeacherClash(moved.teacher, toDay, toTime)) {
+    //   toast.error("Teacher clash!");
+    //   return;
+    // }
+
+    // 1️⃣ Update UI immediately
     setWorkSchedule(sch);
-    dragData.current = null;
-    toast.success("Period moved (local)");
-  };
+    dragRef.current = null;
 
-  const onAllowDrop = (e) => e.preventDefault();
-
-  // persist schedule to server (or offline queue)
-  const saveSchedule = async () => {
-    if (!selectedClassId) return toast.error("Select a class first");
-    const payload = {
-      classId: selectedClassId,
-      schedule: workSchedule,
-    };
-
+    // 2️⃣ Persist to server
     try {
-      // Use offline wrapper: saveItem will switch to offline queue if offline
-      await saveItem(payload);
-      // saveItem expects object to be for store 'classes' — our hook expects saveItem to accept full class doc
-      // some servers expect POST /api/academics/timetable — but our offline resource uses /api/classes endpoint
-      // To be safe we call the timetable API first (server canonical)
-      if (navigator.onLine) {
-        const res = await fetch("/api/academics/timetable/timetableBuilder", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        if (!res.ok) throw new Error("Save failed");
-        // refresh local copy
-        await refreshFromServer();
-        toast.success("Schedule saved (server)");
-      } else {
-        // offline: rely on saveItem to queue
-        await saveItem({ _id: selectedClassId, schedule: workSchedule });
-        toast.success("Schedule saved (offline, queued)");
-      }
+      await fetch("/api/academics/timetable", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          classId: selectedClassId,
+          schedule: sch,
+        }),
+      });
+
+      toast.success("Timetable updated");
+      mutate(); // revalidate from server
     } catch (err) {
-      console.error(err);
-      toast.error("Failed to save schedule");
+      toast.error("Failed to save drag change");
     }
   };
 
-  // If offline, allow user to force sync when back online
-  const { online: isOnline } = (function useFakeOnline() {
-    // quick inline online detection
-    const [on, setOn] = useState(
-      typeof navigator !== "undefined" ? navigator.onLine : true
-    );
-    useEffect(() => {
-      const onOnline = () => setOn(true);
-      const onOffline = () => setOn(false);
-      window.addEventListener("online", onOnline);
-      window.addEventListener("offline", onOffline);
-      return () => {
-        window.removeEventListener("online", onOnline);
-        window.removeEventListener("offline", onOffline);
-      };
-    }, []);
-    return { online: on };
-  })();
-
-  // sync to server when back online automatically
-  useEffect(() => {
-    if (isOnline) {
-      // optionally refresh server copy
-      refreshFromServer();
-    }
-  }, [isOnline, refreshFromServer]);
-
-  // If there is no selected class, pick first
-  useEffect(() => {
-    if (!selectedClassId && (localClasses?.length || classes?.length)) {
-      const first =
-        localClasses && localClasses.length ? localClasses[0] : classes[0];
-      if (first) setSelectedClassId(first._id);
-    }
-  }, [localClasses, classes, selectedClassId]);
+  /* ================= UI ================= */
+  if (isLoading) return <div>Loading timetable...</div>;
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Timetable Builder</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-3 items-center mb-4">
-            <div className="w-64">
-              <label className="block text-sm font-medium text-muted-foreground">
-                Select Class
-              </label>
-              <select
-                className="mt-1 block w-full rounded border px-3 py-2"
-                value={selectedClassId || ""}
-                onChange={(e) => setSelectedClassId(e.target.value)}
+    <Card>
+      <CardHeader>
+        <CardTitle>Timetable Builder</CardTitle>
+      </CardHeader>
+
+      <CardContent>
+        <div className="flex gap-4 mb-4 items-center">
+          <select
+            className="border rounded px-3 py-2"
+            value={selectedClassId}
+            onChange={(e) => setSelectedClassId(e.target.value)}
+          >
+            {classes.map((c) => (
+              <option key={c._id} value={c._id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {WEEKDAYS.map((day) => {
+            const d = workSchedule.find((x) => x.day === day) || {
+              day,
+              periods: [],
+            };
+
+            return (
+              <div
+                key={day}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={() => onDrop(day)}
+                className="border rounded-lg p-3 bg-slate-50"
               >
-                <option value="">-- select class --</option>
-                {localClasses.map((c) => (
-                  <option key={c._id} value={c._id}>
-                    {c.name} {c.academicYear ? `(${c.academicYear})` : ""}
-                  </option>
-                ))}
-                {classes
-                  .filter((c) => !localClasses.find((lc) => lc._id === c._id))
-                  .map((c) => (
-                    <option key={c._id} value={c._id}>
-                      {c.name} {c.academicYear ? `(${c.academicYear})` : ""}
-                    </option>
-                  ))}
-              </select>
-            </div>
-
-            <div className="ml-auto flex items-center gap-2">
-              <Button variant="outline" onClick={() => refreshFromServer()}>
-                Refresh
-              </Button>
-              <Button onClick={saveSchedule}>Save Schedule</Button>
-            </div>
-          </div>
-
-          {!selectedClass ? (
-            <div className="text-sm text-muted-foreground">
-              Choose a class to begin editing timetable
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
-              {WEEKDAYS.map((d) => {
-                const dayObj = workSchedule.find((s) => s.day === d) || {
-                  day: d,
-                  periods: [],
-                };
-                return (
-                  <div
-                    key={d}
-                    onDrop={(e) => onDropToDay(e, d)}
-                    onDragOver={onAllowDrop}
-                    className="p-3 border rounded-lg bg-white shadow-sm"
+                <div className="flex justify-between mb-2">
+                  <h3 className="font-semibold">{day}</h3>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => openAdd(day)}
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-semibold">{d}</h3>
-                      <div className="flex gap-1">
-                        <button
-                          className="text-xs text-primary"
-                          onClick={() => openAdd(d)}
-                        >
-                          <Plus className="inline w-4 h-4 mr-1" /> Add
-                        </button>
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                {d.periods.map((p, i) => (
+                  <div
+                    key={`${day}-${i}`}
+                    draggable
+                    onDragStart={() => onDragStart(day, i)}
+                    className="bg-white border rounded p-2 mb-2 shadow-sm"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="font-medium">
+                          {p.subjectName || p.subject}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {p.time} •{" "}
+                          {teachers?.find((t) => t._id === p.teacher)?.name ||
+                            p.teacher.name ||
+                            "Unassigned"}
+                        </div>
                       </div>
+                      <GripVertical className="w-4 h-4 text-muted-foreground" />
                     </div>
 
-                    {dayObj.periods.length === 0 ? (
-                      <div className="text-sm text-muted-foreground">
-                        No periods
-                      </div>
-                    ) : (
-                      dayObj.periods.map((p, i) => (
-                        <div
-                          key={p._id || `${d}-${i}`}
-                          draggable
-                          onDragStart={(e) => onDragStart(e, d, i)}
-                          className="mb-2 p-2 rounded-lg bg-gradient-to-r from-slate-50 to-slate-100 border flex justify-between items-center"
-                        >
-                          <div>
-                            <div className="text-sm font-medium">
-                              {p.subject}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {p.time} {p.teacher ? ` • ${p.teacher}` : ""}
-                            </div>
-                          </div>
-                          <div className="flex gap-1 items-center">
-                            <button
-                              title="Edit"
-                              onClick={() => onEditPeriod(d, i)}
-                              className="p-1"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button
-                              title="Delete"
-                              onClick={() => onDeletePeriod(d, i)}
-                              className="p-1 text-red-600"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      ))
-                    )}
+                    <div className="flex gap-2 mt-2">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => openEdit(day, i)}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="text-red-600"
+                        onClick={() => deletePeriod(day, i)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      </CardContent>
 
-      {/* Editor Dialog */}
+      {/* Editor */}
       <Dialog open={isEditorOpen} onOpenChange={setIsEditorOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editingPeriod ? "Edit Period" : "Add Period"}
+              {editingIndex !== null ? "Edit Period" : "Add Period"}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-3 mt-2">
-            <div>
-              <label className="block text-sm">Day</label>
-              <select
-                value={editorDay}
-                onChange={(e) => setEditorDay(e.target.value)}
-                className="mt-1 block w-full rounded border px-3 py-2"
-              >
+          <div className="space-y-3">
+            <Select value={editorDay} onValueChange={setEditorDay}>
+              <SelectTrigger>
+                <SelectValue placeholder="Day" />
+              </SelectTrigger>
+              <SelectContent>
                 {WEEKDAYS.map((d) => (
-                  <option key={d} value={d}>
+                  <SelectItem key={d} value={d}>
                     {d}
-                  </option>
+                  </SelectItem>
                 ))}
-              </select>
-            </div>
+              </SelectContent>
+            </Select>
 
-            <div>
-              <label className="block text-sm">Time</label>
-              <Input
-                value={editorTime}
-                onChange={(e) => setEditorTime(e.target.value)}
-                placeholder="09:00 - 10:00"
-              />
-            </div>
+            <Select value={editorTime} onValueChange={setEditorTime}>
+              <SelectTrigger>
+                <SelectValue placeholder="Time" />
+              </SelectTrigger>
+              <SelectContent>
+                {TIME_SLOTS.map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {t}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-            <div>
-              <label className="block text-sm">Subject</label>
-              <Input
-                value={editorSubject}
-                onChange={(e) => setEditorSubject(e.target.value)}
-                placeholder="Mathematics"
-              />
-            </div>
+            {/* <Select value={editorSubject} onValueChange={setEditorSubject}>
+              <SelectTrigger>
+                <SelectValue placeholder="Subject" />
+              </SelectTrigger>
+              <SelectContent>
+                {subjects.map((s) => (
+                  <SelectItem key={s._id} value={s.name}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select> */}
 
-            <div>
-              <label className="block text-sm">Teacher</label>
-              <Input
-                value={editorTeacher}
-                onChange={(e) => setEditorTeacher(e.target.value)}
-                placeholder="Mr. John Doe"
-              />
-            </div>
+            <Select
+              value={editorSubjectId}
+              onValueChange={(val) => {
+                setEditorSubjectId(val);
+                const s = subjects.find((x) => x._id === val);
+                setEditorSubjectName(s?.name || "");
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Subject" />
+              </SelectTrigger>
+              <SelectContent>
+                {subjects.map((s) => (
+                  <SelectItem key={s._id} value={s._id}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={editorTeacher} onValueChange={setEditorTeacher}>
+              <SelectTrigger>
+                <SelectValue placeholder="Teacher" />
+              </SelectTrigger>
+              <SelectContent>
+                {teachers.map((t) => (
+                  <SelectItem key={t._id} value={t._id}>
+                    {t.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditorOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={onAddOrUpdate}>
-              {editingPeriod ? "Update" : "Add"}
-            </Button>
+            <Button onClick={savePeriod}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </Card>
   );
 }

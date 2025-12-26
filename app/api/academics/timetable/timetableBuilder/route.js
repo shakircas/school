@@ -3,20 +3,34 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import Class from "@/models/Class";
 
+e// /app/api/academics/timetable/route.js
+import { NextResponse } from "next/server";
+import { connectDB } from "@/lib/db";
+import Class from "@/models/Class";
+
 export async function GET() {
   try {
     await connectDB();
-    // return minimal fields (name, schedule)
+
     const data = await Class.find(
       {},
-      { name: 1, schedule: 1, academicYear: 1 }
-    ).lean();
+      { name: 1, schedule: 1 }
+    ).populate({
+      path: "schedule.periods.teacher",
+      model: "Teacher",
+      select: "name",
+    });
+
     return NextResponse.json({ data });
   } catch (err) {
     console.error("timetable GET error", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json(
+      { error: err.message },
+      { status: 500 }
+    );
   }
 }
+
 
 // POST: replace full schedule for class
 export async function POST(req) {

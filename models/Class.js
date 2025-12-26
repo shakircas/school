@@ -1,5 +1,38 @@
 import mongoose from "mongoose";
 
+const periodSchema = new mongoose.Schema(
+  {
+    time: {
+      type: String,
+      required: true,
+    },
+
+    // NEW (relational)
+    subjectId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Subject",
+    },
+
+    // NEW (snapshot for offline + history)
+    subjectName: {
+      type: String,
+      required: true,
+    },
+
+    // OLD (kept for migration safety)
+    subject: {
+      type: String,
+    },
+
+    teacher: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Teacher",
+      required: true,
+    },
+  },
+  { _id: true }
+);
+
 const classSchema = new mongoose.Schema(
   {
     name: {
@@ -36,6 +69,24 @@ const classSchema = new mongoose.Schema(
         periods: Number,
       },
     ],
+    // subjects: [
+    //   {
+    //     name: { type: String, required: true },
+    //     code: { type: String, required: true },
+    //     teacher: {
+    //       type: mongoose.Schema.Types.ObjectId,
+    //       ref: "Teacher",
+    //       required: true,
+    //     },
+    //     periods: {
+    //       type: Number,
+    //       required: true,
+    //       min: 1,
+    //       max: 10,
+    //     },
+    //   },
+    // ],
+
     feeStructure: {
       tuitionFee: Number,
       admissionFee: Number,
@@ -46,21 +97,28 @@ const classSchema = new mongoose.Schema(
       computerFee: Number,
       otherFee: Number,
     },
+    // schedule: [
+    //   {
+    //     day: String,
+    //     periods: [
+    //       {
+    //         time: String,
+    //         subject: String,
+    //         teacher: {
+    //           type: mongoose.Schema.Types.ObjectId,
+    //           ref: "Teacher",
+    //         },
+    //       },
+    //     ],
+    //   },
+    // ],
     schedule: [
       {
-        day: String,
-        periods: [
-          {
-            time: String,
-            subject: String,
-            teacher: {
-              type: mongoose.Schema.Types.ObjectId,
-              ref: "Teacher",
-            },
-          },
-        ],
+        day: { type: String, required: true },
+        periods: [periodSchema],
       },
     ],
+
     status: {
       type: String,
       enum: ["Active", "Inactive"],

@@ -190,23 +190,41 @@ export function ClassesContent() {
     }
   }
 
-  function handleEdit(cls) {
-    setSelectedClass(cls);
-    // populate form
-    reset({
-      name: cls.name,
-      academicYear: cls.academicYear,
-      sections: cls.sections?.length
-        ? cls.sections
-        : [{ name: "A", capacity: 40, classTeacher: "" }],
-      subjects: cls.subjects?.length
-        ? cls.subjects
-        : [{ name: "", code: "", teacher: "", periods: 0 }],
-      feeStructure: cls.feeStructure || {},
-      schedule: cls.schedule || [],
-    });
-    setIsAddOpen(true);
-  }
+ function handleEdit(cls) {
+   setSelectedClass(cls);
+
+   reset({
+     name: cls.name,
+     academicYear: cls.academicYear,
+
+     sections: cls.sections?.length
+       ? cls.sections.map((s) => ({
+           name: s.name,
+           capacity: s.capacity,
+           classTeacher: s.classTeacher?._id || s.classTeacher || "",
+         }))
+       : [{ name: "A", capacity: 40, classTeacher: "" }],
+
+     subjects: cls.subjects?.length
+       ? cls.subjects.map((s) => {
+           const meta = subjects.find(
+             (x) => x.name === s.name && x.code === s.code
+           );
+
+           return {
+             subjectId: meta?._id || "",
+             teacher: s.teacher?._id || s.teacher || "",
+             periods: s.periods,
+           };
+         })
+       : [{ subjectId: "", teacher: "", periods: 1 }],
+
+     feeStructure: cls.feeStructure || {},
+     schedule: cls.schedule || [],
+   });
+
+   setIsAddOpen(true);
+ }
 
   // PDF export
   async function exportPDF(all = false) {

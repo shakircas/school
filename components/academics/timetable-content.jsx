@@ -1,7 +1,7 @@
 "use client";
 
 import useSWR from "swr";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,6 +34,14 @@ import {
 import { Plus, Calendar, Clock, BookOpen, User } from "lucide-react";
 import { toast } from "sonner";
 import { Ta } from "zod/v4/locales";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+  SelectLabel,
+} from "../ui/select";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -46,60 +54,49 @@ const WEEKDAYS = [
   "Saturday",
 ];
 
+const TIME_SLOTS = [
+  "08:00 - 08:40",
+  "08:40 - 09:20",
+  "09:20 - 10:00",
+  "10:00 - 10:40",
+  "11:00 - 11:40",
+  "11:40 - 12:20",
+  "12:20 - 01:00",
+];
+
 export function TimetableContent() {
   const { data, isLoading, mutate } = useSWR(
     "/api/academics/timetable",
     fetcher
   );
 
+  const { data: teachersRes } = useSWR("/api/teachers", fetcher);
+  const { data: subjectsData } = useSWR("/api/academics/subjects", fetcher);
+
+  const teachers = teachersRes?.teachers || [];
+  const subjects = subjectsData?.data || [];
+  console.log("teachers", teachers);
+  console.log("tiemetable", data);
+
   const [isOpen, setIsOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState(null);
 
   const [day, setDay] = useState("");
   const [time, setTime] = useState("");
-  const [subject, setSubject] = useState("");
+  const [subjectId, setSubjectId] = useState("");
+  const [subjectName, setSubjectName] = useState("");
   const [teacher, setTeacher] = useState("");
-
   const [editMode, setEditMode] = useState(false);
   const [editIndex, setEditIndex] = useState(null);
   const [editDay, setEditDay] = useState("");
-  const [editTime, setEditTime] = useState("");
-  const [editSubject, setEditSubject] = useState("");
-  const [editTeacher, setEditTeacher] = useState("");
 
   const openEditor = (cls) => {
     setSelectedClass(cls);
     setIsOpen(true);
   };
 
-  // const addPeriod = async () => {
-  //   if (!day || !time || !subject || !teacher) return toast.error("Please fill all fields");
-
-  //   const cls = selectedClass;
-
-  //   let schedule = cls.schedule || [];
-  //   let targetDay = schedule.find((d) => d.day === day);
-
-  //   if (!targetDay) {
-  //     targetDay = { day, periods: [] };
-  //     schedule.push(targetDay);
-  //   }
-
-  //   targetDay.periods.push({ time, subject, teacher });
-
-  //   await fetch("/api/academics/timetable", {
-  //     method: "POST",
-  //     headers: { "Content-Type": "application/json" },
-  //     body: JSON.stringify({ classId: cls._id, schedule }),
-  //   });
-
-  //   toast.success("Period added successfully");
-  //   setIsOpen(false);
-  //   mutate();
-  // };
-
   const savePeriod = async () => {
-    if (!day || !time || !subject || !teacher)
+    if (!day || !time || !subjectId || !teacher)
       return toast.error("Please fill all fields");
 
     const cls = selectedClass;
@@ -113,7 +110,8 @@ export function TimetableContent() {
           day: editDay,
           index: editIndex,
           time,
-          subject,
+          subjectId,
+          subjectName,
           teacher,
         }),
       });
@@ -122,15 +120,29 @@ export function TimetableContent() {
     }
     // If adding new
     else {
-      let schedule = cls.schedule || [];
-      let targetDay = schedule.find((d) => d.day === day);
+      // let schedule = cls.schedule || [];
+      // let targetDay = schedule.find((d) => d.day === day);
 
+      // if (!targetDay) {
+      //   targetDay = { day, periods: [] };
+      //   schedule.push(targetDay);
+      // }
+
+      // targetDay.periods.push({ time, subjectId, subjectName, teacher });
+      const schedule = structuredClone(cls.schedule || []);
+
+      let targetDay = schedule.find((d) => d.day === day);
       if (!targetDay) {
         targetDay = { day, periods: [] };
         schedule.push(targetDay);
       }
 
-      targetDay.periods.push({ time, subject, teacher });
+      targetDay.periods.push({
+        time,
+        subjectId,
+        subjectName,
+        teacher,
+      });
 
       await fetch("/api/academics/timetable", {
         method: "POST",
@@ -139,6 +151,11 @@ export function TimetableContent() {
       });
 
       toast.success("Period added!");
+      setDay("");
+      setTime("");
+      setSubjectId("");
+      setSubjectName("");
+      setTeacher("");
     }
 
     setIsOpen(false);
@@ -150,18 +167,14 @@ export function TimetableContent() {
     cls.schedule?.find((d) => d.day === day)?.periods || [];
 
   const deletePeriod = async (cls, day, index) => {
-    const res = await fetch("/api/academics/timetable", {
+    const confirmDelete = window.confirm("Delete this period?");
+    if (!confirmDelete) return;
+
+    await fetch(`/api/academics/timetable/${cls._id}`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ classId: cls._id, day, index }),
+      body: JSON.stringify({ day, index }),
     });
-
-    const result = await res.json();
-
-    if (result.error) {
-      toast.error(result.error);
-      return;
-    }
 
     toast.success("Period deleted successfully");
     mutate();
@@ -247,7 +260,7 @@ export function TimetableContent() {
                           ) : (
                             getDaySchedule(cls, d).map((p, i) => (
                               <motion.div
-                                key={i}
+                                key={p._id}
                                 initial={{ opacity: 0, y: 5 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 className="p-2 mb-2 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg shadow-sm"
@@ -258,11 +271,11 @@ export function TimetableContent() {
                                 </div>
                                 <div className="font-medium text-gray-800">
                                   <BookOpen className="inline w-3 h-3 mr-1" />
-                                  {p.subject}
+                                  {p.subjectName || p.subject}
                                 </div>
                                 <div className="text-xs text-gray-500">
                                   <User className="inline w-3 h-3 mr-1" />
-                                  {p.teacher}
+                                  {p.teacher?.name}
                                 </div>
                                 <Button
                                   variant="outline"
@@ -271,8 +284,9 @@ export function TimetableContent() {
                                     setSelectedClass(cls);
                                     setDay(d);
                                     setTime(p.time);
-                                    setSubject(p.subject);
-                                    setTeacher(p.teacher);
+                                    setSubjectId(p.subjectId);
+                                    setSubjectName(p.subjectName);
+                                    setTeacher(p.teacher?._id || p.teacher);
                                     setEditMode(true);
                                     setEditIndex(i);
                                     setEditDay(d);
@@ -369,7 +383,10 @@ export function TimetableContent() {
                                     key={i}
                                     className="px-2 py-1 rounded bg-blue-100 text-blue-700 mr-2"
                                   >
-                                    {p.time} – {p.subject}
+                                    {p.time} –{" "}
+                                    {p.subjectName ||
+                                      p.subject ||
+                                      p.subjectId?.name}
                                   </span>
                                 ))}
                           </TableCell>
@@ -382,7 +399,7 @@ export function TimetableContent() {
                                     key={i}
                                     className="px-2 py-1 rounded bg-blue-100 text-blue-700 mr-2"
                                   >
-                                    {p.teacher}
+                                    {p.teacher.name}
                                   </span>
                                 ))}
                           </TableCell>
@@ -412,32 +429,77 @@ export function TimetableContent() {
 
           <div className="space-y-4">
             <Label>Day</Label>
-            <Input
+            <select
               value={day}
               onChange={(e) => setDay(e.target.value)}
-              placeholder="Monday"
-            />
+              className="w-full border rounded-md p-2"
+            >
+              <option value="">Select Day</option>
+              {WEEKDAYS.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
 
-            <Label>Time</Label>
+            {/* <Label>Time</Label>
             <Input
               value={time}
               onChange={(e) => setTime(e.target.value)}
               placeholder="9:00 - 10:00"
-            />
+            /> */}
+
+            {/* Time Slot */}
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Time Slot
+              </label>
+              <Select value={time} onValueChange={setTime}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Time" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TIME_SLOTS.map((slot) => (
+                    <SelectItem key={slot} value={slot}>
+                      {slot}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
             <Label>Subject</Label>
-            <Input
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              placeholder="Mathematics"
-            />
+            <select
+              value={subjectId}
+              onChange={(e) => {
+                const id = e.target.value;
+                const subj = subjects.find((s) => s._id === id);
+                setSubjectId(id);
+                setSubjectName(subj?.name || "");
+              }}
+              className="w-full border rounded-md p-2"
+            >
+              <option value="">Select Subject</option>
+              {subjects?.map((s) => (
+                <option key={s._id} value={s._id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
 
             <Label>Teacher</Label>
-            <Input
+            <select
               value={teacher}
               onChange={(e) => setTeacher(e.target.value)}
-              placeholder="Mr. John Doe"
-            />
+              className="w-full border rounded-md p-2"
+            >
+              <option value="">Select Teacher</option>
+              {teachers?.map((t) => (
+                <option key={t._id} value={t._id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <DialogFooter>
@@ -445,7 +507,10 @@ export function TimetableContent() {
               <Plus className="h-4 w-4 mr-2" />
               Add Period
             </Button> */}
-            <Button onClick={savePeriod}>
+            <Button
+              onClick={savePeriod}
+              disabled={!day || !time || !subjectId || !teacher}
+            >
               <Plus className="h-4 w-4 mr-2" />
               {editMode ? "Save Changes" : "Add Period"}
             </Button>

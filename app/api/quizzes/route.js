@@ -34,18 +34,45 @@ export async function GET(request) {
   }
 }
 
+// export async function POST(request) {
+//   try {
+//     await connectDB()
+
+//     const data = await request.json()
+
+//     const quiz = new Quiz(data)
+//     await quiz.save()
+
+//     return NextResponse.json(quiz, { status: 201 })
+//   } catch (error) {
+//     console.error("Error creating quiz:", error)
+//     return NextResponse.json({ error: "Failed to create quiz" }, { status: 500 })
+//   }
+// }
+
 export async function POST(request) {
   try {
-    await connectDB()
+    await connectDB();
+    const data = await request.json();
 
-    const data = await request.json()
+    if (!data.totalMarks) {
+      data.totalMarks = data.questions?.length || 0;
+    }
 
-    const quiz = new Quiz(data)
-    await quiz.save()
+    if (!data.passingMarks) {
+      data.passingMarks = Math.ceil(data.totalMarks * 0.4);
+    }
 
-    return NextResponse.json(quiz, { status: 201 })
+    if (data.status) {
+      data.status = data.status.charAt(0).toUpperCase() + data.status.slice(1);
+    }
+
+    const quiz = new Quiz(data);
+    await quiz.save();
+
+    return NextResponse.json(quiz, { status: 201 });
   } catch (error) {
-    console.error("Error creating quiz:", error)
-    return NextResponse.json({ error: "Failed to create quiz" }, { status: 500 })
+    console.error("Error creating quiz:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

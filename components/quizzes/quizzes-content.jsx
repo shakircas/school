@@ -1,53 +1,74 @@
-"use client"
-import useSWR from "swr"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { PageHeader } from "@/components/ui/page-header"
-import { LoadingSpinner } from "@/components/ui/loading-spinner"
-import { EmptyState } from "@/components/ui/empty-state"
-import { Plus, Clock, Users, FileQuestion, Play, Edit, Trash2, BarChart } from "lucide-react"
-import { toast } from "sonner"
+"use client";
+import useSWR from "swr";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/ui/page-header";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { EmptyState } from "@/components/ui/empty-state";
+import {
+  Plus,
+  Clock,
+  Users,
+  FileQuestion,
+  Play,
+  Edit,
+  Trash2,
+  BarChart,
+} from "lucide-react";
+import { toast } from "sonner";
 
-const fetcher = (url) => fetch(url).then((res) => res.json())
+const fetcher = (url) => fetch(url).then((res) => res.json());
 
 export function QuizzesContent() {
-  const { data: quizzes, isLoading, mutate } = useSWR("/api/quizzes", fetcher)
+  const { data: quizzes, isLoading, mutate } = useSWR("/api/quizzes", fetcher);
+
+  console.log("quizzes:", quizzes);
 
   const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to delete this quiz?")) return
+    if (!confirm("Are you sure you want to delete this quiz?")) return;
 
     try {
-      const response = await fetch(`/api/quizzes/${id}`, { method: "DELETE" })
-      if (!response.ok) throw new Error("Failed to delete quiz")
-      toast.success("Quiz deleted successfully")
-      mutate()
+      const response = await fetch(`/api/quizzes/${id}`, { method: "DELETE" });
+      if (!response.ok) throw new Error("Failed to delete quiz");
+      toast.success("Quiz deleted successfully");
+      mutate();
     } catch (error) {
-      toast.error("Failed to delete quiz")
+      toast.error("Failed to delete quiz");
     }
-  }
+  };
 
   const getStatusBadge = (status) => {
     const variants = {
       draft: "secondary",
       active: "default",
       completed: "outline",
-    }
-    return <Badge variant={variants[status] || "secondary"}>{status}</Badge>
-  }
+    };
+    return <Badge variant={variants[status] || "secondary"}>{status}</Badge>;
+  };
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <LoadingSpinner size="lg" />
       </div>
-    )
+    );
   }
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Quizzes" description="Create and manage quizzes for students">
+      <PageHeader
+        title="Quizzes"
+        description="Create and manage quizzes for students"
+      >
         <Button asChild>
           <Link href="/quizzes/create">
             <Plus className="h-4 w-4 mr-2" />
@@ -60,26 +81,30 @@ export function QuizzesContent() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold">{quizzes?.data?.length || 0}</div>
+            <div className="text-2xl font-bold">{quizzes?.length || 0}</div>
             <p className="text-sm text-muted-foreground">Total Quizzes</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold">{quizzes?.data?.filter((q) => q.status === "active").length || 0}</div>
+            <div className="text-2xl font-bold">
+              {quizzes?.filter((q) => q.status === "active").length || 0}
+            </div>
             <p className="text-sm text-muted-foreground">Active Quizzes</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold">{quizzes?.data?.reduce((sum, q) => sum + (q.attempts || 0), 0)}</div>
+            <div className="text-2xl font-bold">
+              {quizzes?.reduce((sum, q) => sum + (q.attempts || 0), 0)}
+            </div>
             <p className="text-sm text-muted-foreground">Total Attempts</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Quizzes Grid */}
-      {!quizzes?.data?.length ? (
+      {!quizzes?.length ? (
         <EmptyState
           icon={FileQuestion}
           title="No quizzes created"
@@ -95,7 +120,7 @@ export function QuizzesContent() {
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {quizzes.data.map((quiz) => (
+          {quizzes?.map((quiz) => (
             <Card key={quiz._id} className="flex flex-col">
               <CardHeader>
                 <div className="flex items-start justify-between">
@@ -131,7 +156,11 @@ export function QuizzesContent() {
                       <Edit className="h-4 w-4" />
                     </Link>
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleDelete(quiz._id)}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDelete(quiz._id)}
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                   <Button variant="ghost" size="icon" asChild>
@@ -152,5 +181,5 @@ export function QuizzesContent() {
         </div>
       )}
     </div>
-  )
+  );
 }
