@@ -88,7 +88,7 @@ export function QuizzesContent() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-2xl font-bold">
-              {quizzes?.filter((q) => q.status === "active").length || 0}
+              {quizzes?.filter((q) => q.status === "Active").length || 0}
             </div>
             <p className="text-sm text-muted-foreground">Active Quizzes</p>
           </CardContent>
@@ -96,7 +96,7 @@ export function QuizzesContent() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-2xl font-bold">
-              {quizzes?.reduce((sum, q) => sum + (q.attempts || 0), 0)}
+              {quizzes?.reduce((sum, q) => sum + (q.maxAttempts || 0), 0)}
             </div>
             <p className="text-sm text-muted-foreground">Total Attempts</p>
           </CardContent>

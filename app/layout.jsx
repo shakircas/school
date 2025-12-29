@@ -8,6 +8,7 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import { AppDataProvider } from "./providers/AppDataProvider";
+import { SessionProvider } from "next-auth/react";
 
 export const metadata = {
   title: "EduManage Pro - School Management System",
@@ -35,26 +36,28 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <SchoolDataProvider>
-        {/* <AppDataProvider> */}
-        <body
-          className={`${inter.variable} ${geistMono.variable} font-sans antialiased`}
-          suppressHydrationWarning
-        >
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="light"
-            enableSystem
-            disableTransitionOnChange
+      <SessionProvider>
+        <SchoolDataProvider>
+          {/* <AppDataProvider> */}
+          <body
+            className={`${inter.variable} ${geistMono.variable} font-sans antialiased`}
+            suppressHydrationWarning
           >
-            <ServiceWorkerRegister />
-            {children}
-            <Toaster />
-          </ThemeProvider>
-          <Analytics />
-        </body>
-        {/* </AppDataProvider> */}
-      </SchoolDataProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="light"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <ServiceWorkerRegister />
+              {children}
+              <Toaster />
+            </ThemeProvider>
+            <Analytics />
+          </body>
+          {/* </AppDataProvider> */}
+        </SchoolDataProvider>
+      </SessionProvider>
     </html>
   );
 }

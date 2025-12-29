@@ -1,8 +1,141 @@
-"use client"
+// "use client"
 
-import { useTheme } from "next-themes"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+// import { useTheme } from "next-themes"
+// import { Button } from "@/components/ui/button"
+// import { Input } from "@/components/ui/input"
+// import {
+//   DropdownMenu,
+//   DropdownMenuContent,
+//   DropdownMenuItem,
+//   DropdownMenuLabel,
+//   DropdownMenuSeparator,
+//   DropdownMenuTrigger,
+// } from "@/components/ui/dropdown-menu"
+// import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+// import { Badge } from "@/components/ui/badge"
+// import { useOnlineStatus } from "@/hooks/use-online-status"
+// import { Search, Bell, Sun, Moon, User, Settings, LogOut, Wifi, WifiOff } from "lucide-react"
+
+// export function Header() {
+//   const { theme, setTheme } = useTheme()
+//   const isOnline = useOnlineStatus()
+
+//   return (
+//     <header className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b border-border">
+//       <div className="flex items-center justify-between h-16 px-4 lg:px-6">
+//         <div className="flex items-center gap-4 lg:ml-64">
+//           <div className="hidden md:flex relative">
+//             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+//             <Input placeholder="Search students, teachers..." className="w-64 pl-9" />
+//           </div>
+//         </div>
+
+//         <div className="flex items-center gap-2">
+//           {/* Online Status */}
+//           <Badge
+//             variant={isOnline ? "default" : "secondary"}
+//             className={cn(
+//               "gap-1",
+//               isOnline ? "bg-success text-success-foreground" : "bg-warning text-warning-foreground",
+//             )}
+//           >
+//             {isOnline ? (
+//               <>
+//                 <Wifi className="h-3 w-3" />
+//                 <span className="hidden sm:inline">Online</span>
+//               </>
+//             ) : (
+//               <>
+//                 <WifiOff className="h-3 w-3" />
+//                 <span className="hidden sm:inline">Offline</span>
+//               </>
+//             )}
+//           </Badge>
+
+//           {/* Theme Toggle */}
+//           <Button variant="ghost" size="icon" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+//             <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+//             <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+//             <span className="sr-only">Toggle theme</span>
+//           </Button>
+
+//           {/* Notifications */}
+//           <DropdownMenu>
+//             <DropdownMenuTrigger asChild>
+//               <Button variant="ghost" size="icon" className="relative">
+//                 <Bell className="h-5 w-5" />
+//                 <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center">
+//                   3
+//                 </span>
+//               </Button>
+//             </DropdownMenuTrigger>
+//             <DropdownMenuContent align="end" className="w-80">
+//               <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+//               <DropdownMenuSeparator />
+//               <DropdownMenuItem className="flex flex-col items-start gap-1">
+//                 <span className="font-medium">New Admission</span>
+//                 <span className="text-sm text-muted-foreground">Student Ahmed Khan admitted to Class 8</span>
+//               </DropdownMenuItem>
+//               <DropdownMenuItem className="flex flex-col items-start gap-1">
+//                 <span className="font-medium">Fee Payment</span>
+//                 <span className="text-sm text-muted-foreground">15 students have pending fees</span>
+//               </DropdownMenuItem>
+//               <DropdownMenuItem className="flex flex-col items-start gap-1">
+//                 <span className="font-medium">Exam Results</span>
+//                 <span className="text-sm text-muted-foreground">Mid-term results published</span>
+//               </DropdownMenuItem>
+//             </DropdownMenuContent>
+//           </DropdownMenu>
+
+//           {/* User Menu */}
+//           <DropdownMenu>
+//             <DropdownMenuTrigger asChild>
+//               <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+//                 <Avatar>
+//                   <AvatarImage src="/admin-interface.png" alt="Admin" />
+//                   <AvatarFallback>AD</AvatarFallback>
+//                 </Avatar>
+//               </Button>
+//             </DropdownMenuTrigger>
+//             <DropdownMenuContent align="end">
+//               <DropdownMenuLabel>
+//                 <div className="flex flex-col">
+//                   <span>Administrator</span>
+//                   <span className="text-sm font-normal text-muted-foreground">admin@school.com</span>
+//                 </div>
+//               </DropdownMenuLabel>
+//               <DropdownMenuSeparator />
+//               <DropdownMenuItem>
+//                 <User className="mr-2 h-4 w-4" />
+//                 Profile
+//               </DropdownMenuItem>
+//               <DropdownMenuItem>
+//                 <Settings className="mr-2 h-4 w-4" />
+//                 Settings
+//               </DropdownMenuItem>
+//               <DropdownMenuSeparator />
+//               <DropdownMenuItem className="text-destructive">
+//                 <LogOut className="mr-2 h-4 w-4" />
+//                 Log out
+//               </DropdownMenuItem>
+//             </DropdownMenuContent>
+//           </DropdownMenu>
+//         </div>
+//       </div>
+//     </header>
+//   )
+// }
+
+// function cn(...classes) {
+//   return classes.filter(Boolean).join(" ")
+// }
+
+"use client";
+
+import { useTheme } from "next-themes";
+import { signIn, signOut, useSession } from "next-auth/react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,122 +143,176 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { useOnlineStatus } from "@/hooks/use-online-status"
-import { Search, Bell, Sun, Moon, User, Settings, LogOut, Wifi, WifiOff } from "lucide-react"
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { useOnlineStatus } from "@/hooks/use-online-status";
+import {
+  Search,
+  Bell,
+  Sun,
+  Moon,
+  User,
+  Settings,
+  LogOut,
+  Wifi,
+  WifiOff,
+  LogIn,
+  UserPlus,
+} from "lucide-react";
+import Link from "next/link";
 
 export function Header() {
-  const { theme, setTheme } = useTheme()
-  const isOnline = useOnlineStatus()
+  const { theme, setTheme } = useTheme();
+  const isOnline = useOnlineStatus();
+  const { data: session, status } = useSession();
+
+  const user = session?.user;
 
   return (
-    <header className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b border-border">
+    <header className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b">
       <div className="flex items-center justify-between h-16 px-4 lg:px-6">
-        <div className="flex items-center gap-4 lg:ml-64">
+        {/* LEFT */}
+        {/* <div className="flex items-center gap-4 lg:ml-64">
           <div className="hidden md:flex relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search students, teachers..." className="w-64 pl-9" />
+            <Input
+              placeholder="Search students, teachers..."
+              className="w-64 pl-9"
+            />
           </div>
-        </div>
+        </div> */}
 
-        <div className="flex items-center gap-2">
+        {/* RIGHT */}
+        <div className="flex items-end gap-2">
           {/* Online Status */}
           <Badge
-            variant={isOnline ? "default" : "secondary"}
             className={cn(
               "gap-1",
-              isOnline ? "bg-success text-success-foreground" : "bg-warning text-warning-foreground",
+              isOnline ? "bg-emerald-600 text-white" : "bg-amber-500 text-white"
             )}
           >
             {isOnline ? (
-              <>
-                <Wifi className="h-3 w-3" />
-                <span className="hidden sm:inline">Online</span>
-              </>
+              <Wifi className="h-3 w-3" />
             ) : (
-              <>
-                <WifiOff className="h-3 w-3" />
-                <span className="hidden sm:inline">Offline</span>
-              </>
+              <WifiOff className="h-3 w-3" />
             )}
+            <span className="hidden sm:inline">
+              {isOnline ? "Online" : "Offline"}
+            </span>
           </Badge>
 
-          {/* Theme Toggle */}
-          <Button variant="ghost" size="icon" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
-            <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-            <span className="sr-only">Toggle theme</span>
+          {/* Theme */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          >
+            <Sun className="h-5 w-5 dark:hidden" />
+            <Moon className="h-5 w-5 hidden dark:block" />
           </Button>
 
-          {/* Notifications */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center">
-                  3
-                </span>
+          {/* If NOT logged in */}
+          {status === "unauthenticated" && (
+            <>
+              <Button variant="ghost" onClick={() => signIn()}>
+                <LogIn className="mr-2 h-4 w-4" />
+                Sign In
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
-              <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="flex flex-col items-start gap-1">
-                <span className="font-medium">New Admission</span>
-                <span className="text-sm text-muted-foreground">Student Ahmed Khan admitted to Class 8</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="flex flex-col items-start gap-1">
-                <span className="font-medium">Fee Payment</span>
-                <span className="text-sm text-muted-foreground">15 students have pending fees</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="flex flex-col items-start gap-1">
-                <span className="font-medium">Exam Results</span>
-                <span className="text-sm text-muted-foreground">Mid-term results published</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
 
-          {/* User Menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                <Avatar>
-                  <AvatarImage src="/admin-interface.png" alt="Admin" />
-                  <AvatarFallback>AD</AvatarFallback>
-                </Avatar>
+              <Button asChild>
+                <Link href="/auth/signup">
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Sign Up
+                </Link>
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>
-                <div className="flex flex-col">
-                  <span>Administrator</span>
-                  <span className="text-sm font-normal text-muted-foreground">admin@school.com</span>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                Profile
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive">
-                <LogOut className="mr-2 h-4 w-4" />
-                Log out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </>
+          )}
+
+          {/* If logged in */}
+          {status === "authenticated" && (
+            <>
+              {/* Notifications */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="relative">
+                    <Bell className="h-5 w-5" />
+                    <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-white text-xs flex items-center justify-center">
+                      3
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-80">
+                  <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>New student admission</DropdownMenuItem>
+                  <DropdownMenuItem>Quiz results published</DropdownMenuItem>
+                  <DropdownMenuItem>Fee pending alerts</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* User Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="relative h-10 w-10 rounded-full"
+                  >
+                    <Avatar>
+                      <AvatarImage src={user.image || ""} />
+                      <AvatarFallback>{user.name?.[0] || "U"}</AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{user.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {user.email}
+                      </span>
+                      <Badge className="mt-1 w-fit capitalize">
+                        {user.role}
+                      </Badge>
+                    </div>
+                  </DropdownMenuLabel>
+
+                  <DropdownMenuSeparator />
+
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile">
+                      <User className="mr-2 h-4 w-4" />
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Settings
+                    </Link>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator />
+
+                  <DropdownMenuItem
+                    className="text-destructive"
+                    onClick={() => signOut()}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Log out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          )}
         </div>
       </div>
     </header>
-  )
+  );
 }
 
 function cn(...classes) {
-  return classes.filter(Boolean).join(" ")
+  return classes.filter(Boolean).join(" ");
 }

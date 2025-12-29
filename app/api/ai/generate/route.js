@@ -152,6 +152,7 @@ export async function POST(req) {
       notesType,
       count = 10,
       difficulty = "Medium",
+      language = "English",
     } = body;
     console.log("REQUEST BODY:", body);
 
@@ -195,6 +196,36 @@ JSON format:
     "explanation": "Short explanation"
   }
 ]
+`;
+        break;
+
+      case "mcq":
+        prompt = `
+You are an experienced school MCQ examiner.
+
+Generate EXACTLY ONE Multiple Choice Question.
+
+Subject: ${subject}
+Class: ${classLevel}
+Topic: ${topic}
+Difficulty: ${difficulty}
+Language: ${language}
+
+STRICT RULES:
+• Output ONLY valid JSON object
+• No markdown
+• No extra text
+• Exactly 4 options
+• correctAnswer MUST be a number (0–3)
+
+JSON FORMAT:
+{
+  "question": "Question text",
+  "options": ["A", "B", "C", "D"],
+  "correctAnswer": 2,
+  "explanation": "Short explanation",
+  "marks": 1
+}
 `;
         break;
 
@@ -405,7 +436,6 @@ Language must be simple and clear.
         );
       }
     }
-
 
     // ------------------------------
     // MCQs → JSON Parsing

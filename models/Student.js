@@ -125,6 +125,16 @@ const studentSchema = new mongoose.Schema(
     withdrawalDate: Date,
     withdrawalReason: String,
 
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User", // teacher
+    },
+
     // =============================
     // MEDIA
     // =============================
@@ -142,6 +152,7 @@ const studentSchema = new mongoose.Schema(
       },
     ],
   },
+
   { timestamps: true }
 );
 
