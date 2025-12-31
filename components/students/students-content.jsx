@@ -50,12 +50,20 @@ import { useClasses } from "../hooks/useClasses";
 import { useStudents } from "../hooks/useStudents";
 import { useDebounce } from "@/hooks/useDebounce";
 import { generateStudentListPDF } from "@/lib/pdf-generator";
+import { downloadStudentTemplate } from "@/lib/excel-templates";
+import { ImportPreviewDialog } from "./import-preview-dialog";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
 const statuses = ["Active", "Inactive", "Graduated", "Transferred"];
 
 export function StudentsContent() {
+
+ const [previewData, setPreviewData] = useState([]);
+ const [showPreview, setShowPreview] = useState(false);
+ const [importFile, setImportFile] = useState(null);
+ const [importResult, setImportResult] = useState(null);
+
   const router = useRouter();
   const { toast } = useToast();
   const [search, setSearch] = useState("");
@@ -174,53 +182,150 @@ export function StudentsContent() {
     });
   };
 
+  // const handleImport = async (e) => {
+  //   const file = e.target.files?.[0];
+  //   if (!file) return;
+
+  //   try {
+  //     const data = await importFromExcel(file);
+
+  //     // Process and validate imported data
+  //     const students = data.map((row) => ({
+  //       rollNumber: row["Roll Number"] || row.rollNumber,
+  //       registrationNumber:
+  //         row["Registration Number"] || row.registrationNumber,
+  //       name: row["Name"] || row.name,
+  //       class: String(row["Class"] || getClassById(row.classId).name),
+  //       section: row["Section"] || row.sectionId,
+  //       fatherName: row["Father Name"] || row.fatherName,
+  //       phone: row["Phone"] || row.phone,
+  //       email: row["Email"] || row.email,
+  //       dateOfBirth: row["Date of Birth"] || row.dateOfBirth || new Date(),
+  //       gender: row["Gender"] || row.gender || "Male",
+  //     }));
+
+  //     // Bulk create students
+  //     for (const student of students) {
+  //       await fetch("/api/students", {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify(student),
+  //       });
+  //     }
+
+  //     toast({
+  //       title: "Import successful",
+  //       description: `${students.length} students imported successfully.`,
+  //     });
+
+  //     mutate();
+  //   } catch (error) {
+  //     toast({
+  //       title: "Import failed",
+  //       description: "Please check your file format and try again.",
+  //       variant: "destructive",
+  //     });
+  //   }
+
+  //   e.target.value = "";
+  // };
+
+  // const handleImport = async (e) => {
+  //   const file = e.target.files?.[0];
+  //   if (!file) return;
+
+  //   try {
+  //     const formData = new FormData();
+  //     formData.append("file", file);
+
+  //     const res = await fetch("/api/students/import", {
+  //       method: "POST",
+  //       body: formData,
+  //     });
+
+  //     const result = await res.json();
+
+  //     if (!res.ok) {
+  //       throw new Error(result.error || "Import failed");
+  //     }
+
+  //     toast({
+  //       title: "Import completed",
+  //       description: `${result.success} students imported successfully${
+  //         result.failed?.length ? `, ${result.failed.length} failed` : ""
+  //       }.`,
+  //     });
+
+  //     if (result.failed?.length) {
+  //       console.warn("Import failures:", result.failed);
+  //     }
+
+  //     mutate(); // refresh student list
+  //   } catch (error) {
+  //     toast({
+  //       title: "Import failed",
+  //       description: error.message || "Please check your Excel file.",
+  //       variant: "destructive",
+  //     });
+  //   }
+
+  //   e.target.value = "";
+  // };
+
   const handleImport = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     try {
-      const data = await importFromExcel(file);
-
-      // Process and validate imported data
-      const students = data.map((row) => ({
-        rollNumber: row["Roll Number"] || row.rollNumber,
-        registrationNumber:
-          row["Registration Number"] || row.registrationNumber,
-        name: row["Name"] || row.name,
-        class: String(row["Class"] || getClassById(row.classId).name),
-        section: row["Section"] || row.sectionId,
-        fatherName: row["Father Name"] || row.fatherName,
-        phone: row["Phone"] || row.phone,
-        email: row["Email"] || row.email,
-        dateOfBirth: row["Date of Birth"] || row.dateOfBirth || new Date(),
-        gender: row["Gender"] || row.gender || "Male",
-      }));
-
-      // Bulk create students
-      for (const student of students) {
-        await fetch("/api/students", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(student),
-        });
-      }
-
+      const data = await importFromExcel(file); // frontend only
+      setPreviewData(data);
+      setImportFile(file);
+      setShowPreview(true);
+    } catch (err) {
       toast({
-        title: "Import successful",
-        description: `${students.length} students imported successfully.`,
-      });
-
-      mutate();
-    } catch (error) {
-      toast({
-        title: "Import failed",
-        description: "Please check your file format and try again.",
+        title: "Invalid file",
+        description: "Unable to read Excel file",
         variant: "destructive",
       });
     }
 
     e.target.value = "";
   };
+
+  const confirmImport = async () => {
+    try {
+      const formData = new FormData();
+      formData.append("file", importFile);
+
+      const res = await fetch("/api/teachers/students/import", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error);
+
+      setImportResult(result);
+      setShowPreview(false);
+      setPreviewData([]);
+      setImportFile(null);
+
+      toast({
+        title: "Import finished",
+        description: `${result.success} imported, ${result.failed.length} failed`,
+      });
+
+      mutate(); // refresh list
+    } catch (err) {
+      toast({
+        title: "Import failed",
+        description: err.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+
 
   return (
     <div className="space-y-6">
@@ -274,6 +379,13 @@ export function StudentsContent() {
               <Plus className="h-4 w-4 mr-2" />
               Add Student
             </Link>
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => downloadStudentTemplate(classes)}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Download Template
           </Button>
         </div>
       </PageHeader>
@@ -405,8 +517,7 @@ export function StudentsContent() {
                     <TableCell>{student.rollNumber}</TableCell>
                     <TableCell>
                       {/* {getClassById(student.classId)?.name ?? "—"} -{" "}  */}
-                      {student.classId.name} {" "}
-                      {student.sectionId ?? "—"}
+                      {student.classId.name} {student.sectionId ?? "—"}
                     </TableCell>
 
                     <TableCell>{student.fatherName}</TableCell>
@@ -465,6 +576,30 @@ export function StudentsContent() {
           </Table>
         </div>
       )}
+
+      {importResult?.failed?.length > 0 && (
+        <div className="border rounded-lg p-4 mt-6">
+          <h3 className="font-semibold mb-2 text-red-600">Failed Records</h3>
+
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Row</TableHead>
+                <TableHead>Error</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {importResult.failed.map((f, i) => (
+                <TableRow key={i}>
+                  <TableCell>{f.row}</TableCell>
+                  <TableCell className="text-red-500">{f.error}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
       <div className="flex items-center justify-between px-4 py-3 border-t">
         <p className="text-sm text-muted-foreground">
           Page {data?.page} of {data?.totalPages}
@@ -490,6 +625,12 @@ export function StudentsContent() {
           </Button>
         </div>
       </div>
+      <ImportPreviewDialog
+        open={showPreview}
+        data={previewData}
+        onConfirm={confirmImport}
+        onClose={() => setShowPreview(false)}
+      />
     </div>
   );
 }

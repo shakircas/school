@@ -9,14 +9,15 @@ export default function ImportStudentsPage() {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const upload = async () => {
+  const upload = async (e) => {
+     const file = e.target.files?.[0];
     if (!file) return toast.error("Select Excel file");
 
     setLoading(true);
     const formData = new FormData();
     formData.append("file", file);
 
-    const res = await fetch("/api/teacher/students/import", {
+    const res = await fetch("/api/teachers/students/import", {
       method: "POST",
       body: formData,
     });

@@ -32,6 +32,7 @@ const statuses = [
 ];
 
 export function StudentForm({ defaultValues, onSubmit, isLoading, classes }) {
+
   const {
     register,
     handleSubmit,
@@ -77,37 +78,11 @@ export function StudentForm({ defaultValues, onSubmit, isLoading, classes }) {
         allergies: "",
         conditions: "",
         medications: "",
+        createAccount: true,
       },
     },
   });
 
-  // useEffect(() => {
-  //   if (!defaultValues) return;
-
-  //   Object.keys(defaultValues).forEach((key) => {
-  //     const value = defaultValues[key];
-
-  //     if (value && typeof value === "object" && !Array.isArray(value)) {
-  //       Object.keys(value).forEach((subKey) => {
-  //         setValue(`${key}.${subKey}`, value[subKey] ?? "");
-  //       });
-  //     } else {
-  //       setValue(key, value ?? "");
-  //     }
-  //   });
-
-  //   // Selects
-  //   setValue("gender", defaultValues.gender ?? "");
-  //   setValue("bloodGroup", defaultValues.bloodGroup ?? "");
-  //   setValue("class", defaultValues.class ?? "");
-  //   setValue("section", defaultValues.section ?? "");
-  //   setValue("status", defaultValues.status ?? "");
-
-  //   // Image
-  //   if (defaultValues.photo?.url) {
-  //     setValue("photo", { url: defaultValues.photo.url });
-  //   }
-  // }, [defaultValues, setValue]);
   useEffect(() => {
     if (!defaultValues) return;
 
@@ -135,6 +110,8 @@ export function StudentForm({ defaultValues, onSubmit, isLoading, classes }) {
   }, [defaultValues, setValue]);
 
   const watchedValues = watch();
+
+  
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -602,6 +579,20 @@ export function StudentForm({ defaultValues, onSubmit, isLoading, classes }) {
         <Button type="submit" disabled={isLoading}>
           {isLoading ? "Saving..." : "Save Student"}
         </Button>
+      </div>
+      <div className="flex items-center space-x-3 rounded-lg border p-4">
+        <input
+          type="checkbox"
+          id="createAccount"
+          {...register("createAccount")}
+          className="h-4 w-4"
+        />
+        <label htmlFor="createAccount" className="text-sm font-medium">
+          Create student login account
+          <p className="text-xs text-muted-foreground">
+            Student will be able to log in using roll number & password
+          </p>
+        </label>
       </div>
     </form>
   );

@@ -1,79 +1,3 @@
-// "use client";
-
-// import useSWR from "swr";
-// import { Button } from "@/components/ui/button";
-// import { Badge } from "@/components/ui/badge";
-// import { Card } from "@/components/ui/card";
-// import { LoadingSpinner } from "@/components/ui/loading-spinner";
-// import { toast } from "sonner";
-// import { MainLayout } from "@/components/layout/main-layout";
-
-// const fetcher = (url) => fetch(url).then((res) => res.json());
-
-// export default function AdminUsersPage() {
-//   const { data, isLoading, mutate } = useSWR("/api/admin/users", fetcher);
-  
-//   if (isLoading) return <LoadingSpinner />;
-// console.log(data);
-//   const users = data.users;
-
-//   const updateRole = async (id, role) => {
-//     await fetch(`/api/admin/users/${id}`, {
-//       method: "PATCH",
-//       headers: { "Content-Type": "application/json" },
-//       body: JSON.stringify({ role }),
-//     });
-//     toast.success("Role updated");
-//     mutate();
-//   };
-
-//   const toggleActive = async (id, isActive) => {
-//     await fetch(`/api/admin/users/${id}`, {
-//       method: "PATCH",
-//       headers: { "Content-Type": "application/json" },
-//       body: JSON.stringify({ isActive }),
-//     });
-//     mutate();
-//   };
-
-//   return (
-//     <MainLayout>
-//       <div className="space-y-4">
-//         <h1 className="text-2xl font-bold">User Management</h1>
-
-//         {users.map((user) => (
-//           <Card
-//             key={user._id}
-//             className="p-4 flex justify-between items-center"
-//           >
-//             <div>
-//               <p className="font-medium">{user.name}</p>
-//               <p className="text-sm text-muted-foreground">{user.email}</p>
-//               <Badge>{user.role}</Badge>
-//             </div>
-
-//             <div className="flex gap-2">
-//               <Button size="sm" onClick={() => updateRole(user._id, "teacher")}>
-//                 Teacher
-//               </Button>
-//               <Button size="sm" onClick={() => updateRole(user._id, "admin")}>
-//                 Admin
-//               </Button>
-//               <Button
-//                 size="sm"
-//                 variant={user.isActive ? "destructive" : "default"}
-//                 onClick={() => toggleActive(user._id, !user.isActive)}
-//               >
-//                 {user.isActive ? "Disable" : "Enable"}
-//               </Button>
-//             </div>
-//           </Card>
-//         ))}
-//       </div>
-//     </MainLayout>
-//   );
-// }
-
 "use client";
 
 import useSWR from "swr";
@@ -103,8 +27,7 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
 
-  if (isLoading) return <LoadingSpinner />;
-
+ 
   const users = data?.users || [];
 
   /* ---------------- FILTER LOGIC ---------------- */
@@ -155,6 +78,9 @@ export default function AdminUsersPage() {
     XLSX.utils.book_append_sheet(wb, ws, "Users");
     XLSX.writeFile(wb, "users.xlsx");
   };
+
+   if (isLoading) return <LoadingSpinner />;
+
 
   return (
     <MainLayout>
