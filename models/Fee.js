@@ -18,7 +18,7 @@ const feeSchema = new mongoose.Schema(
       type: String,
       required: true,
       index: true,
-      default:'all'
+      default: "all",
     },
 
     // sectionId: {
@@ -40,6 +40,7 @@ const feeSchema = new mongoose.Schema(
     month: {
       type: String,
       required: true,
+      default: "all",
     },
 
     // 💰 Fee breakdown

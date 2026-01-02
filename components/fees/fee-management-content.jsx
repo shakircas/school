@@ -153,12 +153,12 @@ export function FeeManagementContent() {
     try {
       // Simulate API call
       // await new Promise((resolve) => setTimeout(resolve, 1000));
-      await fetch(`/api/fees/${selectedFee._id}/pay`, {
+      await fetch(`/api/fees/${selectedFee._id}/payment`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           amount,
-          method: paymentMethod,
+          paymentMethod,
           collectedBy: "Admin",
         }),
       });
@@ -436,51 +436,6 @@ export function FeeManagementContent() {
       </div>
 
       {/* Filters */}
-      {/* <Card>
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by name or roll..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <Select value={classFilter} onValueChange={setClassFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="All Classes" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Classes</SelectItem>
-                {Array.isArray(classes) &&
-                  classes.map((cls) => (
-                    <SelectItem key={cls._id} value={cls._id}>
-                      {cls.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="All Status" />
-              </SelectTrigger>
-              <SelectContent>
-                {statuses.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {status}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button variant="outline" className="w-full bg-transparent">
-              <FileText className="h-4 w-4 mr-2" />
-              Generate Report
-            </Button>
-          </div>
-        </CardContent>
-      </Card> */}
 
       <Card>
         <CardContent className="p-4">
@@ -676,6 +631,17 @@ export function FeeManagementContent() {
                             onClick={() => printReceipt(fee)}
                           >
                             <Printer className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => {
+                              window.open(
+                                `/api/fees/legal-notice?feeId=${fee._id}`
+                              );
+                            }}
+                          >
+                            <FileText className="h-4 w-4 text-red-600" />
                           </Button>
                         </div>
                       </TableCell>
