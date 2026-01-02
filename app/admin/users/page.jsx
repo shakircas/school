@@ -18,6 +18,7 @@ import {
 import { toast } from "sonner";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Download, Shield, UserCog, UserCheck, UserX } from "lucide-react";
+import { Table, TableHead, TableRow } from "@/components/ui/table";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -128,15 +129,15 @@ export default function AdminUsersPage() {
         {/* TABLE */}
         <Card className="overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50">
-                <tr>
-                  <th className="px-4 py-3 text-left">User</th>
-                  <th className="px-4 py-3">Role</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
+            <Table className="w-full text-sm">
+              <TableHead className="bg-muted/50">
+                <TableRow>
+                  <TableHead className="px-4 py-3 text-left">User</TableHead>
+                  <TableHead className="px-4 py-3">Role</TableHead>
+                  <TableHead className="px-4 py-3">Status</TableHead>
+                  <TableHead className="px-4 py-3 text-right">Actions</TableHead>
+                </TableRow>
+              </TableHead>
 
               <tbody>
                 {filteredUsers.map((user) => (
@@ -214,7 +215,7 @@ export default function AdminUsersPage() {
                   </tr>
                 )}
               </tbody>
-            </table>
+            </Table>
           </div>
         </Card>
       </div>

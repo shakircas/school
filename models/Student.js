@@ -51,6 +51,7 @@ const studentSchema = new mongoose.Schema(
       type: String,
       required: true,
       index: true,
+      default: "all",
     },
 
     // Legacy support (DO NOT USE IN NEW CODE)

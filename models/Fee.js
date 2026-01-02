@@ -1,24 +1,48 @@
-import mongoose from "mongoose"
-
+import mongoose from "mongoose";
 const feeSchema = new mongoose.Schema(
   {
+    // 🔗 Core relations
     student: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Student",
       required: true,
     },
+
+    classId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Class",
+      required: true,
+    },
+
+    sectionId: {
+      type: String,
+      required: true,
+      index: true,
+      default:'all'
+    },
+
+    // sectionId: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   required: true,
+    // },
+
+    // 🧾 Snapshot fields (VERY IMPORTANT)
     studentName: String,
     rollNumber: String,
-    class: String,
-    section: String,
+    className: String,
+    sectionName: String,
+
     academicYear: {
       type: String,
       required: true,
     },
+
     month: {
       type: String,
       required: true,
     },
+
+    // 💰 Fee breakdown
     feeStructure: {
       tuitionFee: { type: Number, default: 0 },
       admissionFee: { type: Number, default: 0 },
@@ -30,41 +54,41 @@ const feeSchema = new mongoose.Schema(
       computerFee: { type: Number, default: 0 },
       otherFee: { type: Number, default: 0 },
     },
+
     totalAmount: {
       type: Number,
       required: true,
     },
-    discount: {
-      type: Number,
-      default: 0,
-    },
+
+    discount: { type: Number, default: 0 },
     discountReason: String,
-    fine: {
-      type: Number,
-      default: 0,
-    },
+
+    fine: { type: Number, default: 0 },
     fineReason: String,
+
     netAmount: {
       type: Number,
       required: true,
     },
-    paidAmount: {
-      type: Number,
-      default: 0,
-    },
+
+    paidAmount: { type: Number, default: 0 },
+
     dueAmount: {
       type: Number,
       required: true,
     },
+
     status: {
       type: String,
       enum: ["Pending", "Partial", "Paid", "Overdue"],
       default: "Pending",
     },
+
     dueDate: {
       type: Date,
       required: true,
     },
+
     payments: [
       {
         amount: Number,
@@ -78,18 +102,17 @@ const feeSchema = new mongoose.Schema(
         remarks: String,
       },
     ],
+
     invoiceNumber: {
       type: String,
       unique: true,
     },
   },
-  {
-    timestamps: true,
-  },
-)
+  { timestamps: true }
+);
 
-feeSchema.index({ student: 1, academicYear: 1, month: 1 })
-feeSchema.index({ status: 1 })
-feeSchema.index({ dueDate: 1 })
-
-export default mongoose.models.Fee || mongoose.model("Fee", feeSchema)
+feeSchema.index({ student: 1, academicYear: 1, month: 1 }, { unique: true });
+feeSchema.index({ classId: 1, sectionId: 1 });
+feeSchema.index({ status: 1 });
+feeSchema.index({ dueDate: 1 });
+export default mongoose.models.Fee || mongoose.model("Fee", feeSchema);

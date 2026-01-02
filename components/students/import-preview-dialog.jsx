@@ -1,74 +1,23 @@
-// import {
-//   Dialog,
-//   DialogContent,
-//   DialogHeader,
-//   DialogTitle,
-// } from "@/components/ui/dialog";
-// import {
-//   Table,
-//   TableHeader,
-//   TableRow,
-//   TableCell,
-//   TableBody,
-//   TableHead,
-// } from "@/components/ui/table";
-// import { Button } from "@/components/ui/button";
-// import { ScrollArea } from "@/components/ui/scroll-area";
-
-// export function ImportPreviewDialog({ open, data, onConfirm, onClose }) {
-//   if (!data?.length) return null;
-
-//   const headers = Object.keys(data[0]);
-
-//   return (
-//     <Dialog open={open} onOpenChange={onClose}>
-//       <DialogContent className="max-w-auto">
-//         <DialogHeader>
-//           <DialogTitle>Import Preview</DialogTitle>
-//         </DialogHeader>
-
-//         <ScrollArea className="h-[400px] border rounded">
-//           <Table>
-//             <TableHeader>
-//               <TableRow>
-//                 {Object.keys(data[0]).map((key) => (
-//                   <TableHead key={key}>{key}</TableHead>
-//                 ))}
-//               </TableRow>
-//             </TableHeader>
-//             <TableBody>
-//               {data.map((row, i) => (
-//                 <TableRow key={i}>
-//                   {Object.values(row).map((val, j) => (
-//                     <TableCell key={j}>{val || "—"}</TableCell>
-//                   ))}
-//                 </TableRow>
-//               ))}
-//             </TableBody>
-//           </Table>
-//         </ScrollArea>
-
-//         <div className="flex justify-end gap-2 mt-4">
-//           <Button variant="outline" onClick={onClose}>
-//             Cancel
-//           </Button>
-//           <Button onClick={onConfirm}>Confirm Import</Button>
-//         </div>
-//       </DialogContent>
-//     </Dialog>
-//   );
-// }
-
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Table, TableHead, TableRow, TableCell } from "@/components/ui/table";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { CheckCircle, XCircle } from "lucide-react";
 import { useClasses } from "../hooks/useClasses";
+import { exportToExcel } from "@/lib/exportToExcel";
 
 export function ImportPreviewDialog({ open, data, onConfirm, onClose }) {
   const { classes } = useClasses();
@@ -86,48 +35,106 @@ export function ImportPreviewDialog({ open, data, onConfirm, onClose }) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl">
+      <DialogContent className="max-w-6xl">
         <DialogHeader>
-          <DialogTitle>Import Preview</DialogTitle>
+          <DialogTitle className="text-lg font-semibold">
+            Import Preview (Excel Style)
+          </DialogTitle>
         </DialogHeader>
 
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Roll</TableCell>
-              <TableCell>Name</TableCell>
-              <TableCell>Class</TableCell>
-              <TableCell>Section</TableCell>
-              <TableCell>Status</TableCell>
-            </TableRow>
-          </TableHead>
+        {/* Excel-like sheet */}
+        <div className="border rounded-md bg-muted/30">
+          <ScrollArea className="h-[420px]">
+            <Table className="border-collapse text-sm">
+              <TableHeader className="sticky top-0 z-10 bg-background">
+                <TableRow>
+                  <TableHead className="border w-24">Roll</TableHead>
+                  <TableHead className="border">Name</TableHead>
+                  <TableHead className="border w-32">Class</TableHead>
+                  <TableHead className="border w-28">Section</TableHead>
+                  <TableHead className="border w-32">Status</TableHead>
+                </TableRow>
+              </TableHeader>
 
-          {validated.map((row, i) => (
-            <TableRow key={i} className={row.__error ? "bg-red-50" : ""}>
-              <TableCell>{row.rollNumber}</TableCell>
-              <TableCell>{row.name}</TableCell>
-              <TableCell>{row.class}</TableCell>
-              <TableCell>{row.section}</TableCell>
-              <TableCell>
-                {row.__error ? (
-                  <Badge variant="destructive">{row.__error}</Badge>
-                ) : (
-                  <Badge variant="success">OK</Badge>
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
-        </Table>
+              <TableBody>
+                {validated.map((row, i) => (
+                  <TableRow
+                    key={i}
+                    className={
+                      row.__error
+                        ? "bg-red-50 hover:bg-red-100"
+                        : i % 2 === 0
+                        ? "bg-white"
+                        : "bg-muted/40"
+                    }
+                  >
+                    <TableCell className="border font-mono">
+                      {row.rollNumber}
+                    </TableCell>
 
-        <div className="flex justify-end gap-2 mt-4">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button disabled={hasErrors} onClick={onConfirm}>
-            Import Students
-          </Button>
+                    <TableCell className="border">{row.name}</TableCell>
+
+                    <TableCell
+                      className={`border ${
+                        row.__error ? "text-red-600 font-medium" : ""
+                      }`}
+                    >
+                      {row.class}
+                    </TableCell>
+
+                    <TableCell className="border">{row.section}</TableCell>
+
+                    <TableCell className="border">
+                      {row.__error ? (
+                        <div className="flex items-center gap-2 text-red-600">
+                          <XCircle className="h-4 w-4" />
+                          <span>{row.__error}</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 text-green-600">
+                          <CheckCircle className="h-4 w-4" />
+                          <span>Valid</span>
+                        </div>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </ScrollArea>
+        </div>
+
+        {/* Footer */}
+        <div className="flex justify-between items-center mt-4">
+          <div className="text-sm text-muted-foreground">
+            {validated.length} rows •{" "}
+            {validated.filter((r) => !r.__error).length} valid •{" "}
+            {validated.filter((r) => r.__error).length} errors
+          </div>
+
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button disabled={hasErrors} onClick={onConfirm}>
+              Import Students
+            </Button>
+          </div>
         </div>
       </DialogContent>
+      {/* <div className="flex gap-2">
+        <Button variant="secondary" onClick={() => exportToExcel(validated)}>
+          Download Corrected Excel
+        </Button>
+
+        <Button variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
+
+        <Button disabled={hasErrors} onClick={() => onConfirm(rows)}>
+          Import Students
+        </Button>
+      </div> */}
     </Dialog>
   );
 }
