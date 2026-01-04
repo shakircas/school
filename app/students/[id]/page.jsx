@@ -1,27 +1,27 @@
-"use client"
+"use client";
 
-import { use } from "react"
-import useSWR from "swr"
-import { MainLayout } from "@/components/layout/main-layout"
-import { PageHeader } from "@/components/ui/page-header"
-import { LoadingPage } from "@/components/ui/loading-spinner"
-import { StudentProfile } from "@/components/students/student-profile"
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
-import { Edit, ArrowLeft } from "lucide-react"
+import { use } from "react";
+import useSWR from "swr";
+import { MainLayout } from "@/components/layout/main-layout";
+import { PageHeader } from "@/components/ui/page-header";
+import { LoadingPage } from "@/components/ui/loading-spinner";
+import { StudentProfile } from "@/components/students/student-profile";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { Edit, ArrowLeft } from "lucide-react";
 
-const fetcher = (url) => fetch(url).then((res) => res.json())
+const fetcher = (url) => fetch(url).then((res) => res.json());
 
 export default function StudentDetailPage({ params }) {
-  const { id } = use(params)
-  const { data: student, isLoading } = useSWR(`/api/students/${id}`, fetcher)
+  const { id } = use(params);
+  const { data: student, isLoading } = useSWR(`/api/students/${id}`, fetcher);
 
   if (isLoading) {
     return (
       <MainLayout>
         <LoadingPage />
       </MainLayout>
-    )
+    );
   }
 
   if (!student || student.error) {
@@ -37,14 +37,14 @@ export default function StudentDetailPage({ params }) {
           </Button>
         </div>
       </MainLayout>
-    )
+    );
   }
 
   return (
     <MainLayout>
       <PageHeader
         title={student.name}
-        description={`Roll No: ${student.rollNumber} | Class ${student.class}-${student.section}`}
+        description={`Roll No: ${student.rollNumber} | Class ${student.classId.name}-${student.sectionId}`}
       >
         <Button asChild>
           <Link href={`/students/${id}/edit`}>
@@ -55,5 +55,5 @@ export default function StudentDetailPage({ params }) {
       </PageHeader>
       <StudentProfile student={student} />
     </MainLayout>
-  )
+  );
 }

@@ -262,7 +262,7 @@ export function FeeStructureContent() {
       </PageHeader>
 
       {/* TABLE */}
-      <Card>
+      {/* <Card>
         <CardHeader>
           <CardTitle>Fee Structures</CardTitle>
           <CardDescription>
@@ -319,12 +319,23 @@ export function FeeStructureContent() {
             </TableBody>
           </Table>
         </CardContent>
+      </Card> */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Fee Structures</CardTitle>
+          <CardDescription>
+            Class & section wise annual fee configuration
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent>
+          <FeeStructureTable
+            onEdit={onEdit}
+            onDelete={onDelete}
+            feeStructures={feeStructures}
+          />
+        </CardContent>
       </Card>
-      <FeeStructureTable
-        onEdit={onEdit}
-        onDelete={onDelete}
-        feeStructures={feeStructures}
-      />
     </div>
   );
 }

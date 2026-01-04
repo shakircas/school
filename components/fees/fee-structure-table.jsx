@@ -39,6 +39,7 @@ export function FeeStructureTable({ feeStructures, onEdit, onDelete }) {
       <TableHeader>
         <TableRow>
           <TableHead />
+          <TableHead>Academic Year</TableHead>
           <TableHead>Class</TableHead>
           <TableHead>Section</TableHead>
           <TableHead>Total</TableHead>
@@ -65,8 +66,10 @@ export function FeeStructureTable({ feeStructures, onEdit, onDelete }) {
                   </Button>
                 </TableCell>
 
+                <TableCell>{f.academicYear}</TableCell>
+
                 <TableCell>
-                  <Badge variant="outline">{f.className}</Badge>
+                  {/* <Badge >{f.className}</Badge> */}
                   <p>{f.className}</p>
                 </TableCell>
 

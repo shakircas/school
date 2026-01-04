@@ -45,6 +45,9 @@ import {
   Upload,
   FileSpreadsheet,
   GraduationCap,
+  Users,
+  UserCheck,
+  UserX,
 } from "lucide-react";
 import { useClasses } from "../hooks/useClasses";
 import { useStudents } from "../hooks/useStudents";
@@ -52,17 +55,18 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { generateStudentListPDF } from "@/lib/pdf-generator";
 import { downloadStudentTemplate } from "@/lib/excel-templates";
 import { ImportPreviewDialog } from "./import-preview-dialog";
+import { cn } from "@/lib/utils";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
 const statuses = ["Active", "Inactive", "Graduated", "Transferred"];
 
 export function StudentsContent() {
-
- const [previewData, setPreviewData] = useState([]);
- const [showPreview, setShowPreview] = useState(false);
- const [importFile, setImportFile] = useState(null);
- const [importResult, setImportResult] = useState(null);
+  const [previewData, setPreviewData] = useState([]);
+  const [showPreview, setShowPreview] = useState(false);
+  const [importFile, setImportFile] = useState(null);
+  const [importResult, setImportResult] = useState(null);
+  const [showFilters, setShowFilters] = useState(false);
 
   const router = useRouter();
   const { toast } = useToast();
@@ -73,8 +77,19 @@ export function StudentsContent() {
   const [page, setPage] = useState(1);
   const limit = 10;
 
+  const debouncedSearch = useDebounce(search, 400);
+
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    setSearch(searchParams.get("search") || "");
+    setClassFilter(searchParams.get("classId") || "all");
+    setSectionFilter(searchParams.get("sectionId") || "all");
+    setStatusFilter(searchParams.get("status") || "Active");
+  }, []);
+
   const queryParams = new URLSearchParams();
-  if (search) queryParams.set("search", search);
+  if (debouncedSearch) queryParams.set("search", debouncedSearch);
   if (classFilter) queryParams.set("classId", classFilter);
   if (sectionFilter) queryParams.set("sectionId", sectionFilter);
 
@@ -83,25 +98,26 @@ export function StudentsContent() {
   queryParams.set("page", page);
   queryParams.set("limit", limit);
 
-  useEffect(() => {
-    setPage(1);
-  }, [search, classFilter, sectionFilter, statusFilter]);
-
-  const debouncedSearch = useDebounce(search, 300);
+  // useEffect(() => {
+  //   setPage(1);
+  // }, [search, classFilter, sectionFilter, statusFilter]);
 
   if (debouncedSearch) {
     queryParams.set("search", debouncedSearch);
   }
 
-  const params = useSearchParams();
-
   useEffect(() => {
-    setSearch(params.get("search") || "");
-    setClassFilter(params.get("classId") || "all");
-    setSectionFilter(params.get("sectionId") || "all");
-    setStatusFilter(params.get("status") || "Active");
-    setPage(Number(params.get("page")) || 1);
-  }, []);
+    const params = new URLSearchParams();
+
+    if (search) params.set("search", search);
+    if (classFilter !== "all") params.set("classId", classFilter);
+    if (sectionFilter !== "all") params.set("sectionId", sectionFilter);
+    if (statusFilter !== "all") params.set("status", statusFilter);
+
+    params.set("page", "1");
+
+    router.replace(`?${params.toString()}`, { scroll: false });
+  }, [search, classFilter, sectionFilter, statusFilter]);
 
   const getClassById = (classId) => classes?.find((c) => c._id === classId);
 
@@ -123,6 +139,17 @@ export function StudentsContent() {
   console.log("classes", classes);
   const students = data?.students || [];
   // const { students, loading: studentsLoading } = useStudents();
+
+  useEffect(() => {
+    const filters = {
+      search,
+      classFilter,
+      sectionFilter,
+      statusFilter,
+    };
+
+    localStorage.setItem("studentFilters", JSON.stringify(filters));
+  }, [search, classFilter, sectionFilter, statusFilter]);
 
   const handleDelete = async (id) => {
     if (!confirm("Are you sure you want to delete this student?")) return;
@@ -182,8 +209,6 @@ export function StudentsContent() {
     });
   };
 
-  
-
   const handleImport = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -237,40 +262,107 @@ export function StudentsContent() {
     }
   };
 
-
+  const clearFilters = () => {
+    setSearch("");
+    setClassFilter("all");
+    setSectionFilter("all");
+    setStatusFilter("Active");
+    localStorage.removeItem("studentFilters");
+    router.replace("/students", { scroll: false });
+  };
 
   return (
     <div className="space-y-6">
+      {/* ===== Summary Cards ===== */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 text-white p-5 shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm opacity-90">Total Students</p>
+              <p className="text-2xl font-bold">{data?.total || 0}</p>
+            </div>
+            <Users className="h-8 w-8 opacity-90" />
+          </div>
+        </div>
+
+        <div className="rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white p-5 shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm opacity-90">Active</p>
+              <p className="text-2xl font-bold">
+                {students.filter((s) => s.status === "Active").length}
+              </p>
+            </div>
+            <UserCheck className="h-8 w-8 opacity-90" />
+          </div>
+        </div>
+
+        <div className="rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 text-white p-5 shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm opacity-90">Inactive</p>
+              <p className="text-2xl font-bold">
+                {students.filter((s) => s.status !== "Active").length}
+              </p>
+            </div>
+            <UserX className="h-8 w-8 opacity-90" />
+          </div>
+        </div>
+
+        <div className="rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white p-5 shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm opacity-90">Classes</p>
+              <p className="text-2xl font-bold">{classes?.length || 0}</p>
+            </div>
+            <GraduationCap className="h-8 w-8 opacity-90" />
+          </div>
+        </div>
+      </div>
+
       <PageHeader
         title="Students"
         description={`Manage all ${
           students?.length || 0
         } students in your school`}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* ===== Export ===== */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline">
-                <Download className="h-4 w-4 mr-2" />
-                Export
+              <Button variant="outline" size="sm">
+                <Download className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Export</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent>
+
+            <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => handleExport("excel")}>
                 <FileSpreadsheet className="h-4 w-4 mr-2" />
-                Export as Excel
+                Excel
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleExport("csv")}>
                 <FileSpreadsheet className="h-4 w-4 mr-2" />
-                Export as CSV
+                CSV
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleExport("pdf")}>
                 <FileSpreadsheet className="h-4 w-4 mr-2" />
-                Export as PDF
+                PDF
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
+          {/* ===== Download Template ===== */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => downloadStudentTemplate(classes)}
+          >
+            <Download className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Template</span>
+          </Button>
+
+          {/* ===== Import ===== */}
           <label>
             <input
               type="file"
@@ -278,96 +370,222 @@ export function StudentsContent() {
               className="hidden"
               onChange={handleImport}
             />
-            <Button variant="outline" asChild>
+            <Button variant="outline" size="sm" asChild>
               <span>
-                <Upload className="h-4 w-4 mr-2" />
-                Import
+                <Upload className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Import</span>
               </span>
             </Button>
           </label>
 
-          <Button asChild>
+          {/* ===== Add Student (Primary) ===== */}
+          <Button size="sm" asChild>
             <Link href="/students/add">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Student
+              <Plus className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Add Student</span>
             </Link>
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => downloadStudentTemplate(classes)}
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Download Template
           </Button>
         </div>
       </PageHeader>
 
+      <div className="flex items-center justify-between md:hidden mb-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowFilters((p) => !p)}
+        >
+          Filters
+        </Button>
+
+        {(search || classFilter !== "all" || sectionFilter !== "all") && (
+          <Button variant="ghost" size="sm" onClick={clearFilters}>
+            Clear
+          </Button>
+        )}
+      </div>
+
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by name, roll number..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
+      <div
+        className={cn(
+          "transition-all duration-300 overflow-hidden",
+          showFilters || window.innerWidth >= 768
+            ? "max-h-[300px] opacity-100"
+            : "max-h-0 opacity-0"
+        )}
+      >
+        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b">
+          <div className="p-4">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-12">
+              {/* 🔍 Search */}
+              <div className="relative md:col-span-5">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search students..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+
+              {/* 🎓 Class */}
+              <div className="md:col-span-2">
+                <Select value={classFilter} onValueChange={setClassFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Class" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Classes</SelectItem>
+                    {classes?.map((c) => (
+                      <SelectItem key={c._id} value={c._id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* 📚 Section */}
+              <div className="md:col-span-2">
+                <Select
+                  value={sectionFilter}
+                  onValueChange={setSectionFilter}
+                  disabled={classFilter === "all"}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Section" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Sections</SelectItem>
+                    {getClassById(classFilter)?.sections?.map((s) => (
+                      <SelectItem key={s._id} value={s.name}>
+                        Section {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* 🟢 Status */}
+              <div className="md:col-span-2">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    {statuses.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* 🧹 Clear */}
+              <div className="md:col-span-1 flex items-center">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full"
+                  onClick={clearFilters}
+                >
+                  Clear
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <Select
-          value={classFilter}
-          onValueChange={(value) => {
-            setClassFilter(value);
-            setSectionFilter(""); // reset section
-          }}
-        >
-          <SelectTrigger className="w-full sm:w-32">
-            <SelectValue placeholder="Class" />
-          </SelectTrigger>
+      {(search || classFilter !== "all" || sectionFilter !== "all") && (
+        <div className="flex flex-wrap gap-2 mt-3">
+          {search && (
+            <Badge variant="secondary" onClick={() => setSearch("")}>
+              Search: {search} ✕
+            </Badge>
+          )}
 
-          <SelectContent>
-            <SelectItem value="all">All Classes</SelectItem>
-            {classes?.map((cls) => (
-              <SelectItem key={cls._id} value={cls._id}>
-                {cls.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          {classFilter !== "all" && (
+            <Badge variant="secondary" onClick={() => setClassFilter("all")}>
+              Class ✕
+            </Badge>
+          )}
 
-        <Select
-          value={sectionFilter}
-          onValueChange={setSectionFilter}
-          disabled={!classFilter}
-        >
-          <SelectTrigger className="w-full sm:w-32">
-            <SelectValue placeholder="Section" />
-          </SelectTrigger>
+          {sectionFilter !== "all" && (
+            <Badge variant="secondary" onClick={() => setSectionFilter("all")}>
+              Section ✕
+            </Badge>
+          )}
 
-          <SelectContent>
-            <SelectItem value="all">All Sections</SelectItem>
+          {statusFilter !== "all" && (
+            <Badge variant="secondary" onClick={() => setStatusFilter("all")}>
+              Status: {statusFilter} ✕
+            </Badge>
+          )}
+        </div>
+      )}
 
-            {getClassById(classFilter)?.sections?.map((sec) => (
-              <SelectItem key={sec._id} value={sec.name}>
-                Section {sec.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      {/* ===== Mobile Cards ===== */}
+      <div className="grid gap-4 sm:hidden">
+        {students.map((student) => (
+          <div
+            key={student._id}
+            className="rounded-xl border p-4 space-y-3 shadow-sm"
+          >
+            <div className="flex items-center gap-3">
+              <Avatar>
+                <AvatarImage src={student.photo?.url} />
+                <AvatarFallback>{student.name?.[0]}</AvatarFallback>
+              </Avatar>
 
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-32">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            {statuses.map((status) => (
-              <SelectItem key={status} value={status}>
-                {status}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+              <div className="flex-1">
+                <p className="font-semibold">{student.name}</p>
+                <p className="text-sm text-muted-foreground">
+                  Roll #{student.rollNumber}
+                </p>
+              </div>
+
+              <Badge>{student.status}</Badge>
+            </div>
+
+            <div className="text-sm grid grid-cols-2 gap-2">
+              <p>
+                <span className="text-muted-foreground">Class:</span>{" "}
+                {student.classId?.name}
+              </p>
+              <p>
+                <span className="text-muted-foreground">Section:</span>{" "}
+                {student.sectionId}
+              </p>
+              <p>
+                <span className="text-muted-foreground">Father:</span>{" "}
+                {student.fatherName}
+              </p>
+              <p>
+                <span className="text-muted-foreground">Phone:</span>{" "}
+                {student.phone}
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => router.push(`/students/${student._id}`)}
+              >
+                View
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => router.push(`/students/${student._id}/edit`)}
+              >
+                Edit
+              </Button>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Table */}
@@ -390,7 +608,7 @@ export function StudentsContent() {
           }
         />
       ) : (
-        <div className="rounded-lg border border-border overflow-hidden">
+        <div className="rounded-lg border border-border overflow-hidden hidden sm:block">
           <Table>
             <TableHeader>
               <TableRow>
@@ -407,7 +625,10 @@ export function StudentsContent() {
               {students &&
                 students.length > 0 &&
                 students.map((student) => (
-                  <TableRow key={student._id}>
+                  <TableRow
+                    key={student._id}
+                    className="hover:bg-muted/50 transition"
+                  >
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar>

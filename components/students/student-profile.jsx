@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { User, Phone, Mail, MapPin, Calendar, Heart, Users, GraduationCap } from "lucide-react"
 
 export function StudentProfile({ student }) {
+  console.log(student)
   return (
     <div className="space-y-6">
       {/* Header Card */}
@@ -36,7 +37,7 @@ export function StudentProfile({ student }) {
                 <div>
                   <p className="text-muted-foreground">Class</p>
                   <p className="font-medium">
-                    {student.class} - {student.section}
+                    {student.classId.name} - {student.sectionId}
                   </p>
                 </div>
                 <div>
