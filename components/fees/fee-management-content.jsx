@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { use, useState } from "react";
 import useSWR from "swr";
 import {
   Card,
@@ -53,7 +53,9 @@ import {
   Clock,
   Printer,
   FileText,
+  Eye,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -78,6 +80,7 @@ export function FeeManagementContent() {
 
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const [form, setForm] = useState({
     academicYear: "2024-2025",
@@ -567,6 +570,7 @@ export function FeeManagementContent() {
                   <TableRow>
                     <TableHead>Student</TableHead>
                     <TableHead>Class</TableHead>
+                    <TableHead>Month</TableHead>
                     <TableHead className="text-right">Total Fee</TableHead>
                     <TableHead className="text-right">Paid</TableHead>
                     <TableHead className="text-right">Due</TableHead>
@@ -599,8 +603,9 @@ export function FeeManagementContent() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {fee.className}-{fee.sectionName}
+                        {fee.classId.name}-{fee.sectionName}
                       </TableCell>
+                      <TableCell>{fee.month}</TableCell>
                       <TableCell className="text-right font-medium">
                         Rs. {fee.totalAmount.toLocaleString()}
                       </TableCell>
@@ -642,6 +647,13 @@ export function FeeManagementContent() {
                             }}
                           >
                             <FileText className="h-4 w-4 text-red-600" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => router.push(`/fees/${fee._id}`)}
+                          >
+                            <Eye className="h-4 w-4 text-red-600" />
                           </Button>
                         </div>
                       </TableCell>

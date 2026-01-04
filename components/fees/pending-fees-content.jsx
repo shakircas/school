@@ -72,7 +72,7 @@ export function PendingFeesContent() {
   // 🔗 Query builder (USES SAME /api/fees)
   const query = new URLSearchParams({
     academicYear,
-    status: "Pending" && "Partial", // 🔥 forced as requested
+    status: "Pending", // 🔥 forced as requested
   });
 
   if (month !== "all") query.append("month", month);
@@ -86,6 +86,7 @@ export function PendingFeesContent() {
   const { data, isLoading } = useSWR(`/api/fees?${query.toString()}`, fetcher);
 
   const fees = data?.data || [];
+  console.log(fees);
 
   // 📊 Stats
   const totalPending = fees.reduce((s, f) => s + (f.dueAmount || 0), 0);
@@ -223,6 +224,7 @@ export function PendingFeesContent() {
                   <TableRow>
                     <TableHead>Student</TableHead>
                     <TableHead>Class</TableHead>
+                    <TableHead>Month</TableHead>
                     <TableHead className="text-right">Due</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Due Date</TableHead>
@@ -255,8 +257,10 @@ export function PendingFeesContent() {
                       </TableCell>
 
                       <TableCell>
-                        {fee.className}-{fee.sectionName}
+                        {fee.classId.name}-{fee.sectionName}
                       </TableCell>
+
+                      <TableCell> <Badge>{fee.year}-{fee.month}</Badge></TableCell>
 
                       <TableCell className="text-right text-amber-600 font-bold">
                         Rs. {fee.dueAmount.toLocaleString()}
