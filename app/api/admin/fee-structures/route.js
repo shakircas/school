@@ -9,7 +9,7 @@ import Class from "@/models/Class";
 export async function GET() {
   await connectDB();
 
-  const structures = await FeeStructure.find({ isActive: true }).sort({
+  const structures = await FeeStructure.find({ isActive: true }).populate("classId", "name").sort({
     createdAt: -1,
   });
 
@@ -22,52 +22,121 @@ export async function GET() {
 /* =========================
    POST: Create Fee Structure
 ========================= */
+
 export async function POST(req) {
-  await connectDB();
-  const body = await req.json();
+  try {
+    await connectDB();
 
-  const {
-    classId,
-    sectionId,
-    academicYear,
-    fees,
-    applicableMonths,
-    isMonthly,
-    remarks,
-  } = body;
+    const body = await req.json();
 
-  if (!classId || !academicYear) {
+    const {
+      academicYear,
+      classId,
+      sectionId = "all",
+      fees,
+      isMonthly = true,
+      applicableMonths = [],
+      effectiveFromMonth,
+      effectiveToMonth = null,
+      remarks,
+    } = body;
+
+    /* ======================
+       BASIC VALIDATION
+    ====================== */
+    if (!academicYear || !classId || !effectiveFromMonth) {
+      return NextResponse.json(
+        { error: "academicYear, classId & effectiveFromMonth are required" },
+        { status: 400 }
+      );
+    }
+
+    /* ======================
+       SNAPSHOT CLASS NAME
+    ====================== */
+    const cls = await Class.findById(classId).lean();
+    if (!cls) {
+      return NextResponse.json({ error: "Class not found" }, { status: 404 });
+    }
+
+    const className = cls.name;
+    const sectionName = sectionId === "all" ? "All Sections" : sectionId;
+
+    /* ======================
+       FIND LAST VERSION
+    ====================== */
+    const last = await FeeStructure.findOne({
+      academicYear,
+      classId,
+      sectionId,
+    })
+      .sort({ version: -1 })
+      .lean();
+
+    const lastVersion =
+      last && Number.isFinite(Number(last.version)) ? Number(last.version) : 0;
+
+    const nextVersion = lastVersion + 1;
+
+    /* ======================
+       ARCHIVE & LOCK OLD VERSION
+    ====================== */
+    if (last) {
+      await FeeStructure.updateOne(
+        { _id: last._id },
+        {
+          $set: {
+            isArchived: true,
+            isLocked: true,
+            lockedAt: new Date(),
+            effectiveToMonth: effectiveFromMonth || last.effectiveToMonth,
+          },
+        }
+      );
+    }
+
+    /* ======================
+       CREATE NEW VERSION
+    ====================== */
+    const feeStructure = await FeeStructure.create({
+      academicYear,
+      classId,
+      sectionId,
+
+      // snapshots
+      className,
+      sectionName,
+
+      fees,
+      isMonthly,
+      applicableMonths: isMonthly ? [] : applicableMonths,
+
+      version: nextVersion,
+      effectiveFromMonth,
+      effectiveToMonth,
+
+      feeStructureMeta: {
+        structureId: last
+          ? last.feeStructureMeta?.structureId || last._id
+          : undefined,
+        version: nextVersion,
+        effectiveFromMonth,
+      },
+
+      isActive: true,
+      isArchived: false,
+      isLocked: false,
+
+      generatedCount: 0,
+      remarks,
+    });
+
+    return NextResponse.json(feeStructure, { status: 201 });
+  } catch (err) {
+    console.error("FeeStructure POST error:", err);
     return NextResponse.json(
-      { success: false, message: "Class and academic year required" },
-      { status: 400 }
+      { error: "Failed to create fee structure" },
+      { status: 500 }
     );
   }
-
-  // 🔍 Load class snapshot
-  const cls = await Class.findById(classId);
-  if (!cls) {
-    return NextResponse.json(
-      { success: false, message: "Class not found" },
-      { status: 404 }
-    );
-  }
-
-  const section = sectionId ? cls.sections.id(sectionId) : null;
-
-  const feeStructure = await FeeStructure.create({
-    classId,
-    sectionId: sectionId || null,
-    academicYear,
-    className: cls.name,
-    sectionName: section ? section.name : "All Sections",
-    fees,
-    applicableMonths,
-    isMonthly,
-    remarks,
-  });
-
-  return NextResponse.json({
-    success: true,
-    data: feeStructure,
-  });
 }

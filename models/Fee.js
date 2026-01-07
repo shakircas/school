@@ -56,6 +56,14 @@ const feeSchema = new mongoose.Schema(
       otherFee: { type: Number, default: 0 },
     },
 
+    // store version info
+
+    feeStructureMeta: {
+      structureId: mongoose.Schema.Types.ObjectId,
+      version: Number,
+      effectiveFromMonth: String,
+    },
+
     totalAmount: {
       type: Number,
       required: true,
@@ -107,6 +115,28 @@ const feeSchema = new mongoose.Schema(
     invoiceNumber: {
       type: String,
       unique: true,
+    },
+
+    // models/Fee.js
+    installments: [
+      {
+        label: String,
+        amount: Number,
+        dueDate: Date,
+        paidAmount: { type: Number, default: 0 },
+        status: {
+          type: String,
+          enum: ["Pending", "Paid", "Partial"],
+          default: "Pending",
+        },
+        locked: { type: Boolean, default: false },
+        fine: { type: Number, default: 0 },
+      },
+    ],
+
+    scholarship: {
+      type: Number, // amount
+      default: 0,
     },
   },
   { timestamps: true }

@@ -6,7 +6,6 @@ import {
   Trash2,
   IndianRupee,
   Layers,
-  Badge,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -18,6 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "../ui/button";
+import { Badge } from "@/components/ui/badge";
 
 const feeLabels = {
   tuitionFee: "Tuition",
@@ -31,7 +31,7 @@ const feeLabels = {
   otherFee: "Other",
 };
 
-export function FeeStructureTable({ feeStructures, onEdit, onDelete }) {
+export function FeeStructureTable({ feeStructures = [], onEdit, onDelete }) {
   const [expanded, setExpanded] = useState(null);
 
   return (
@@ -39,17 +39,20 @@ export function FeeStructureTable({ feeStructures, onEdit, onDelete }) {
       <TableHeader>
         <TableRow>
           <TableHead />
+          <TableHead>Version</TableHead>
+          <TableHead>Effective From</TableHead>
           <TableHead>Academic Year</TableHead>
           <TableHead>Class</TableHead>
           <TableHead>Section</TableHead>
           <TableHead>Total</TableHead>
+          <TableHead>Status</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
 
       <TableBody>
-        {feeStructures?.map((f) => {
-          const total = Object.values(f.fees).reduce((s, v) => s + v, 0);
+        {feeStructures.map((f) => {
+          const total = Object.values(f.fees || {}).reduce((s, v) => s + v, 0);
           const isOpen = expanded === f._id;
 
           return (
@@ -66,25 +69,42 @@ export function FeeStructureTable({ feeStructures, onEdit, onDelete }) {
                   </Button>
                 </TableCell>
 
+                <TableCell>v{f.version}</TableCell>
+                <TableCell>{f.effectiveFromMonth}</TableCell>
                 <TableCell>{f.academicYear}</TableCell>
 
-                <TableCell>
-                  {/* <Badge >{f.className}</Badge> */}
-                  <p>{f.className}</p>
-                </TableCell>
+                <TableCell>{f.className || f.classId?.name || "—"}</TableCell>
 
-                <TableCell>{f.sectionName || "All Sections"}</TableCell>
+                <TableCell>
+                  {f.sectionId === "all" ? "All Sections" : f.sectionId}
+                </TableCell>
 
                 <TableCell className="font-semibold text-primary">
                   Rs. {total.toLocaleString()}
                 </TableCell>
 
+                <TableCell>
+                  {f.isLocked ? (
+                    <Badge variant="destructive">Locked</Badge>
+                  ) : f.isArchived ? (
+                    <Badge variant="secondary">Archived</Badge>
+                  ) : (
+                    <Badge variant="outline">Active</Badge>
+                  )}
+                </TableCell>
+
                 <TableCell className="text-right space-x-1">
-                  <Button size="icon" variant="ghost" onClick={() => onEdit(f)}>
+                  <Button
+                    disabled={f.isLocked}
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => onEdit(f)}
+                  >
                     <Pencil className="h-4 w-4" />
                   </Button>
 
                   <Button
+                    disabled={f.isLocked}
                     size="icon"
                     variant="ghost"
                     className="text-destructive"
@@ -98,7 +118,7 @@ export function FeeStructureTable({ feeStructures, onEdit, onDelete }) {
               {/* EXPANDED ROW */}
               {isOpen && (
                 <TableRow className="bg-muted/30">
-                  <TableCell colSpan={5}>
+                  <TableCell colSpan={9}>
                     <div className="p-4 rounded-lg space-y-4">
                       <div className="flex items-center gap-2 font-medium">
                         <Layers className="h-4 w-4" />
@@ -106,7 +126,7 @@ export function FeeStructureTable({ feeStructures, onEdit, onDelete }) {
                       </div>
 
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {Object.entries(f.fees).map(([key, val]) => (
+                        {Object.entries(f.fees || {}).map(([key, val]) => (
                           <div
                             key={key}
                             className="p-3 rounded-lg border bg-background"

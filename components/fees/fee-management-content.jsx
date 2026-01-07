@@ -61,6 +61,18 @@ const fetcher = (url) => fetch(url).then((res) => res.json());
 
 const statuses = ["All", "Paid", "Partial", "Pending", "Overdue"];
 const paymentMethods = ["Cash", "Card", "Bank Transfer", "Cheque", "Online"];
+const classColorMap = {
+  "Class 1": "bg-blue-100 text-blue-700 border-blue-200",
+  "Class 2": "bg-green-100 text-green-700 border-green-200",
+  "Class 3": "bg-purple-100 text-purple-700 border-purple-200",
+  "Class 4": "bg-pink-100 text-pink-700 border-pink-200",
+  "Class 5": "bg-amber-100 text-amber-700 border-amber-200",
+  "Class 6": "bg-cyan-100 text-cyan-700 border-cyan-200",
+  "Class 7": "bg-indigo-100 text-indigo-700 border-indigo-200",
+  "Class 8": "bg-rose-100 text-rose-700 border-rose-200",
+  "Class 9": "bg-teal-100 text-teal-700 border-teal-200",
+  "Class 10": "bg-orange-100 text-orange-700 border-orange-200",
+};
 
 export function FeeManagementContent() {
   const { toast } = useToast();
@@ -111,6 +123,8 @@ export function FeeManagementContent() {
   const classes = classesRes?.data || [];
   const feeList = data?.data || [];
   const meta = data?.meta || {};
+
+  console.log(feeList)
 
   // Filter fees
   const filteredFees = feeList;
@@ -199,6 +213,19 @@ export function FeeManagementContent() {
     });
   };
 
+  const getClassBadge = (className, section) => {
+    const color =
+      classColorMap[className] || "bg-gray-100 text-gray-700 border-gray-200";
+
+    return (
+      <span
+        className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${color}`}
+      >
+        {className} – {section}
+      </span>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -210,6 +237,16 @@ export function FeeManagementContent() {
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
+          <Button
+            onClick={() =>
+              window.open(
+                `/api/admin/fees/register-pdf?classId=${classFilter}&month=${filterMonth}`
+              )
+            }
+          >
+            Download Fee Register
+          </Button>
+
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -309,7 +346,7 @@ export function FeeManagementContent() {
                   <Select
                     value={form.sectionId || ""}
                     onValueChange={(v) =>
-                      setForm((p) => ({ ...p, sectionId: v || null }))
+                      setForm((p) => ({ ...p, sectionId: v || "all" }))
                     }
                   >
                     <SelectTrigger>
@@ -571,6 +608,9 @@ export function FeeManagementContent() {
                     <TableHead>Student</TableHead>
                     <TableHead>Class</TableHead>
                     <TableHead>Month</TableHead>
+                    <TableHead>Academic Year</TableHead>
+                    <TableHead>Installments</TableHead>
+                    {/* <TableHead>version</TableHead> */}
                     <TableHead className="text-right">Total Fee</TableHead>
                     <TableHead className="text-right">Paid</TableHead>
                     <TableHead className="text-right">Due</TableHead>
@@ -581,7 +621,10 @@ export function FeeManagementContent() {
                 </TableHeader>
                 <TableBody>
                   {filteredFees.map((fee) => (
-                    <TableRow key={fee._id}>
+                    <TableRow
+                      key={fee._id}
+                      className="hover:bg-muted/40 transition relative"
+                    >
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-9 w-9">
@@ -603,19 +646,64 @@ export function FeeManagementContent() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {fee.classId.name}-{fee.sectionName}
+                        {getClassBadge(fee.classId.name, fee.sectionId)}
                       </TableCell>
+
                       <TableCell>{fee.month}</TableCell>
-                      <TableCell className="text-right font-medium">
-                        Rs. {fee.totalAmount.toLocaleString()}
+                      <TableCell>{fee.academicYear}</TableCell>
+                      <TableCell>
+                        {fee.installments?.map((ins, i) => (
+                          <div
+                            key={i}
+                            className={`text-xs flex items-center gap-1 ${
+                              ins.locked
+                                ? "text-green-600"
+                                : "text-muted-foreground"
+                            }`}
+                          >
+                            <span>
+                              Inst {i + 1}: Rs. {ins.amount -(fee.discount + fee.scholarship - fee.fine)/2}
+                            </span>
+                            {ins.fine > 0 && (
+                              <span className="text-red-600">
+                                (Fine Rs.{ins.fine})
+                              </span>
+                            )}
+                            {ins.locked && (
+                              <Badge variant="success">Locked</Badge>
+                            )}
+                          </div>
+                        ))}
                       </TableCell>
-                      <TableCell className="text-right text-green-600">
-                        Rs. {fee.paidAmount.toLocaleString()}
+
+                      <TableCell className="text-right">
+                        <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700">
+                          Rs. {fee.totalAmount.toLocaleString()}
+                        </span>
                       </TableCell>
-                      <TableCell className="text-right text-amber-600 font-medium">
-                        Rs. {fee.dueAmount.toLocaleString()}
+
+                      <TableCell className="text-right">
+                        <span className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-semibold text-green-700">
+                          Rs. {fee.paidAmount.toLocaleString()}
+                        </span>
                       </TableCell>
-                      <TableCell>{getStatusBadge(fee.status)}</TableCell>
+
+                      <TableCell className="text-right">
+                        <span
+                          className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-semibold ${
+                            fee.dueAmount > 0
+                              ? "bg-amber-50 text-amber-700"
+                              : "bg-emerald-50 text-emerald-700"
+                          }`}
+                        >
+                          Rs. {fee.dueAmount.toLocaleString()}
+                        </span>
+                      </TableCell>
+
+                      <TableCell>
+                        {getStatusBadge(fee.status)}
+                        {/* {fee?.inst.locked && <Badge variant="success">Locked</Badge>} */}
+                      </TableCell>
                       <TableCell className="text-sm">
                         {new Date(fee.dueDate).toLocaleDateString()}
                       </TableCell>
@@ -625,6 +713,7 @@ export function FeeManagementContent() {
                             <Button
                               size="sm"
                               onClick={() => openPaymentDialog(fee)}
+                              // disabled={fee?.inst.locked}
                             >
                               <CreditCard className="h-3 w-3 mr-1" />
                               Pay
@@ -693,65 +782,159 @@ export function FeeManagementContent() {
 
       {/* Payment Dialog */}
       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Collect Payment</DialogTitle>
+            <DialogTitle>Collect Fee Payment</DialogTitle>
             <DialogDescription>
-              Process fee payment for {selectedFee?.studentName}
+              Review installments and collect payment safely
             </DialogDescription>
           </DialogHeader>
+
           {selectedFee && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
+            <div className="space-y-5">
+              {/* STUDENT + SUMMARY */}
+              <div className="grid grid-cols-3 gap-4 p-4 rounded-lg bg-muted/40">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Fee</p>
+                  <p className="text-xs text-muted-foreground">Student</p>
+                  <p className="font-medium">{selectedFee.studentName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Roll #{selectedFee.rollNumber}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-muted-foreground">Total Fee</p>
                   <p className="font-semibold">
                     Rs. {selectedFee.totalAmount.toLocaleString()}
                   </p>
                 </div>
+
                 <div>
-                  <p className="text-sm text-muted-foreground">Due Amount</p>
+                  <p className="text-xs text-muted-foreground">Remaining Due</p>
                   <p className="font-semibold text-amber-600">
                     Rs. {selectedFee.dueAmount.toLocaleString()}
                   </p>
                 </div>
               </div>
 
+              {/* SCHOLARSHIP INFO */}
+              {selectedFee.scholarship?.value > 0 && (
+                <div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700">
+                  🎓 Scholarship Applied:{" "}
+                  <strong>
+                    {selectedFee.scholarship.type === "percentage"
+                      ? `${selectedFee.scholarship.value}%`
+                      : `Rs. ${selectedFee.scholarship.value}`}
+                  </strong>
+                </div>
+              )}
+
+              {/* INSTALLMENT BREAKDOWN */}
               <div className="space-y-2">
-                <Label>Payment Amount</Label>
-                <Input
-                  type="number"
-                  value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(e.target.value)}
-                  placeholder="Enter amount"
-                />
+                <h4 className="text-sm font-semibold">Installment Breakdown</h4>
+
+                <div className="border rounded-md divide-y">
+                  {selectedFee.installments.map((inst, idx) => {
+                    const instDue =
+                      inst.amount + (inst.fine || 0) - inst.paidAmount;
+
+                    return (
+                      <div
+                        key={idx}
+                        className={`p-3 flex items-center justify-between ${
+                          inst.locked ? "bg-green-50" : "bg-background"
+                        }`}
+                      >
+                        <div className="text-sm space-y-0.5">
+                          <p className="font-medium">Installment {idx + 1}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Amount: Rs. {inst.amount}
+                            {inst.fine > 0 && (
+                              <span className="text-red-600">
+                                {" "}
+                                + Fine Rs.{inst.fine}
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-xs">Paid: Rs. {inst.paidAmount}</p>
+                        </div>
+
+                        <div className="text-right">
+                          {inst.locked ? (
+                            <Badge className="bg-green-600 text-white">
+                              Paid & Locked 🔒
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline">Due: Rs. {instDue}</Badge>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>Payment Method</Label>
-                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {paymentMethods.map((method) => (
-                      <SelectItem key={method} value={method}>
-                        {method}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {/* PAYMENT INPUT */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Label>
+                    Payment Amount
+                    <span className="text-xs text-muted-foreground ml-1">
+                      (Auto-applied to installments)
+                    </span>
+                  </Label>
+                  <Input
+                    type="number"
+                    value={paymentAmount}
+                    onChange={(e) => setPaymentAmount(e.target.value)}
+                    placeholder="Enter amount"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label>Payment Method</Label>
+                  <Select
+                    value={paymentMethod}
+                    onValueChange={setPaymentMethod}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {paymentMethods.map((m) => (
+                        <SelectItem key={m} value={m}>
+                          {m}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
+
+              {/* WARNING / LOCK INFO */}
+              {selectedFee.installments.every((i) => i.locked) && (
+                <div className="text-sm text-green-600 font-medium">
+                  ✅ All installments are fully paid and locked.
+                </div>
+              )}
             </div>
           )}
-          <DialogFooter>
+
+          {/* FOOTER */}
+          <DialogFooter className="mt-4">
             <Button
               variant="outline"
               onClick={() => setIsPaymentDialogOpen(false)}
             >
               Cancel
             </Button>
-            <Button onClick={handlePayment} disabled={isProcessing}>
+
+            <Button
+              onClick={handlePayment}
+              disabled={
+                isProcessing || selectedFee?.installments.every((i) => i.locked)
+              }
+            >
               {isProcessing ? (
                 <>
                   <LoadingSpinner className="mr-2 h-4 w-4" />

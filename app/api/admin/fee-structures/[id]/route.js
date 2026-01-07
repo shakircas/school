@@ -19,34 +19,74 @@ export async function GET(req, { params }) {
 export async function PUT(req, { params }) {
   await connectDB();
   const { id } = await params;
-  const body = await req.json();
+  const oldStructure = await FeeStructure.findById(id);
 
-  // prevent duplicates
-  const duplicate = await FeeStructure.findOne({
-    _id: { $ne: id },
-    classId: body.classId,
-    sectionId: body.sectionId || null,
-    academicYear: body.academicYear,
-  });
+  if (!oldStructure) {
+    return NextResponse.json({ message: "Not found" }, { status: 404 });
+  }
 
-  if (duplicate) {
+  // 🔒 BLOCK EDIT
+  if (oldStructure.isLocked) {
     return NextResponse.json(
-      { message: "Duplicate fee structure exists" },
-      { status: 409 }
+      { message: "This fee structure is locked. Create a new version." },
+      { status: 403 }
     );
   }
 
-  const updated = await FeeStructure.findByIdAndUpdate(id, body, {
-    new: true,
+  const body = await req.json();
+  const { fees, effectiveFromMonth, remarks } = body;
+
+  if (!effectiveFromMonth) {
+    return NextResponse.json(
+      { message: "effectiveFromMonth is required" },
+      { status: 400 }
+    );
+  }
+
+  // 🔒 Archive old structure
+  await FeeStructure.updateOne(
+    { _id: oldStructure._id },
+    {
+      isActive: false,
+      isArchived: true,
+      effectiveToMonth: effectiveFromMonth,
+    }
+  );
+
+  // 🧠 Create NEW VERSION
+  const newStructure = await FeeStructure.create({
+    classId: oldStructure.classId,
+    sectionId: oldStructure.sectionId,
+    academicYear: oldStructure.academicYear,
+    className: oldStructure.className,
+    sectionName: oldStructure.sectionName,
+
+    version: oldStructure.version + 1,
+    effectiveFromMonth,
+    effectiveToMonth: null,
+
+    fees,
+    applicableMonths: oldStructure.applicableMonths,
+    isMonthly: oldStructure.isMonthly,
+    isActive: true,
+    remarks,
   });
 
-  return NextResponse.json(updated);
+  return NextResponse.json({
+    success: true,
+    message: "Fee structure updated with new version",
+    data: newStructure,
+  });
 }
 
 /* DELETE */
 export async function DELETE(req, { params }) {
   await connectDB();
-  const { id } = await params;
-  await FeeStructure.findByIdAndDelete(id);
+
+  await FeeStructure.updateOne(
+    { _id: params.id },
+    { isActive: false, isArchived: true }
+  );
+
   return NextResponse.json({ success: true });
 }

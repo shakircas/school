@@ -43,6 +43,13 @@ const feeStructureSchema = new mongoose.Schema(
       otherFee: { type: Number, default: 0 },
     },
 
+    // store version info
+
+    feeStructureMeta: {
+      structureId: mongoose.Schema.Types.ObjectId,
+      version: Number,
+      effectiveFromMonth: String,
+    },
     // 📅 Rules
     applicableMonths: {
       type: [String], // ["Jan", "Feb", ...]
@@ -58,6 +65,35 @@ const feeStructureSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+
+    // this critical changes FeeStructure becomes VERSIONED
+
+    version: {
+      type: Number,
+      required: true,
+    },
+
+    effectiveFromMonth: {
+      type: String, // "January"
+      required: true,
+    },
+
+    effectiveToMonth: {
+      type: String, // null = till end of year
+      default: null,
+    },
+
+    isArchived: {
+      type: Boolean,
+      default: false,
+    },
+
+    // 🔒 LOCKING
+    isLocked: { type: Boolean, default: false },
+    lockedAt: Date,
+
+    // 📊 USAGE
+    generatedCount: { type: Number, default: 0 },
 
     remarks: String,
   },

@@ -257,7 +257,7 @@ export function PendingFeesContent() {
                       </TableCell>
 
                       <TableCell>
-                        {fee.classId.name}-{fee.sectionName}
+                        {fee.classId.name}-{fee.sectionId}
                       </TableCell>
 
                       <TableCell> <Badge>{fee.year}-{fee.month}</Badge></TableCell>

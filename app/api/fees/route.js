@@ -3,6 +3,9 @@ import connectDB from "@/lib/db";
 import Fee from "@/models/Fee";
 import Student from "@/models/Student";
 
+/* =========================
+   GET: List Fees
+========================= */
 export async function GET(request) {
   try {
     await connectDB();
@@ -15,6 +18,7 @@ export async function GET(request) {
     const sectionId = searchParams.get("sectionId");
     const status = searchParams.get("status");
     const search = searchParams.get("search");
+    const version = searchParams.get("version");
 
     const page = Number(searchParams.get("page") || 1);
     const limit = Number(searchParams.get("limit") || 10);
@@ -27,14 +31,19 @@ export async function GET(request) {
       );
     }
 
+    /* ✅ Build query SAFELY */
     const query = { academicYear };
 
     if (month) query.month = month;
     if (status && status !== "All") query.status = status;
     if (classId && classId !== "all") query.classId = classId;
     if (sectionId && sectionId !== "all") query.sectionId = sectionId;
+   if (version && !isNaN(Number(version))) {
+     query["feeStructureMeta.version"] = Number(version);
+   }
 
-    // 🔍 Search by student name or roll number
+
+    /* 🔍 Search students */
     if (search) {
       const students = await Student.find({
         $or: [
@@ -50,7 +59,6 @@ export async function GET(request) {
       Fee.find(query)
         .populate("student", "name rollNumber")
         .populate("classId", "name")
-        .populate("sectionId", "name")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -76,23 +84,60 @@ export async function GET(request) {
   }
 }
 
+/* =========================
+   POST: Manual Fee Entry
+========================= */
 export async function POST(request) {
   try {
     await connectDB();
 
     const data = await request.json();
 
-    // Generate invoice number
+    /* 🚫 Prevent duplicates */
+    const exists = await Fee.findOne({
+      student: data.student,
+      academicYear: data.academicYear,
+      month: data.month,
+    });
+
+    if (exists) {
+      return NextResponse.json(
+        { error: "Fee already exists for this student and month" },
+        { status: 409 }
+      );
+    }
+
+    /* 🧾 Invoice */
     const count = await Fee.countDocuments();
     data.invoiceNumber = `INV-${new Date().getFullYear()}-${String(
       count + 1
     ).padStart(6, "0")}`;
 
-    // Calculate net amount
+    /* 💰 Calculations */
     data.netAmount = data.totalAmount - (data.discount || 0) + (data.fine || 0);
+
     data.dueAmount = data.netAmount - (data.paidAmount || 0);
 
+    /* ⚠️ ENSURE feeStructureMeta EXISTS */
+    if (!data.feeStructureMeta) {
+      data.feeStructureMeta = {
+        version: 1,
+        effectiveFromMonth: data.month,
+        source: "manual",
+      };
+    }
+
+
+
     const fee = new Fee(data);
+
+    /* 🔁 Auto status */
+    if (data.dueAmount === 0) {
+      fee.status = "Paid";
+    } else if (data.paidAmount > 0) {
+      fee.status = "Partial";
+    }
+
     await fee.save();
 
     return NextResponse.json(fee, { status: 201 });

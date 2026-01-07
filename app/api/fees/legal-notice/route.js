@@ -27,7 +27,7 @@ LEGAL NOTICE – FEE PAYMENT
 
 This is to inform you that the fee of:
 Student: ${fee.studentName}
-Class: ${fee.className}-${fee.sectionName}
+Class: ${fee.classId.name}-${fee.sectionId}
 Month: ${fee.month}
 Due Amount: Rs. ${fee.dueAmount}
 

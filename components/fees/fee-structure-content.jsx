@@ -44,10 +44,16 @@ import { FeeStructureTable } from "./fee-structure-table";
 const fetcher = (url) => fetch(url).then((r) => r.json());
 
 const emptyForm = {
-  _id: null,
   classId: "",
-  sectionId: null,
+  sectionId: "all",
   academicYear: "2024-2025",
+
+  effectiveFromMonth: "",
+  effectiveToMonth: null,
+
+  isMonthly: true,
+  applicableMonths: [],
+
   fees: {
     tuitionFee: 0,
     admissionFee: 0,
@@ -59,9 +65,10 @@ const emptyForm = {
     computerFee: 0,
     otherFee: 0,
   },
-  isMonthly: true,
+
   remarks: "",
 };
+
 
 export function FeeStructureContent() {
   const [editingId, setEditingId] = useState(null);
@@ -83,29 +90,6 @@ export function FeeStructureContent() {
 
   const total = Object.values(form.fees).reduce((s, v) => s + v, 0);
 
-  // const save = async () => {
-  //   if (!form.classId) {
-  //     toast({ title: "Select class", variant: "destructive" });
-  //     return;
-  //   }
-
-  //   const res = await fetch("/api/admin/fee-structures", {
-  //     method: form._id ? "PUT" : "POST",
-  //     headers: { "Content-Type": "application/json" },
-  //     body: JSON.stringify(form),
-  //   });
-
-  //   if (!res.ok) {
-  //     toast({ title: "Save failed", variant: "destructive" });
-  //     return;
-  //   }
-
-  //   toast({ title: "Fee structure saved" });
-  //   setOpen(false);
-  //   setForm(emptyForm);
-  //   mutate();
-  // };
-
   const edit = (f) => {
     setForm(f);
     setOpen(true);
@@ -120,10 +104,15 @@ export function FeeStructureContent() {
   };
 
   const onEdit = (fee) => {
-    setForm(fee);
-    setEditingId(fee._id);
+    setForm({
+      ...fee,
+      _id: null, // 🔥 IMPORTANT
+      effectiveFromMonth: "",
+    });
+    setEditingId(null);
     setOpen(true);
   };
+
   const onDelete = async (id) => {
     if (!confirm("Delete this fee structure?")) return;
 
@@ -136,22 +125,44 @@ export function FeeStructureContent() {
   };
 
   const save = async () => {
-    const method = editingId ? "PUT" : "POST";
-    const url = editingId
-      ? `/api/admin/fee-structures/${editingId}`
-      : "/api/admin/fee-structures";
+    if (!form.classId || !form.effectiveFromMonth) {
+      toast({
+        title: "Class & effective month required",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    await fetch(url, {
-      method,
+    const payload = {
+      academicYear: form.academicYear,
+      classId: form.classId,
+      sectionId: form.sectionId || "all",
+      effectiveFromMonth: form.effectiveFromMonth,
+      fees: form.fees,
+      isMonthly: form.isMonthly,
+      applicableMonths: form.isMonthly ? [] : form.applicableMonths,
+      remarks: form.remarks,
+    };
+
+    await fetch("/api/admin/fee-structures", {
+      method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify(payload),
     });
 
-    toast({ title: "Saved successfully" });
+    toast({ title: "New fee version created" });
     setOpen(false);
-    setEditingId(null);
+    setForm(emptyForm);
     mutate();
   };
+
+  const normalizedFeeStructures = feeStructures.map((f) => ({
+    ...f,
+    className: f.className || f.classId?.name || "—",
+    sectionName: f.sectionName || "All Sections",
+    total: Object.values(f.fees || {}).reduce((s, v) => s + v, 0),
+  }));
+
 
   return (
     <div className="space-y-6">
@@ -182,7 +193,7 @@ export function FeeStructureContent() {
                 <Select
                   value={form.classId}
                   onValueChange={(v) =>
-                    setForm((p) => ({ ...p, classId: v, sectionId: null }))
+                    setForm((p) => ({ ...p, classId: v, sectionId: "all" }))
                   }
                 >
                   <SelectTrigger>
@@ -201,9 +212,9 @@ export function FeeStructureContent() {
               <div>
                 <Label>Section (optional)</Label>
                 <Select
-                  value={form.sectionId || ""}
+                  value={form.sectionId}
                   onValueChange={(v) =>
-                    setForm((p) => ({ ...p, sectionId: v || null }))
+                    setForm((p) => ({ ...p, sectionId: v }))
                   }
                 >
                   <SelectTrigger>
@@ -218,6 +229,44 @@ export function FeeStructureContent() {
                           {s.name}
                         </SelectItem>
                       ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label>Effective From Month</Label>
+              <Input
+                type="month"
+                value={form.effectiveFromMonth}
+                onChange={(e) =>
+                  setForm((p) => ({
+                    ...p,
+                    effectiveFromMonth: e.target.value,
+                  }))
+                }
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Fee Type</Label>
+                <Select
+                  value={form.isMonthly ? "monthly" : "custom"}
+                  onValueChange={(v) =>
+                    setForm((p) => ({
+                      ...p,
+                      isMonthly: v === "monthly",
+                      applicableMonths: [],
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="custom">Custom Months</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -332,7 +381,7 @@ export function FeeStructureContent() {
           <FeeStructureTable
             onEdit={onEdit}
             onDelete={onDelete}
-            feeStructures={feeStructures}
+            feeStructures={normalizedFeeStructures}
           />
         </CardContent>
       </Card>
