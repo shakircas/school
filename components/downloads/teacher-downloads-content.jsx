@@ -1,74 +1,38 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import useSWR from "swr"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { PageHeader } from "@/components/ui/page-header"
-import { useToast } from "@/hooks/use-toast"
-import { FileSpreadsheet, FileText, Users, Printer, Eye } from "lucide-react"
-import { exportToExcel, exportToCSV } from "@/lib/excel-utils"
-import { generateTeacherListPDF } from "@/lib/pdf-generator"
+import { useState } from "react";
+import useSWR from "swr";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/ui/page-header";
+import { useToast } from "@/hooks/use-toast";
+import { FileSpreadsheet, FileText, Users, Printer, Eye } from "lucide-react";
+import { exportToExcel, exportToCSV } from "@/lib/excel-utils";
+import { generateTeacherListPDF } from "@/lib/pdf-generator";
 
-const fetcher = (url) => fetch(url).then((res) => res.json())
-
-const mockTeachers = [
-  {
-    employeeId: "T001",
-    name: "Muhammad Ali",
-    designation: "Senior Teacher",
-    department: "Science",
-    phone: "0300-1234567",
-    email: "mali@school.com",
-    status: "Active",
-  },
-  {
-    employeeId: "T002",
-    name: "Fatima Khan",
-    designation: "Head of Dept",
-    department: "Mathematics",
-    phone: "0301-2345678",
-    email: "fkhan@school.com",
-    status: "Active",
-  },
-  {
-    employeeId: "T003",
-    name: "Ahmed Hassan",
-    designation: "Teacher",
-    department: "English",
-    phone: "0302-3456789",
-    email: "ahassan@school.com",
-    status: "Active",
-  },
-  {
-    employeeId: "T004",
-    name: "Ayesha Malik",
-    designation: "Teacher",
-    department: "Urdu",
-    phone: "0303-4567890",
-    email: "amalik@school.com",
-    status: "Active",
-  },
-  {
-    employeeId: "T005",
-    name: "Usman Raza",
-    designation: "Lab Instructor",
-    department: "Computer",
-    phone: "0304-5678901",
-    email: "uraza@school.com",
-    status: "Active",
-  },
-]
+const fetcher = (url) => fetch(url).then((res) => res.json());
 
 const availableFields = [
-  { id: "employeeId", label: "Employee ID", default: true },
+  { id: "personalNo", label: "Personal No.", default: true }, // 👇 FIXED", label: "Employee ID", default: true },
   { id: "name", label: "Teacher Name", default: true },
   { id: "designation", label: "Designation", default: true },
-  { id: "department", label: "Department", default: true },
+  // { id: "department", label: "Department", default: true },
   { id: "phone", label: "Phone", default: true },
   { id: "email", label: "Email", default: true },
   { id: "qualification", label: "Qualification", default: false },
@@ -76,80 +40,113 @@ const availableFields = [
   { id: "joiningDate", label: "Joining Date", default: false },
   { id: "salary", label: "Salary", default: false },
   { id: "status", label: "Status", default: true },
-]
+];
 
 export function TeacherDownloadsContent() {
-  const { toast } = useToast()
-  const [selectedDepartment, setSelectedDepartment] = useState("all")
-  const [selectedStatus, setSelectedStatus] = useState("all")
-  const [selectedFields, setSelectedFields] = useState(availableFields.filter((f) => f.default).map((f) => f.id))
-  const [isExporting, setIsExporting] = useState(false)
+  const { toast } = useToast();
+  const [selectedDepartment, setSelectedDepartment] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState("Active");
+  const [selectedFields, setSelectedFields] = useState(
+    availableFields.filter((f) => f.default).map((f) => f.id)
+  );
+  const [isExporting, setIsExporting] = useState(false);
 
-  const { data: teachersData, isLoading } = useSWR("/api/teachers", fetcher, {
-    fallbackData: { teachers: mockTeachers },
-  })
+  const queryParams = new URLSearchParams({
+    // department: selectedDepartment,
+    status: selectedStatus,
+  }).toString();
 
-  const teachers = teachersData?.teachers || mockTeachers
+  // const { data: teachers, isLoading: isTeachersLoading } = useSWR(`/api/teachers?${queryParams}`, fetcher)
 
-  const filteredTeachers = teachers.filter((t) => {
-    const matchesDept = selectedDepartment === "all" || t.department === selectedDepartment
-    const matchesStatus = selectedStatus === "all" || t.status === selectedStatus
-    return matchesDept && matchesStatus
-  })
+  const { data: teachersData, isLoading } = useSWR(
+    `/api/teachers?${queryParams}`,
+    fetcher
+  );
 
-  const toggleField = (fieldId) => {
-    setSelectedFields((prev) => (prev.includes(fieldId) ? prev.filter((f) => f !== fieldId) : [...prev, fieldId]))
+  const teachers = teachersData?.teachers || [];
+  if (!teachers) {
+    return <div>Loading...</div>;
   }
+
+  console.log(teachers);
+  console.log(teachersData);
+  const toggleField = (fieldId) => {
+    setSelectedFields((prev) =>
+      prev.includes(fieldId)
+        ? prev.filter((f) => f !== fieldId)
+        : [...prev, fieldId]
+    );
+  };
 
   const prepareExportData = () => {
-    return filteredTeachers.map((teacher) => {
-      const row = {}
+    return teachers.map((teacher) => {
+      const row = {};
       selectedFields.forEach((field) => {
-        const fieldInfo = availableFields.find((f) => f.id === field)
-        row[fieldInfo?.label || field] = teacher[field] || "-"
-      })
-      return row
-    })
-  }
+        const fieldInfo = availableFields.find((f) => f.id === field);
+        row[fieldInfo?.label || field] = teacher[field] || "-";
+      });
+      return row;
+    });
+  };
 
   const handleExport = async (format) => {
-    if (!filteredTeachers.length) {
-      toast({ title: "No Data", description: "No teachers to export.", variant: "destructive" })
-      return
+    if (!teachers.length) {
+      toast({
+        title: "No Data",
+        description: "No teachers to export.",
+        variant: "destructive",
+      });
+      return;
     }
 
-    setIsExporting(true)
+    setIsExporting(true);
     try {
-      const data = prepareExportData()
-      const filename = `teachers-${selectedDepartment === "all" ? "all" : selectedDepartment.toLowerCase()}-${new Date().toISOString().split("T")[0]}`
+      const data = prepareExportData();
+      const filename = `teachers-${
+        selectedDepartment === "all" ? "all" : selectedDepartment.toLowerCase()
+      }-${new Date().toISOString().split("T")[0]}`;
 
       if (format === "excel") {
-        exportToExcel(data, filename, "Teachers")
+        exportToExcel(data, filename, "Teachers");
       } else if (format === "csv") {
-        exportToCSV(data, filename)
+        exportToCSV(data, filename);
       } else if (format === "pdf") {
-        const doc = generateTeacherListPDF(filteredTeachers, {
-          subtitle: selectedDepartment === "all" ? "All Departments" : `${selectedDepartment} Department`,
-        })
-        doc.save(`${filename}.pdf`)
+        const doc = generateTeacherListPDF(teachers, {
+          subtitle:
+            selectedDepartment === "all"
+              ? "All Departments"
+              : `${selectedDepartment} Department`,
+        });
+        doc.save(`${filename}.pdf`);
       }
 
       toast({
         title: "Export Successful",
-        description: `${filteredTeachers.length} teachers exported to ${format.toUpperCase()}.`,
-      })
+        description: `${
+          teachers.length
+        } teachers exported to ${format.toUpperCase()}.`,
+      });
     } catch (error) {
-      toast({ title: "Export Failed", variant: "destructive" })
+      toast({ title: "Export Failed", variant: "destructive" });
     } finally {
-      setIsExporting(false)
+      setIsExporting(false);
     }
-  }
+  };
 
-  const departments = [...new Set(teachers.map((t) => t.department))]
+  const departments = [
+    ...new Set(
+      (Array.isArray(teachers) ? teachers : [])
+        .map((t) => t.department)
+        .filter(Boolean)
+    ),
+  ];
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Download Teacher Data" description="Export teacher information in various formats" />
+      <PageHeader
+        title="Download Teacher Data"
+        description="Export teacher information in various formats"
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Filters */}
@@ -161,7 +158,10 @@ export function TeacherDownloadsContent() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label>Department</Label>
-              <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+              <Select
+                value={selectedDepartment}
+                onValueChange={setSelectedDepartment}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="All Departments" />
                 </SelectTrigger>
@@ -195,7 +195,8 @@ export function TeacherDownloadsContent() {
               <div className="flex items-center gap-2 text-sm">
                 <Users className="h-4 w-4 text-muted-foreground" />
                 <span className="text-muted-foreground">
-                  <strong className="text-foreground">{filteredTeachers.length}</strong> teachers found
+                  <strong className="text-foreground">{teachers.length}</strong>{" "}
+                  teachers found
                 </span>
               </div>
             </div>
@@ -217,7 +218,10 @@ export function TeacherDownloadsContent() {
                     checked={selectedFields.includes(field.id)}
                     onCheckedChange={() => toggleField(field.id)}
                   />
-                  <Label htmlFor={`teacher-${field.id}`} className="cursor-pointer text-sm">
+                  <Label
+                    htmlFor={`teacher-${field.id}`}
+                    className="cursor-pointer text-sm"
+                  >
                     {field.label}
                   </Label>
                 </div>
@@ -268,7 +272,7 @@ export function TeacherDownloadsContent() {
             <div className="pt-4 border-t space-y-2">
               <p className="text-sm font-medium">Export Summary</p>
               <div className="text-xs text-muted-foreground space-y-1">
-                <p>Records: {filteredTeachers.length}</p>
+                <p>Records: {teachers.length}</p>
                 <p>Fields: {selectedFields.length}</p>
               </div>
             </div>
@@ -296,14 +300,17 @@ export function TeacherDownloadsContent() {
               <thead>
                 <tr className="border-b">
                   {selectedFields.map((field) => (
-                    <th key={field} className="px-3 py-2 text-left font-medium text-muted-foreground">
+                    <th
+                      key={field}
+                      className="px-3 py-2 text-left font-medium text-muted-foreground"
+                    >
                       {availableFields.find((f) => f.id === field)?.label}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {filteredTeachers.slice(0, 5).map((teacher, idx) => (
+                {teachers && teachers.length > 0 && teachers.slice(0, 5).map((teacher, idx) => (
                   <tr key={idx} className="border-b last:border-0">
                     {selectedFields.map((field) => (
                       <td key={field} className="px-3 py-2">
@@ -318,5 +325,5 @@ export function TeacherDownloadsContent() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

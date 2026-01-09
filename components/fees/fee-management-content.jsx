@@ -124,7 +124,7 @@ export function FeeManagementContent() {
   const feeList = data?.data || [];
   const meta = data?.meta || {};
 
-  console.log(feeList)
+  console.log(feeList);
 
   // Filter fees
   const filteredFees = feeList;
@@ -226,6 +226,39 @@ export function FeeManagementContent() {
     );
   };
 
+  const handleFeeExport = async (format) => {
+    try {
+      const query = new URLSearchParams({
+        academicYear: filterAcademicYear,
+      });
+
+      if (filterMonth !== "all") query.append("month", filterMonth);
+      if (classFilter !== "all") query.append("classId", classFilter);
+      if (statusFilter !== "All") query.append("status", statusFilter);
+      if (search) query.append("search", search);
+
+      const res = await fetch(`/api/reports/fees/export?${query.toString()}`);
+      const { rows } = await res.json();
+
+      if (!rows || rows.length === 0) {
+        toast({ title: "No data to export", variant: "destructive" });
+        return;
+      }
+
+      const filename = `fee-report-${filterAcademicYear}-${filterMonth}`;
+
+      if (format === "excel") {
+        exportToExcel(rows, filename, "Fees");
+      } else if (format === "csv") {
+        exportToCSV(rows, filename);
+      } else if (format === "pdf") {
+        generateFeeReportPDF(rows).save(`${filename}.pdf`);
+      }
+    } catch (err) {
+      toast({ title: "Export failed", variant: "destructive" });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -233,16 +266,30 @@ export function FeeManagementContent() {
         description="Collect fees and manage student payments"
       >
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
+          <Select onValueChange={(v) => handleFeeExport(v)}>
+            <SelectTrigger className="w-[140px]">
+              <Download className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Export" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="excel">Excel (.xlsx)</SelectItem>
+              <SelectItem value="csv">CSV</SelectItem>
+              <SelectItem value="pdf">PDF</SelectItem>
+            </SelectContent>
+          </Select>
+
           <Button
-            onClick={() =>
-              window.open(
-                `/api/admin/fees/register-pdf?classId=${classFilter}&month=${filterMonth}`
-              )
-            }
+            onClick={() => {
+              const query = new URLSearchParams({
+                academicYear: filterAcademicYear,
+              });
+
+              if (filterMonth !== "all") query.append("month", filterMonth);
+              if (classFilter !== "all") query.append("classId", classFilter);
+              if (statusFilter !== "All") query.append("status", statusFilter);
+
+              window.open(`/api/admin/fees/register-pdf?${query.toString()}`);
+            }}
           >
             Download Fee Register
           </Button>
@@ -662,7 +709,9 @@ export function FeeManagementContent() {
                             }`}
                           >
                             <span>
-                              Inst {i + 1}: Rs. {ins.amount -(fee.discount + fee.scholarship - fee.fine)/2}
+                              Inst {i + 1}: Rs.{" "}
+                              {ins.amount -
+                                (fee.discount + fee.scholarship - fee.fine) / 2}
                             </span>
                             {ins.fine > 0 && (
                               <span className="text-red-600">

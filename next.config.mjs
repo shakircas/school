@@ -7,6 +7,7 @@ const nextConfig = {
     unoptimized: true,
   },
   productionBrowserSourceMaps: false,
+  serverExternalPackages: ["pdfkit"],
 };
 
-export default nextConfig
+export default nextConfig;

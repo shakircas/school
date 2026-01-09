@@ -1,81 +1,42 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import useSWR from "swr"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { PageHeader } from "@/components/ui/page-header"
-import { LoadingSpinner } from "@/components/ui/loading-spinner"
-import { useToast } from "@/hooks/use-toast"
-import { FileSpreadsheet, FileText, Users, Printer, Eye } from "lucide-react"
-import { exportToExcel, exportToCSV } from "@/lib/excel-utils"
-import { generateStudentListPDF } from "@/lib/pdf-generator"
+import { useState } from "react";
+import useSWR from "swr";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/ui/page-header";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { useToast } from "@/hooks/use-toast";
+import { FileSpreadsheet, FileText, Users, Printer, Eye } from "lucide-react";
+import { exportToExcel, exportToCSV } from "@/lib/excel-utils";
+import { generateStudentListPDF } from "@/lib/pdf-generator";
 
-const fetcher = (url) => fetch(url).then((res) => res.json())
-
-// Mock students for demo
-const mockStudents = [
-  {
-    rollNumber: "001",
-    name: "Ahmed Khan",
-    class: "10",
-    section: "A",
-    fatherName: "Muhammad Khan",
-    phone: "0300-1234567",
-    email: "ahmed@email.com",
-    status: "Active",
-  },
-  {
-    rollNumber: "002",
-    name: "Sara Ali",
-    class: "10",
-    section: "A",
-    fatherName: "Ali Hassan",
-    phone: "0301-2345678",
-    email: "sara@email.com",
-    status: "Active",
-  },
-  {
-    rollNumber: "003",
-    name: "Usman Ahmed",
-    class: "9",
-    section: "B",
-    fatherName: "Ahmed Khan",
-    phone: "0302-3456789",
-    email: "usman@email.com",
-    status: "Active",
-  },
-  {
-    rollNumber: "004",
-    name: "Fatima Zahra",
-    class: "8",
-    section: "A",
-    fatherName: "Zaheer Abbas",
-    phone: "0303-4567890",
-    email: "fatima@email.com",
-    status: "Active",
-  },
-  {
-    rollNumber: "005",
-    name: "Hassan Raza",
-    class: "10",
-    section: "B",
-    fatherName: "Raza Khan",
-    phone: "0304-5678901",
-    email: "hassan@email.com",
-    status: "Active",
-  },
-]
+const fetcher = (url) => fetch(url).then((res) => res.json());
 
 const availableFields = [
   { id: "rollNumber", label: "Roll Number", default: true },
   { id: "name", label: "Student Name", default: true },
-  { id: "class", label: "Class", default: true },
-  { id: "section", label: "Section", default: true },
+
+  // 👇 FIXED
+  { id: "classId", label: "Class", default: true },
+  { id: "sectionId", label: "Section", default: true },
+
   { id: "fatherName", label: "Father Name", default: true },
   { id: "phone", label: "Phone", default: true },
   { id: "email", label: "Email", default: false },
@@ -84,81 +45,141 @@ const availableFields = [
   { id: "address", label: "Address", default: false },
   { id: "admissionDate", label: "Admission Date", default: false },
   { id: "status", label: "Status", default: true },
-]
+];
+
 
 export function StudentDownloadsContent() {
-  const { toast } = useToast()
-  const [selectedClass, setSelectedClass] = useState("all")
-  const [selectedSection, setSelectedSection] = useState("all")
-  const [selectedStatus, setSelectedStatus] = useState("all")
-  const [selectedFields, setSelectedFields] = useState(availableFields.filter((f) => f.default).map((f) => f.id))
-  const [isExporting, setIsExporting] = useState(false)
+  const { toast } = useToast();
+  const [selectedClass, setSelectedClass] = useState("all");
+  const [selectedSection, setSelectedSection] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [selectedFields, setSelectedFields] = useState(
+    availableFields.filter((f) => f.default).map((f) => f.id)
+  );
+  const [isExporting, setIsExporting] = useState(false);
 
-  const { data: studentsData, isLoading } = useSWR("/api/students", fetcher, {
-    fallbackData: { students: mockStudents },
-  })
+ const query = new URLSearchParams({
+   classId: selectedClass,
+   sectionId: selectedSection,
+   status: selectedStatus,
+ }).toString();
 
-  const students = studentsData?.students || mockStudents
+ const { data: studentsData, isLoading } = useSWR(
+   `/api/students?${query}`,
+   fetcher
+ );
 
-  // Filter students
-  const filteredStudents = students.filter((s) => {
-    const matchesClass = selectedClass === "all" || s.class === selectedClass
-    const matchesSection = selectedSection === "all" || s.section === selectedSection
-    const matchesStatus = selectedStatus === "all" || s.status === selectedStatus
-    return matchesClass && matchesSection && matchesStatus
-  })
+
+  const { data: ClassesRes, isLoading: classesLoading } = useSWR(
+    "/api/academics/classes",
+    fetcher
+  );
+  const classes = ClassesRes?.data || [];
+  const students = studentsData?.students || [];
+  console.log(classes)
+
+  const selectedClassObj =
+    selectedClass !== "all"
+      ? classes.find((c) => c._id === selectedClass)
+      : null;
+
 
   const toggleField = (fieldId) => {
-    setSelectedFields((prev) => (prev.includes(fieldId) ? prev.filter((f) => f !== fieldId) : [...prev, fieldId]))
-  }
+    setSelectedFields((prev) =>
+      prev.includes(fieldId)
+        ? prev.filter((f) => f !== fieldId)
+        : [...prev, fieldId]
+    );
+  };
 
   const prepareExportData = () => {
-    return filteredStudents.map((student) => {
-      const row = {}
+    return students.map((student) => {
+      const row = {};
       selectedFields.forEach((field) => {
-        const fieldInfo = availableFields.find((f) => f.id === field)
-        row[fieldInfo?.label || field] = student[field] || "-"
-      })
-      return row
-    })
-  }
+        const fieldInfo = availableFields.find((f) => f.id === field);
+        row[fieldInfo.label] = resolveFieldValue(student, field);
+      });
+      return row;
+    });
+  };
 
   const handleExport = async (format) => {
-    if (!filteredStudents.length) {
-      toast({ title: "No Data", description: "No students to export.", variant: "destructive" })
-      return
+    if (!students.length) {
+      toast({
+        title: "No Data",
+        description: "No students to export.",
+        variant: "destructive",
+      });
+      return;
     }
 
-    setIsExporting(true)
+    setIsExporting(true);
     try {
-      const data = prepareExportData()
-      const filename = `students-${selectedClass === "all" ? "all" : `class-${selectedClass}`}-${new Date().toISOString().split("T")[0]}`
+      const data = prepareExportData();
+      const filename = `students-${
+        selectedClass === "all" ? "all" : `class-${selectedClass}`
+      }-${new Date().toISOString().split("T")[0]}`;
 
       if (format === "excel") {
-        exportToExcel(data, filename, "Students")
+        exportToExcel(data, filename, "Students");
       } else if (format === "csv") {
-        exportToCSV(data, filename)
+        exportToCSV(data, filename);
       } else if (format === "pdf") {
-        const doc = generateStudentListPDF(filteredStudents, {
-          subtitle: selectedClass === "all" ? "All Classes" : `Class ${selectedClass}`,
-        })
-        doc.save(`${filename}.pdf`)
+        const doc = generateStudentListPDF(students, {
+          subtitle:
+            selectedClass === "all" ? "All Classes" : `Class ${selectedClass}`,
+        });
+        doc.save(`${filename}.pdf`);
       }
 
       toast({
         title: "Export Successful",
-        description: `${filteredStudents.length} students exported to ${format.toUpperCase()}.`,
-      })
+        description: `${
+          students.length
+        } students exported to ${format.toUpperCase()}.`,
+      });
     } catch (error) {
-      toast({ title: "Export Failed", variant: "destructive" })
+      toast({ title: "Export Failed", variant: "destructive" });
     } finally {
-      setIsExporting(false)
+      setIsExporting(false);
     }
+  };
+
+const resolveFieldValue = (student, field) => {
+  switch (field) {
+    case "classId":
+      return student.classId
+        ? `${student.classId.name} (${student.classId.academicYear})`
+        : "-";
+
+    case "sectionId":
+      return student.sectionId || "-";
+
+    case "admissionDate":
+    case "dateOfBirth":
+      return student[field]
+        ? new Date(student[field]).toLocaleDateString()
+        : "-";
+
+    case "address":
+      return student.address
+        ? [student.address.street, student.address.city, student.address.state]
+            .filter(Boolean)
+            .join(", ")
+        : "-";
+
+    default:
+      return student[field] ?? "-";
   }
+};
+
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Download Student Data" description="Export student information in various formats" />
+      <PageHeader
+        title="Download Student Data"
+        description="Export student information in various formats"
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Filters */}
@@ -170,15 +191,22 @@ export function StudentDownloadsContent() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label>Class</Label>
-              <Select value={selectedClass} onValueChange={setSelectedClass}>
+              <Select
+                value={selectedClass}
+                onValueChange={(value) => {
+                  setSelectedClass(value);
+                  setSelectedSection("all"); // reset section
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="All Classes" />
                 </SelectTrigger>
+
                 <SelectContent>
                   <SelectItem value="all">All Classes</SelectItem>
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((cls) => (
-                    <SelectItem key={cls} value={cls.toString()}>
-                      Class {cls}
+                  {classes.map((cls) => (
+                    <SelectItem key={cls._id} value={cls._id}>
+                      {cls.name} ({cls.academicYear})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -187,15 +215,21 @@ export function StudentDownloadsContent() {
 
             <div className="space-y-2">
               <Label>Section</Label>
-              <Select value={selectedSection} onValueChange={setSelectedSection}>
+              <Select
+                value={selectedSection}
+                onValueChange={setSelectedSection}
+                disabled={!selectedClassObj}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="All Sections" />
                 </SelectTrigger>
+
                 <SelectContent>
                   <SelectItem value="all">All Sections</SelectItem>
-                  {["A", "B", "C", "D"].map((sec) => (
-                    <SelectItem key={sec} value={sec}>
-                      Section {sec}
+
+                  {selectedClassObj?.sections?.map((sec) => (
+                    <SelectItem key={sec.name} value={sec.name}>
+                      Section {sec.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -221,7 +255,8 @@ export function StudentDownloadsContent() {
               <div className="flex items-center gap-2 text-sm">
                 <Users className="h-4 w-4 text-muted-foreground" />
                 <span className="text-muted-foreground">
-                  <strong className="text-foreground">{filteredStudents.length}</strong> students found
+                  <strong className="text-foreground">{students.length}</strong>{" "}
+                  students found
                 </span>
               </div>
             </div>
@@ -232,7 +267,9 @@ export function StudentDownloadsContent() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Select Fields</CardTitle>
-            <CardDescription>Choose which fields to include in export</CardDescription>
+            <CardDescription>
+              Choose which fields to include in export
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 gap-3">
@@ -306,9 +343,14 @@ export function StudentDownloadsContent() {
             <div className="pt-4 border-t space-y-2">
               <p className="text-sm font-medium">Export Summary</p>
               <div className="text-xs text-muted-foreground space-y-1">
-                <p>Records: {filteredStudents.length}</p>
+                <p>Records: {students.length}</p>
                 <p>Fields: {selectedFields.length}</p>
-                <p>Filter: {selectedClass === "all" ? "All Classes" : `Class ${selectedClass}`}</p>
+                <p>
+                  Filter:{" "}
+                  {selectedClass === "all"
+                    ? "All Classes"
+                    : `Class ${selectedClass}`}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -321,7 +363,9 @@ export function StudentDownloadsContent() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-lg">Preview</CardTitle>
-              <CardDescription>First 5 records that will be exported</CardDescription>
+              <CardDescription>
+                First 5 records that will be exported
+              </CardDescription>
             </div>
             <Badge variant="secondary">
               <Eye className="h-3 w-3 mr-1" />
@@ -339,28 +383,31 @@ export function StudentDownloadsContent() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b">
-                    {selectedFields.map((field) => (
-                      <th key={field} className="px-3 py-2 text-left font-medium text-muted-foreground">
+                    {selectedFields.map((field, i) => (
+                      <th
+                        key={field}
+                        className="px-3 py-2 text-left font-medium text-muted-foreground"
+                      >
                         {availableFields.find((f) => f.id === field)?.label}
                       </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredStudents.slice(0, 5).map((student, idx) => (
+                  {students.slice(0, 5).map((student, idx) => (
                     <tr key={idx} className="border-b last:border-0">
                       {selectedFields.map((field) => (
                         <td key={field} className="px-3 py-2">
-                          {student[field] || "-"}
+                          {resolveFieldValue(student, field)}
                         </td>
                       ))}
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {filteredStudents.length > 5 && (
+              {students.length > 5 && (
                 <p className="text-center text-sm text-muted-foreground mt-4">
-                  ... and {filteredStudents.length - 5} more records
+                  ... and {students.length - 5} more records
                 </p>
               )}
             </div>
@@ -368,5 +415,5 @@ export function StudentDownloadsContent() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

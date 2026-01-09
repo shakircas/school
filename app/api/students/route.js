@@ -59,7 +59,8 @@ export async function GET(request) {
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
-      .lean().populate("classId", "name");
+      .lean()
+      .populate("classId", "name academicYear");
 
     const total = await Student.countDocuments(query);
 
