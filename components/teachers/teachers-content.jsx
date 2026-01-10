@@ -45,6 +45,7 @@ import {
   FileSpreadsheet,
   Users,
   Upload,
+  Printer,
 } from "lucide-react";
 import { exportTeachersPDF } from "@/lib/pdf";
 import * as XLSX from "xlsx";
@@ -292,6 +293,12 @@ export function TeachersContent() {
               Add Teacher
             </Link>
           </Button>
+          <Button asChild>
+            <Link href="/teachers/print">
+              <Printer className="h-4 w-4 mr-2" />
+              Bulk Print
+            </Link>
+          </Button>
         </div>
       </PageHeader>
 
@@ -306,20 +313,6 @@ export function TeachersContent() {
             className="pl-9"
           />
         </div>
-
-        {/* <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-          <SelectTrigger className="w-full sm:w-40">
-            <SelectValue placeholder="Department" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Departments</SelectItem>
-            {departments.map((dept) => (
-              <SelectItem key={dept} value={dept}>
-                {dept}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select> */}
 
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-full sm:w-32">
@@ -416,6 +409,16 @@ export function TeachersContent() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          size="icon"
+                          variant="ghost"
+                          onClick={() =>
+                            router.push(`/teachers/${teacher._id}/print`)
+                          }
+                        >
+                          <Printer className="h-4 w-4" />
+                          Print
+                        </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() =>
                             router.push(`/teachers/${teacher._id}`)

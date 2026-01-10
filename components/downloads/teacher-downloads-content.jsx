@@ -25,6 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import { FileSpreadsheet, FileText, Users, Printer, Eye } from "lucide-react";
 import { exportToExcel, exportToCSV } from "@/lib/excel-utils";
 import { generateTeacherListPDF } from "@/lib/pdf-generator";
+import { KP_DESIGNATIONS } from "../teachers/teachers-content";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -44,7 +45,7 @@ const availableFields = [
 
 export function TeacherDownloadsContent() {
   const { toast } = useToast();
-  const [selectedDepartment, setSelectedDepartment] = useState("all");
+  const [selectedDesignation, setSelectedDesignation] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("Active");
   const [selectedFields, setSelectedFields] = useState(
     availableFields.filter((f) => f.default).map((f) => f.id)
@@ -52,7 +53,7 @@ export function TeacherDownloadsContent() {
   const [isExporting, setIsExporting] = useState(false);
 
   const queryParams = new URLSearchParams({
-    // department: selectedDepartment,
+    designation: selectedDesignation,
     status: selectedStatus,
   }).toString();
 
@@ -103,7 +104,7 @@ export function TeacherDownloadsContent() {
     try {
       const data = prepareExportData();
       const filename = `teachers-${
-        selectedDepartment === "all" ? "all" : selectedDepartment.toLowerCase()
+        selectedDesignation === "all" ? "all" : selectedDesignation.toLowerCase()
       }-${new Date().toISOString().split("T")[0]}`;
 
       if (format === "excel") {
@@ -113,9 +114,9 @@ export function TeacherDownloadsContent() {
       } else if (format === "pdf") {
         const doc = generateTeacherListPDF(teachers, {
           subtitle:
-            selectedDepartment === "all"
+            selectedDesignation === "all"
               ? "All Departments"
-              : `${selectedDepartment} Department`,
+              : `${selectedDesignation} Department`,
         });
         doc.save(`${filename}.pdf`);
       }
@@ -159,17 +160,17 @@ export function TeacherDownloadsContent() {
             <div className="space-y-2">
               <Label>Department</Label>
               <Select
-                value={selectedDepartment}
-                onValueChange={setSelectedDepartment}
+                value={selectedDesignation}
+                onValueChange={setSelectedDesignation}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All Departments" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Departments</SelectItem>
-                  {departments.map((dept) => (
-                    <SelectItem key={dept} value={dept}>
-                      {dept}
+                  <SelectItem value="all">All Designations</SelectItem>
+                  {KP_DESIGNATIONS.map((designation) => (
+                    <SelectItem key={designation} value={designation}>
+                      {designation}
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -8,7 +8,7 @@ export async function GET(request) {
 
     const { searchParams } = new URL(request.url)
     const search = searchParams.get("search")
-    const department = searchParams.get("department")
+    const designation = searchParams.get("designation")
     const status = searchParams.get("status")
     const page = Number.parseInt(searchParams.get("page")) || 1
     const limit = Number.parseInt(searchParams.get("limit")) || 50
@@ -19,9 +19,9 @@ export async function GET(request) {
       query.$text = { $search: search }
     }
 
-    if (department) {
-      query.department = department
-    }
+   if (designation && designation !== "all") {
+     query.designation = designation;
+   }
 
     if (status) {
       query.status = status
