@@ -3,6 +3,7 @@
 import useSWR from "swr";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react"; // For SVG (recommended for printing)
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -23,13 +24,16 @@ export default function StudentProfilePrint({ studentId }) {
           Print
         </Button>
       </div>
-
       {/* Header */}
       <div className="text-center border-b pb-4 mb-6">
         <h1 className="text-2xl font-bold">Student Profile</h1>
         <p className="text-sm">Academic Record</p>
       </div>
 
+      <QRCodeSVG
+        value={`${process.env.NEXT_PUBLIC_APP_URL}/verify/student/${student._id} ${student.name} ${student.rollNumber}`}
+        size={80}
+      />
       {/* Student Info */}
       <section className="grid grid-cols-2 gap-4 text-sm">
         <Info label="Name" value={student.name} />
@@ -49,12 +53,10 @@ export default function StudentProfilePrint({ studentId }) {
         />
         <Info label="Status" value={student.status} />
       </section>
-
       {/* Address */}
       <Section title="Address">
         <p className="text-sm">{student.address.country || "-"}</p>
       </Section>
-
       {/* Footer */}
       <div className="mt-12 flex justify-between text-xs">
         <p>Generated on: {new Date().toLocaleDateString()}</p>

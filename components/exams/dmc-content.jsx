@@ -238,9 +238,6 @@ export function DMCContent() {
                 <p>
                   <strong>Class:</strong> {result?.classId.name}
                 </p>
-                <p>
-                  <strong>Section:</strong> {result?.sectionId}
-                </p>
               </div>
 
               <div className="space-y-1 text-right">
@@ -252,9 +249,6 @@ export function DMCContent() {
                 </p>
                 <p>
                   <strong>Result Status:</strong> {result?.status}
-                </p>
-                <p>
-                  <strong>Issue Date:</strong> {new Date().toLocaleDateString()}
                 </p>
               </div>
             </div>
