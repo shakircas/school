@@ -88,14 +88,7 @@ export function DMCContent() {
   };
 
   /* ---------------- Totals ---------------- */
-
-  // const obtainedMarks =
-  //   results?.reduce((sum, r) => sum + (r.obtainedMarks || 0), 0) || 0;
-  // const totalMarks =
-  //   results?.reduce((sum, r) => sum + (r.totalMarks || 0), 0) || 0;
-  // const percentage =
-  //   totalMarks > 0 ? ((obtainedMarks / totalMarks) * 100).toFixed(2) : 0;
-  // const overallGrade = getGrade(percentage);
+  const name = result?.student?.name || "";
   const obtainedMarks = result?.obtainedMarks || 0;
   const totalMarks = result?.totalMarks || 0;
   const percentage = result?.percentage?.toFixed(2) || 0;
@@ -144,7 +137,7 @@ export function DMCContent() {
             <SelectContent>
               {exams.map((e) => (
                 <SelectItem key={e._id} value={e._id}>
-                  {e.name} ({e.examType})
+                  {e.name} ({e.examType} - {e.academicYear} - {e.classId.name})
                 </SelectItem>
               ))}
             </SelectContent>
@@ -268,6 +261,7 @@ export function DMCContent() {
               <TableBody>
                 {subjects.map((s, i) => (
                   <TableRow key={i}>
+                    <TableCell className="text-center">{i + 1}</TableCell>
                     <TableCell>{s.subject}</TableCell>
                     <TableCell className="text-center">
                       {s.totalMarks}
@@ -291,7 +285,7 @@ export function DMCContent() {
                 ))}
 
                 <TableRow className="font-bold bg-gray-100">
-                  <TableCell colSpan={1}>Grand Total</TableCell>
+                  <TableCell colSpan={2}>Grand Total</TableCell>
                   <TableCell className="text-center">{totalMarks}</TableCell>
                   <TableCell className="text-center">{obtainedMarks}</TableCell>
                   <TableCell className="text-center">{percentage}%</TableCell>

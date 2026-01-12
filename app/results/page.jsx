@@ -8,6 +8,8 @@ import { ResultsFiltersBar } from "@/components/results/results-filters-bar";
 import { ResultsTable } from "@/components/results/results-table";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { MainLayout } from "@/components/layout/main-layout";
+import { Card } from "@/components/ui/card";
 
 const fetcher = (url) => fetch(url).then((r) => r.json());
 
@@ -61,7 +63,8 @@ export default function ResultsPage() {
 
   /* ---------------- UI ---------------- */
   return (
-    <div className="space-y-6 p-6">
+    <MainLayout>
+    <Card className="space-y-6 p-6">
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <div>
@@ -91,6 +94,7 @@ export default function ResultsPage() {
         onEdit={handleEdit}
         onDelete={handleDelete}
       />
-    </div>
+    </Card>
+    </MainLayout>
   );
 }

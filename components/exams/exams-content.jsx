@@ -84,7 +84,7 @@ export function ExamsContent() {
       examType: "",
       academicYear: "",
       classId: "",
-      sectionId: "",
+      // sectionId: "",
       startDate: "",
       endDate: "",
       status: "Scheduled",
@@ -104,7 +104,7 @@ export function ExamsContent() {
       examType: "",
       academicYear: "",
       classId: "",
-      sectionId: "",
+      // sectionId: "",
       startDate: "",
       endDate: "",
       status: "Scheduled",
@@ -307,7 +307,7 @@ export function ExamsContent() {
                   </Select>
                 </div>
 
-                <div>
+                {/* <div>
                   <Label>Section</Label>
                   <Select
                     value={watch("sectionId") || ""}
@@ -327,7 +327,7 @@ export function ExamsContent() {
                         ))}
                     </SelectContent>
                   </Select>
-                </div>
+                </div> */}
 
                 <div>
                   <Label>Academic Year</Label>
@@ -584,19 +584,7 @@ export function ExamsContent() {
                       {exam.name} - {exam.academicYear} ({exam.classId.name}){" "}
                     </TableCell>
                     <TableCell>{exam.examType}</TableCell>
-                    <TableCell>
-                      {(() => {
-                        const cls = classes.find((c) => c._id === exam.classId);
-                        const section = cls?.sections?.find(
-                          (s) => s._id === exam.sectionId
-                        );
-
-                        return cls
-                          ? `${cls.name}${section ? ` - ${section.name}` : ""}`
-                          : "-";
-                      })()}
-                      {/* {exam.class} {exam.sectionId.name} */}
-                    </TableCell>
+                    <TableCell>{exam.classId.name}</TableCell>
                     <TableCell>
                       {exam.startDate
                         ? new Date(exam.startDate).toLocaleDateString()
@@ -656,8 +644,7 @@ export function ExamsContent() {
                 <div key={exam._id} className="border rounded-lg p-4 shadow-sm">
                   {/* Exam Title */}
                   <h3 className="text-lg font-bold mb-2">
-                    {exam.name} — {exam.class}
-                    {exam.section ? ` (${exam.section})` : ""}
+                    {exam.name} — {exam.classId.name} — ({exam.academicYear})
                   </h3>
 
                   <p className="text-sm text-muted-foreground mb-4">
@@ -677,7 +664,7 @@ export function ExamsContent() {
                         <TableHead>Date</TableHead>
                         <TableHead>Subject</TableHead>
                         <TableHead>Time</TableHead>
-                        <TableHead>Venue</TableHead>
+                        {/* <TableHead>Venue</TableHead> */}
                         <TableHead>Invigilator</TableHead>
                         <TableHead>Marks</TableHead>
                       </TableRow>
@@ -703,7 +690,7 @@ export function ExamsContent() {
                                 (item.endTime || "--:--")}
                             </TableCell>
 
-                            <TableCell>{item.venue || "-"}</TableCell>
+                            {/* <TableCell>{item.venue || "-"}</TableCell> */}
 
                             <TableCell>
                               {item.invigilator?.name || "-"}

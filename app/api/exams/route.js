@@ -77,11 +77,11 @@ export async function POST(request) {
         { error: "classId is required" },
         { status: 400 }
       );
-    if (!body.sectionId)
-      return NextResponse.json(
-        { error: "sectionId is required" },
-        { status: 400 }
-      );
+    // if (!body.sectionId)
+    //   return NextResponse.json(
+    //     { error: "sectionId is required" },
+    //     { status: 400 }
+    //   );
     if (!body.startDate)
       return NextResponse.json(
         { error: "startDate is required" },

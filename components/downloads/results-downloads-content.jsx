@@ -139,7 +139,7 @@ export function ResultsDownloadsContent() {
                 <SelectContent>
                   {exams?.data?.map((exam) => (
                     <SelectItem key={exam._id} value={exam._id}>
-                      {exam.name} - Class {exam.class}
+                      {exam.name} - Class {exam.classId.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -154,13 +154,13 @@ export function ResultsDownloadsContent() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Sections</SelectItem>
-                  {classes.map((cls) =>
-                    cls.sections.map((s) => (
-                      <SelectItem key={s._id || s.name} value={s._id}>
+                  {classes
+                    .find((c) => c._id === selectedClass)
+                    ?.sections?.map((s) => (
+                      <SelectItem key={s._id} value={s.name}>
                         {s.name}
                       </SelectItem>
-                    ))
-                  )}
+                    ))}
                 </SelectContent>
               </Select>
             </div>
@@ -176,7 +176,7 @@ export function ResultsDownloadsContent() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Academic Years</SelectItem>
-                  <SelectItem value="2025">2025-2026</SelectItem>
+                  <SelectItem value="2025-2026">2025-2026</SelectItem>
                   <SelectItem value="2024-2025">2024-2025</SelectItem>
                   <SelectItem value="2023-2024">2023-2024</SelectItem>
                   <SelectItem value="2022-2023">2022-2023</SelectItem>

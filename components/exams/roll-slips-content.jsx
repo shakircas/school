@@ -123,7 +123,7 @@ export function RollSlipsContent() {
                 <SelectContent>
                   {exams?.map((exam) => (
                     <SelectItem key={exam._id} value={exam._id}>
-                      {exam.name}
+                      {exam.name} - {exam.examType} - {exam.academicYear} - {exam.classId.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

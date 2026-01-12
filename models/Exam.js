@@ -36,7 +36,6 @@ const examSchema = new mongoose.Schema(
     // ✅ SAME AS STUDENT (string section _id)
     sectionId: {
       type: String,
-      required: true,
       index: true,
     },
 

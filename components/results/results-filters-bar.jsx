@@ -25,7 +25,7 @@ export function ResultsFiltersBar({ exams, classes, filters, setFilters }) {
         <SelectContent>
           {exams.map((e) => (
             <SelectItem key={e._id} value={e._id}>
-              {e.name} • {e.examType} • {e.academicYear}
+              {e.name} • {e.examType} • {e.academicYear} • {e.classId.name}
             </SelectItem>
           ))}
         </SelectContent>
