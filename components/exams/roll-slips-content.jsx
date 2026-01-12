@@ -49,12 +49,14 @@ export function RollSlipsContent() {
   };
 
   const getClassName = (student) =>
-    classes?.find((c) => c._id === student.classId)?.name || "-";
+    classes?.find((c) => c._id === student.classId)?.name ||
+    student.classId.name ||
+    "-";
 
   const getSectionName = (student) =>
     classes
       ?.find((c) => c._id === student.classId)
-      ?.sections.find((s) => s._id === student.sectionId)?.name || "-";
+      ?.sections.find((s) => s._id === student.sectionId)?.name || student.sectionId || "-";
 
   return (
     <div className="space-y-6">

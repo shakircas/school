@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Exam from "@/models/Exam";
+import Class from "@/models/Class";
+import Teacher from "@/models/Teacher";
 
 /**
  * GET /api/exams?classId=...&sectionId=...&academicYear=...&status=...&examType=...
@@ -33,7 +35,14 @@ export async function GET(request) {
     if (status) query.status = status;
     if (examType) query.examType = examType;
 
-    const exams = await Exam.find(query).sort({ startDate: -1 }).lean();
+    const exams = await Exam.find(query)
+      .populate("classId", "name")
+      .populate({
+        path: "schedule.invigilator",
+        select: "name", // Only fetch the name field from the Teacher model
+      })
+      .sort({ startDate: -1 })
+      .lean();
 
     return NextResponse.json({ data: exams });
   } catch (error) {

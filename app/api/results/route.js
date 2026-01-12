@@ -27,7 +27,8 @@ export async function GET(request) {
     let results = await Result.find(query)
       .populate("exam", "name examType")
       .populate("student", "name rollNumber")
-      .populate("classId", "name")
+      .populate("classId", "name section")
+      
       .sort({ createdAt: -1 })
       .lean();
 

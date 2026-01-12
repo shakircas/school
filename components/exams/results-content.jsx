@@ -212,7 +212,7 @@ export function ResultsContent() {
                 <SelectContent>
                   {exams.map((e) => (
                     <SelectItem key={e._id} value={e._id}>
-                      {e.name} — {e.examType}
+                      {e.name} — {e.examType} ({e.academicYear}-{e.classId?.name}) 
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -227,9 +227,14 @@ export function ResultsContent() {
                   <SelectValue placeholder="Select class" />
                 </SelectTrigger>
                 <SelectContent>
-                  {classes.map((c) => (
+                  {/* {classes.map((c) => (
                     <SelectItem key={c._id} value={c._id}>
                       {c.name}
+                    </SelectItem>
+                  ))} */}
+                  {exams.map((e) => (
+                    <SelectItem key={e._id} value={e.classId}>
+                      {e.classId.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -368,7 +373,7 @@ export function ResultsContent() {
             <SelectContent>
               {exams.map((e) => (
                 <SelectItem key={e._id} value={e._id}>
-                  {e.name} ({e.examType})
+                  {e.name} ({e.examType} - {e.academicYear} - {e.classId?.name})
                 </SelectItem>
               ))}
             </SelectContent>

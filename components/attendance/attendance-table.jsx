@@ -1,5 +1,9 @@
 import { buildAttendanceMap } from "@/lib/attendance-utils";
 import { Badge } from "@/components/ui/badge";
+import { Card } from "../ui/card";
+import { Button } from "../ui/button";
+import { Printer } from "lucide-react";
+import { getMonthName } from "@/lib/constants";
 
 export default function AttendanceTable({
   students,
@@ -11,66 +15,80 @@ export default function AttendanceTable({
   const attendanceMap = buildAttendanceMap(attendanceDocs);
 
   return (
-    <div className="overflow-x-auto border rounded-lg print:border-none">
-      <table className="w-full text-xs border-collapse">
-        <thead>
-          <tr>
-            <th className="border p-2">Roll</th>
-            <th className="border p-2">Name</th>
+    <Card className="p-4">
+      <h2 className="text-center font-bold text-lg mb-1">
+        Student Attendance Register
+      </h2>
 
-            {[...Array(daysInMonth)].map((_, i) => (
-              <th key={i} className="border p-1">
-                {i + 1}
-              </th>
-            ))}
+      <p className="text-center text-sm mb-4">
+        {/* Month: {month + 1} / {year}  */}
+        Month: {getMonthName(month)} ({month}) / {year}
+      </p>
+      <div className="overflow-x-auto border rounded-lg print:border-none">
+        <table className="w-full bg-white text-xs border-collapse">
+          <thead>
+            <tr>
+              <th className="border p-2">Roll</th>
+              <th className="border p-2">Name</th>
 
-            <th className="border p-2">P</th>
-            <th className="border p-2">A</th>
-            <th className="border p-2">%</th>
-          </tr>
-        </thead>
+              {[...Array(daysInMonth)].map((_, i) => (
+                <th key={i} className="border p-1">
+                  {i + 1}
+                </th>
+              ))}
 
-        <tbody>
-          {students.map((s) => {
-            let present = 0;
-            let absent = 0;
+              <th className="border p-2">P</th>
+              <th className="border p-2">A</th>
+              <th className="border p-2">%</th>
+            </tr>
+          </thead>
 
-            return (
-              <tr key={s._id}>
-                <td className="border p-1">{s.rollNumber}</td>
-                <td className="border p-1 whitespace-nowrap">{s.name}</td>
+          <tbody>
+            {students.map((s) => {
+              let present = 0;
+              let absent = 0;
 
-                {[...Array(daysInMonth)].map((_, d) => {
-                  const status = attendanceMap[d + 1]?.[s._id];
+              return (
+                <tr key={s._id}>
+                  <td className="border p-1">{s.rollNumber}</td>
+                  <td className="border p-1 whitespace-nowrap">{s.name}</td>
 
-                  if (status === "Present") present++;
-                  if (status === "Absent") absent++;
+                  {[...Array(daysInMonth)].map((_, d) => {
+                    const status = attendanceMap[d + 1]?.[s._id];
 
-                  return (
-                    <td key={d} className="border text-center">
-                      {status === "Present" && (
-                        <span className="text-green-600 font-bold">P</span>
-                      )}
-                      {status === "Absent" && (
-                        <span className="text-red-600 font-bold">A</span>
-                      )}
-                    </td>
-                  );
-                })}
+                    if (status === "Present") present++;
+                    if (status === "Absent") absent++;
 
-                <td className="border text-center font-bold">{present}</td>
-                <td className="border text-center font-bold">{absent}</td>
-                <td className="border text-center font-bold">
-                  {present + absent === 0
-                    ? "-"
-                    : Math.round((present / (present + absent)) * 100)}
-                  %
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+                    return (
+                      <td key={d} className="border text-center">
+                        {status === "Present" && (
+                          <span className="text-green-600 font-bold">P</span>
+                        )}
+                        {status === "Absent" && (
+                          <span className="text-red-600 font-bold">A</span>
+                        )}
+                      </td>
+                    );
+                  })}
+
+                  <td className="border text-center font-bold">{present}</td>
+                  <td className="border text-center font-bold">{absent}</td>
+                  <td className="border text-center font-bold">
+                    {present + absent === 0
+                      ? "-"
+                      : Math.round((present / (present + absent)) * 100)}
+                    %
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        <div className="mt-6 flex justify-between text-xs">
+          <span>Class Teacher Signature: __________</span>
+          <span>Principal Signature: __________</span>
+        </div>
+      </div>
+    </Card>
   );
 }

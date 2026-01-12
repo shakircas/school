@@ -1,4 +1,3 @@
-
 import mongoose from "mongoose";
 
 const examSchema = new mongoose.Schema(
@@ -84,7 +83,10 @@ const examSchema = new mongoose.Schema(
 );
 
 // ✅ indexes aligned with queries
-examSchema.index({ academicYear: 1, classId: 1, sectionId: 1 });
+examSchema.index(
+  { name: 1, academicYear: 1, classId: 1, sectionId: 1 },
+  { unique: true }
+);
 examSchema.index({ status: 1 });
 
 export default mongoose.models.Exam || mongoose.model("Exam", examSchema);

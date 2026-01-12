@@ -130,6 +130,7 @@ export async function GET(req) {
 
     const attendance = await Attendance.find(query)
       .populate("markedBy", "name")
+      .populate("classId", "name")
       .sort({ date: -1 })
       .lean();
 

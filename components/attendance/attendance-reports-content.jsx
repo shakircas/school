@@ -136,7 +136,7 @@ export function AttendanceReportsContent() {
   const classMap = useMemo(() => {
     const map = {};
     attendanceData.forEach((a) => {
-      const cls = a.class || "Unknown";
+      const cls = a?.classId?.name || "Unknown";
       if (!map[cls]) map[cls] = { cls, sum: 0, count: 0 };
       const total = a.records?.length || 0;
       const present = (a.records || []).filter(
@@ -162,7 +162,7 @@ export function AttendanceReportsContent() {
 
     attendanceData.forEach((a) => {
       const className =
-        classes.find((c) => c._id === a.classId)?.name || a.class || "Unknown";
+        classes.find((c) => c._id === a.classId)?.name || a.classId.name || "Unknown";
 
       (a.records || []).forEach((r) => {
         const id = r.studentId || r.rollNumber || r.name;
@@ -206,6 +206,7 @@ export function AttendanceReportsContent() {
     let absentToday = 0;
     let sumPercent = 0;
     let countPercent = 0;
+    let totalAttendance = 0
 
     attendanceData.forEach((a) => {
       (a.records || []).forEach((r) => {
@@ -242,6 +243,7 @@ export function AttendanceReportsContent() {
           classPercentList[classPercentList.length - 1].avg
         }%)`
       : "-";
+      totalAttendance = (presentToday + absentToday) 
 
     return {
       totalStudents: totalStudentsSet.size,
@@ -250,6 +252,7 @@ export function AttendanceReportsContent() {
       avgAttendance,
       highestClass,
       lowestClass,
+      totalAttendance
     };
   }, [attendanceData, classMap]);
 
@@ -426,8 +429,14 @@ export function AttendanceReportsContent() {
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <Card>
           <CardContent>
-            <p className="text-sm text-muted-foreground">Total Students</p>
-            <p className="text-2xl font-bold">{stats.totalStudents}</p>
+            <p className="text-sm text-muted-foreground">
+              Total Students/Total Attendance
+            </p>
+            <p className="text-2xl font-bold">
+              {stats.totalStudents}/{stats.totalAttendance}
+            </p>
+            <p className="text-sm text-muted-foreground"></p>
+            <p className="text-2xl font-bold"></p>
           </CardContent>
         </Card>
 

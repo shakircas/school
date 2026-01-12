@@ -43,6 +43,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Calendar, Plus, Edit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
+import { academicYears } from "@/lib/constants";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -231,7 +232,28 @@ export function ExamsContent() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Exam Name</Label>
-                  <Input {...register("name", { required: true })} />
+                  <Select
+                    value={watch("name") || ""}
+                    onValueChange={(v) => setValue("name", v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select name" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[
+                        "Monthly",
+                        "Quarterly",
+                        "Mid Term",
+                        "Final",
+                        "Unit Test",
+                        "Practice",
+                      ].map((t) => (
+                        <SelectItem key={t} value={t}>
+                          {t}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   {errors.name && (
                     <p className="text-sm text-destructive">Required</p>
                   )}
@@ -299,7 +321,7 @@ export function ExamsContent() {
                       {classes
                         .find((c) => c._id === watchClass)
                         ?.sections?.map((s) => (
-                          <SelectItem key={s._id} value={s._id}>
+                          <SelectItem key={s._id} value={s.name}>
                             {s.name}
                           </SelectItem>
                         ))}
@@ -309,10 +331,21 @@ export function ExamsContent() {
 
                 <div>
                   <Label>Academic Year</Label>
-                  <Input
-                    {...register("academicYear")}
-                    placeholder="2025-2026"
-                  />
+                  <Select
+                    value={watch("academicYear") || ""}
+                    onValueChange={(v) => setValue("academicYear", v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {academicYears.map((ay) => (
+                        <SelectItem key={ay} value={ay}>
+                          {ay}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -442,7 +475,7 @@ export function ExamsContent() {
                           </SelectTrigger>
                           <SelectContent>
                             {teachers?.map((t) => (
-                              <SelectItem key={t._id} value={t.name}>
+                              <SelectItem key={t._id} value={t._id}>
                                 {t.name}
                               </SelectItem>
                             ))}
@@ -547,7 +580,9 @@ export function ExamsContent() {
               <TableBody>
                 {exams.map((exam) => (
                   <TableRow key={exam._id}>
-                    <TableCell className="font-medium">{exam.name}</TableCell>
+                    <TableCell className="font-medium">
+                      {exam.name} - {exam.academicYear} ({exam.classId.name}){" "}
+                    </TableCell>
                     <TableCell>{exam.examType}</TableCell>
                     <TableCell>
                       {(() => {
@@ -670,7 +705,9 @@ export function ExamsContent() {
 
                             <TableCell>{item.venue || "-"}</TableCell>
 
-                            <TableCell>{item.invigilator || "-"}</TableCell>
+                            <TableCell>
+                              {item.invigilator?.name || "-"}
+                            </TableCell>
 
                             <TableCell>
                               {item.totalMarks || 0} / {item.passingMarks || 0}

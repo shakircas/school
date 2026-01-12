@@ -203,3 +203,18 @@
     padding: 2px !important;
   }
 }
+
+@media print {
+  body {
+    font-size: 10px;
+  }
+
+  th,
+  td {
+    padding: 2px !important;
+  }
+
+  .print\:hidden {
+    display: none !important;
+  }
+}
