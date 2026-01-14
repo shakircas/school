@@ -43,7 +43,7 @@ export default function TeacherDetailPage({ params }) {
 
   return (
     <MainLayout>
-      <PageHeader
+      {/* <PageHeader
         title={teacher.name}
         description={`Email : ${teacher.email} | Phone number ${teacher.phone}-${teacher.gender}`}
       >
@@ -53,7 +53,7 @@ export default function TeacherDetailPage({ params }) {
             Edit Student
           </Link>
         </Button>
-      </PageHeader>
+      </PageHeader> */}
       <TeacherProfile teacher={teacher} />
     </MainLayout>
   );

@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import useSWR from "swr";
+import Link from "next/link";
 const fetcher = (url) => fetch(url).then((res) => res.json());
 export default function TeacherProfile({ teacher }) {
   // 1. EXTRACT TEACHER SCHEDULE FROM CLASS COLLECTION
@@ -117,7 +118,10 @@ export default function TeacherProfile({ teacher }) {
               variant="outline"
               className="rounded-2xl h-12 border-zinc-200 dark:border-zinc-800 font-bold uppercase tracking-widest text-[10px]"
             >
-              Edit Profile
+              <Link href={`/teachers/${teacher._id}/edit`}>
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Profile
+              </Link>
             </Button>
           </div>
         </div>
