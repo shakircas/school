@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import {
   Select,
@@ -15,23 +16,39 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 import { toast } from "sonner";
 import { MainLayout } from "@/components/layout/main-layout";
-import { Download, Shield, UserCog, UserCheck, UserX } from "lucide-react";
-import { Table, TableHead, TableRow } from "@/components/ui/table";
+import { Download } from "lucide-react";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
+const roleColors = {
+  admin: "destructive",
+  teacher: "secondary",
+  student: "outline",
+};
+
 export default function AdminUsersPage() {
+  const [confirmUser, setConfirmUser] = useState(null);
+
   const { data, isLoading, mutate } = useSWR("/api/admin/users", fetcher);
 
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
 
- 
   const users = data?.users || [];
 
-  /* ---------------- FILTER LOGIC ---------------- */
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
       const matchesSearch =
@@ -39,19 +56,17 @@ export default function AdminUsersPage() {
         u.email.toLowerCase().includes(search.toLowerCase());
 
       const matchesRole = roleFilter === "all" || u.role === roleFilter;
-
       return matchesSearch && matchesRole;
     });
   }, [users, search, roleFilter]);
 
-  /* ---------------- ACTIONS ---------------- */
   const updateRole = async (id, role) => {
     await fetch(`/api/admin/users/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ role }),
     });
-    toast.success(`Role updated to ${role}`);
+    toast.success("Role updated");
     mutate();
   };
 
@@ -65,7 +80,15 @@ export default function AdminUsersPage() {
     mutate();
   };
 
-  /* ---------------- EXCEL EXPORT ---------------- */
+  const handleRoleChange = (user, role) => {
+    if (role === "admin") {
+      setConfirmUser({ user, role });
+    } else {
+      updateRole(user._id, role);
+    }
+  };
+
+
   const exportExcel = () => {
     const sheetData = filteredUsers.map((u) => ({
       Name: u.name,
@@ -80,44 +103,49 @@ export default function AdminUsersPage() {
     XLSX.writeFile(wb, "users.xlsx");
   };
 
-   if (isLoading) return <LoadingSpinner />;
-
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="flex justify-center items-center h-screen">
+          <LoadingSpinner />
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
       <div className="space-y-6">
         {/* HEADER */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              User Management
-            </h1>
+            <h1 className="text-2xl font-bold">User Management</h1>
             <p className="text-sm text-muted-foreground">
-              Search, filter, manage roles & access
+              Manage roles and access control
             </p>
           </div>
 
           <Button onClick={exportExcel} variant="outline">
             <Download className="h-4 w-4 mr-2" />
-            Export Excel
+            Export
           </Button>
         </div>
 
-        {/* FILTER BAR */}
+        {/* FILTERS */}
         <Card className="p-4">
           <div className="grid gap-3 sm:grid-cols-3">
             <Input
-              placeholder="Search name or email..."
+              placeholder="Search users..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
 
             <Select value={roleFilter} onValueChange={setRoleFilter}>
               <SelectTrigger>
-                <SelectValue placeholder="Filter by role" />
+                <SelectValue placeholder="Role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Roles</SelectItem>
+                <SelectItem value="all">All</SelectItem>
                 <SelectItem value="admin">Admin</SelectItem>
                 <SelectItem value="teacher">Teacher</SelectItem>
                 <SelectItem value="student">Student</SelectItem>
@@ -126,99 +154,95 @@ export default function AdminUsersPage() {
           </div>
         </Card>
 
-        {/* TABLE */}
-        <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <Table className="w-full text-sm">
-              <TableHead className="bg-muted/50">
-                <TableRow>
-                  <TableHead className="px-4 py-3 text-left">User</TableHead>
-                  <TableHead className="px-4 py-3">Role</TableHead>
-                  <TableHead className="px-4 py-3">Status</TableHead>
-                  <TableHead className="px-4 py-3 text-right">Actions</TableHead>
-                </TableRow>
-              </TableHead>
+        {/* USERS */}
+        <div className="grid gap-4">
+          {filteredUsers.map((user) => (
+            <Card
+              key={user._id}
+              className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+            >
+              {/* User Info */}
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center font-bold">
+                  {user.name[0]}
+                </div>
 
-              <tbody>
-                {filteredUsers.map((user) => (
-                  <tr
-                    key={user._id}
-                    className="border-t hover:bg-muted/40 transition"
-                  >
-                    <td className="px-4 py-3">
-                      <div className="font-medium">{user.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {user.email}
-                      </div>
-                    </td>
+                <div>
+                  <div className="font-medium">{user.name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {user.email}
+                  </div>
+                </div>
+              </div>
 
-                    <td className="px-4 py-3 text-center">
-                      <Badge variant="outline" className="capitalize">
-                        {user.role}
-                      </Badge>
-                    </td>
+              {/* Role & Status */}
+              <div className="flex flex-wrap items-center gap-3">
+                <Badge variant={roleColors[user.role]} className="capitalize">
+                  {user.role}
+                </Badge>
 
-                    <td className="px-4 py-3 text-center">
-                      {user.isActive ? (
-                        <span className="inline-flex items-center gap-1 text-green-600">
-                          <UserCheck className="h-4 w-4" />
-                          Active
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-red-600">
-                          <UserX className="h-4 w-4" />
-                          Disabled
-                        </span>
-                      )}
-                    </td>
+                <Select
+                  value={user.role}
+                  // onValueChange={(val) => updateRole(user._id, val)}
+                  onValueChange={(val) => handleRoleChange(user, val)}
+                >
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="teacher">Teacher</SelectItem>
+                    <SelectItem value="student">Student</SelectItem>
+                  </SelectContent>
+                </Select>
 
-                    <td className="px-4 py-3">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => updateRole(user._id, "teacher")}
-                        >
-                          <UserCog className="h-4 w-4 mr-1" />
-                          Teacher
-                        </Button>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs">Active</span>
+                  <Switch
+                    checked={user.isActive}
+                    onCheckedChange={(val) => toggleActive(user._id, val)}
+                  />
+                </div>
+              </div>
+            </Card>
+          ))}
 
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => updateRole(user._id, "admin")}
-                        >
-                          <Shield className="h-4 w-4 mr-1" />
-                          Admin
-                        </Button>
-
-                        <Button
-                          size="sm"
-                          variant={user.isActive ? "destructive" : "default"}
-                          onClick={() => toggleActive(user._id, !user.isActive)}
-                        >
-                          {user.isActive ? "Disable" : "Enable"}
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-
-                {filteredUsers.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan="4"
-                      className="py-10 text-center text-muted-foreground"
-                    >
-                      No users found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </Table>
-          </div>
-        </Card>
+          {filteredUsers.length === 0 && (
+            <Card className="py-10 text-center text-muted-foreground">
+              No users found
+            </Card>
+          )}
+        </div>
       </div>
+      <AlertDialog
+        open={!!confirmUser}
+        onOpenChange={() => setConfirmUser(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Grant Admin Access?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You are about to give <b>ADMIN</b> privileges to{" "}
+              <b>{confirmUser?.user?.name}</b>.
+              <br />
+              This user will have full system control.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive"
+              onClick={() => {
+                updateRole(confirmUser.user._id, "admin");
+                setConfirmUser(null);
+              }}
+            >
+              Confirm Admin
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 }

@@ -38,6 +38,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Download, Plus, Trophy } from "lucide-react";
 import { toast } from "sonner";
+import { StudentResultCard } from "./StudentResultCard";
 
 const fetcher = (url) => fetch(url).then((r) => r.json());
 
@@ -212,7 +213,8 @@ export function ResultsContent() {
                 <SelectContent>
                   {exams.map((e) => (
                     <SelectItem key={e._id} value={e._id}>
-                      {e.name} — {e.examType} ({e.academicYear}-{e.classId?.name}) 
+                      {e.name} — {e.examType} ({e.academicYear}-
+                      {e.classId?.name})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -517,6 +519,11 @@ export function ResultsContent() {
           )}
         </CardContent>
       </Card>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 print:grid-cols-2">
+        {results.map((r) => (
+          <StudentResultCard key={r._id} result={r} />
+        ))}
+      </div>
     </div>
   );
 }

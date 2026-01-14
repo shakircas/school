@@ -44,6 +44,7 @@ import { Calendar, Plus, Edit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 import { academicYears } from "@/lib/constants";
+import { ExamDateSheet } from "./ExamDateSheet";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -644,7 +645,7 @@ export function ExamsContent() {
                 <div key={exam._id} className="border rounded-lg p-4 shadow-sm">
                   {/* Exam Title */}
                   <h3 className="text-lg font-bold mb-2">
-                    {exam.name} — {exam.classId.name} — ({exam.academicYear})
+                    {exam.name}  — ({exam.academicYear} - {exam.classId.name})
                   </h3>
 
                   <p className="text-sm text-muted-foreground mb-4">
@@ -661,7 +662,9 @@ export function ExamsContent() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead>#</TableHead>
                         <TableHead>Date</TableHead>
+                        <TableHead>Day</TableHead>
                         <TableHead>Subject</TableHead>
                         <TableHead>Time</TableHead>
                         {/* <TableHead>Venue</TableHead> */}
@@ -674,9 +677,19 @@ export function ExamsContent() {
                       {exam.schedule?.length > 0 ? (
                         exam.schedule.map((item, idx) => (
                           <TableRow key={idx}>
+                            <TableCell>{idx + 1}</TableCell>
                             <TableCell>
                               {item.date
                                 ? new Date(item.date).toLocaleDateString()
+                                : "-"}
+                            </TableCell>
+
+                            <TableCell>
+                              {item.date
+                                ? new Date(item.date).toLocaleDateString(
+                                    "en-US",
+                                    { weekday: "long" }
+                                  )
                                 : "-"}
                             </TableCell>
 

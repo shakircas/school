@@ -134,12 +134,23 @@ const navigation = [
     roles: ["admin", "teacher"],
     children: [
       { name: "Exams", href: "/exams" },
+      { name: "Date Sheet", href: "/exams/datesheet" },
       { name: "Results", href: "/exams/results" },
       { name: "DMC", href: "/exams/dmc" },
       { name: "Roll Number Slips", href: "/exams/roll-slips" },
     ],
   },
 
+  {
+    name: "Results",
+    icon: BarChart3,
+    // href: "/results",
+    roles: ["admin", "teacher", "student"],
+    children: [
+      { name: "All Results", href: "/results" },
+      { name: "Result Cards", href: "/results/result-cards" },
+    ]
+  },
   {
     name: "Quizzes",
     icon: BookOpenCheck,

@@ -218,3 +218,27 @@
     display: none !important;
   }
 }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 1cm;
+  }
+  
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Force 2 columns and remove layout padding */
+  .print\:grid-cols-2 {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 15px !important;
+  }
+
+  /* Prevent UI layout elements from showing */
+  header, nav, footer, .print\:hidden {
+    display: none !important;
+  }
+}

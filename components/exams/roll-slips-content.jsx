@@ -123,7 +123,8 @@ export function RollSlipsContent() {
                 <SelectContent>
                   {exams?.map((exam) => (
                     <SelectItem key={exam._id} value={exam._id}>
-                      {exam.name} - {exam.examType} - {exam.academicYear} - {exam.classId.name}
+                      {exam.name} - {exam.examType} - {exam.academicYear} -{" "}
+                      {exam.classId.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -134,135 +135,109 @@ export function RollSlipsContent() {
       </Card>
 
       {/* Roll Slips Grid */}
-      {isLoading ? (
-        <div className="flex justify-center py-8">
-          <LoadingSpinner size="lg" />
-        </div>
-      ) : selectedClass &&
-        selectedSection &&
-        selectedExam &&
-        students?.students?.length > 0 ? (
-        <div
-          ref={slipRef}
-          className="grid grid-cols-1 md:grid-cols-2 gap-6 print:grid-cols-2"
-        >
-          {students.students.map((student) => (
-            <Card key={student._id} className="print:break-inside-avoid">
-              <CardContent className="p-6">
-                <div className="border-2 border-primary rounded-lg p-4">
-                  {/* Header */}
-                  <div className="flex items-center justify-between border-b pb-4 mb-4">
-                    <div className="flex items-center gap-3">
-                      <School className="h-10 w-10 text-primary" />
-                      <div>
-                        <h3 className="font-bold text-lg text-primary">
-                          EduManage School
-                        </h3>
-                        <p className="text-xs text-muted-foreground">
-                          Excellence in Education
-                        </p>
-                      </div>
-                    </div>
-                    <Avatar className="h-16 w-16 border-2 border-primary">
-                      <AvatarImage
-                        src={
-                          student.photo ||
-                          `/placeholder.svg?height=64&width=64&query=student`
-                        }
-                      />
-                      <AvatarFallback>{student.name?.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                  </div>
+      <div
+        ref={slipRef}
+        className="grid grid-cols-1 sm:grid-cols-2 gap-4 print:grid-cols-2 print:gap-3"
+      >
+        {students?.students.map((student) => (
+          <Card
+            key={student._id}
+            className="border border-black rounded-md p-3 text-[11px] leading-tight print:break-inside-avoid"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-black pb-2 mb-2">
+              <div>
+                <h3 className="text-sm font-bold uppercase">
+                  EduManage School
+                </h3>
+                <p className="text-[10px]">Examination Roll Number Slip</p>
+              </div>
 
-                  {/* Title */}
-                  <div className="text-center mb-4">
-                    <h4 className="font-bold text-primary uppercase">
-                      Roll Number Slip
-                    </h4>
-                    <p className="text-sm text-muted-foreground">
-                      {exam?.name}
-                    </p>
-                  </div>
+              <Avatar className="h-10 w-10 border border-black">
+                <AvatarImage src={student.photo} />
+                <AvatarFallback>{student.name?.charAt(0)}</AvatarFallback>
+              </Avatar>
+            </div>
 
-                  {/* Student Info */}
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="flex gap-2">
-                      <span className="font-semibold">Roll No:</span>
-                      <span className="text-primary font-bold">
-                        {student.rollNumber}
-                      </span>
-                    </div>
-                    <div className="flex gap-2">
-                      <span className="font-semibold">Class:</span>
-                      <span>
-                        {getClassName(student)} - {getSectionName(student)}
-                      </span>
-                    </div>
-                    <div className="col-span-2 flex gap-2">
-                      <span className="font-semibold">Name:</span>
-                      <span>{student.name}</span>
-                    </div>
-                    <div className="col-span-2 flex gap-2">
-                      <span className="font-semibold">Father:</span>
-                      <span>{student.fatherName}</span>
-                    </div>
-                  </div>
+            {/* Exam Info */}
+            <div className="text-center mb-2">
+              <p className="font-semibold uppercase">{exam?.name}</p>
+              <p className="text-[10px]">
+                {exam?.examType} • {exam?.academicYear}
+              </p>
+            </div>
 
-                  {/* Exam Schedule Info */}
-                  <div className="mt-4 pt-4 border-t text-sm">
-                    {exam?.schedule?.map((s, idx) => (
-                      <div
-                        key={idx}
-                        className="grid grid-cols-2 gap-2 py-1 border-b last:border-b-0"
-                      >
-                        <div>
-                          <span className="font-semibold">Subject:</span>{" "}
-                          {s.subject}
-                        </div>
-                        <div>
-                          <span className="font-semibold">Date:</span>{" "}
-                          {s.date ? new Date(s.date).toLocaleDateString() : "-"}
-                        </div>
-                        <div>
-                          <span className="font-semibold">Time:</span>{" "}
-                          {s.startTime} - {s.endTime}
-                        </div>
-                        <div>
-                          <span className="font-semibold">Venue:</span>{" "}
-                          {s.venue || "-"}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+            {/* Student Info */}
+            <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+              <p>
+                <b>Name:</b> {student.name}
+              </p>
+              <p>
+                <b>Roll No:</b> {student.rollNumber}
+              </p>
 
-                  {/* Footer */}
-                  <div className="mt-6 pt-4 border-t flex justify-between items-end text-xs">
-                    <div>
-                      <p className="text-muted-foreground">
-                        Issued Date: {new Date().toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <div className="border-t border-foreground w-24 mb-1"></div>
-                      <p>Principal</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : selectedClass && selectedSection && selectedExam ? (
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
-            No students found in Class{" "}
-            {getClassName({ classId: selectedClass })} -{" "}
-            {classes
-              ?.find((c) => c._id === selectedClass)
-              ?.sections.find((s) => s._id === selectedSection)?.name || ""}
-          </CardContent>
-        </Card>
-      ) : null}
+              <p>
+                <b>Class:</b> {getClassName(student)} -{" "}
+                {getSectionName(student)}
+              </p>
+
+              <p>
+                <b>Father:</b> {student.fatherName}
+              </p>
+            </div>
+
+            {/* Subjects Table */}
+            {/* Subjects Table */}
+            <div className="mt-2 border-t border-black pt-2">
+              <table className="w-full border border-black text-[10px]">
+                <thead>
+                  <tr className="border-b border-black">
+                    <th className="p-1 w-6 text-center">#</th>
+                    <th className="p-1 text-left">Subject</th>
+                    <th className="p-1 text-left">Day</th>
+                    <th className="p-1 text-left">Date</th>
+                    <th className="p-1 text-left">Time</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {exam?.schedule?.map((s, idx) => (
+                    <tr
+                      key={idx}
+                      className="border-b last:border-b-0 border-black"
+                    >
+                      <td className="p-1 text-center">{idx + 1}</td>
+                      <td className="p-1">{s.subject}</td>
+                      <td className="p-1">
+                        {s.date
+                          ? new Date(s.date).toLocaleDateString("en-US", {
+                              weekday: "short",
+                            })
+                          : "-"}
+                      </td>
+                      <td className="p-1">
+                        {s.date ? new Date(s.date).toLocaleDateString() : "-"}
+                      </td>
+                      <td className="p-1">
+                        {s.startTime} – {s.endTime}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Footer */}
+            <div className="mt-3 flex justify-between items-end text-[10px]">
+              <p>Issued: {new Date().toLocaleDateString()}</p>
+              <div className="text-right">
+                <div className="border-t border-black w-20 mb-1"></div>
+                <p>Principal</p>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }
