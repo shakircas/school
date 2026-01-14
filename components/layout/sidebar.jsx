@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -29,10 +29,12 @@ import {
   BookOpenCheck,
   School,
   Shield,
-  UserCog,
-  PieChart,
-  Home,
+  Sparkles,
+  Search,
+  LogOut,
+  X,
 } from "lucide-react";
+import { Input } from "../ui/input";
 
 /* =====================================================
    FULL NAVIGATION (RESTORED + ROLE BASED)
@@ -149,7 +151,7 @@ const navigation = [
     children: [
       { name: "All Results", href: "/results" },
       { name: "Result Cards", href: "/results/result-cards" },
-    ]
+    ],
   },
   {
     name: "Quizzes",
@@ -242,130 +244,251 @@ const navigation = [
   },
 ];
 
-function NavItem({ item, pathname }) {
+function NavItem({ item, pathname, searchActive }) {
   const key = `sidebar-open-${item.name}`;
-  const closeSheet = () => {
-    document.body.click(); // closes Sheet
-  };
   const isActive =
     item.href === pathname ||
     item.children?.some((c) => pathname.startsWith(c.href));
 
-  const [open, setOpen] = useState(() => {
-    if (typeof window === "undefined") return isActive;
-    const saved = localStorage.getItem(key);
-    return saved ? saved === "true" : isActive;
-  });
+  // Auto-expand if searching or if active
+  const [open, setOpen] = useState(isActive);
 
   useEffect(() => {
-    localStorage.setItem(key, open);
-  }, [open]);
+    if (searchActive || isActive) setOpen(true);
+  }, [searchActive, isActive]);
 
   const Icon = item.icon;
 
-  if (item.children) {
-    return (
-      <div>
-        <button
-          onClick={() => setOpen(!open)}
-          className={cn(
-            "flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-white",
-            isActive ? "bg-blue-600" : "hover:bg-white/10"
-          )}
-        >
-          <div className="flex items-center gap-3">
-            <Icon className="h-5 w-5" />
-            <span>{item.name}</span>
-          </div>
-          {open ? <ChevronDown /> : <ChevronRight />}
-        </button>
-
-        {open && (
-          <div className="ml-8 mt-1 space-y-1">
-            {item.children.map((c) => (
-              <Link
-                key={c.href}
-                href={c.href}
-                onClick={closeSheet}
-                className={cn(
-                  "block rounded-md px-3 py-2 text-sm text-white",
-                  pathname.startsWith(c.href)
-                    ? "bg-blue-500"
-                    : "hover:bg-white/10"
-                )}
-              >
-                {c.name}
-              </Link>
-            ))}
-          </div>
+  return (
+    <div className="mb-1">
+      <button
+        onClick={() => setOpen(!open)}
+        className={cn(
+          "group flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-all",
+          isActive
+            ? "bg-zinc-800/80 text-white"
+            : "text-zinc-400 hover:bg-zinc-800/40 hover:text-zinc-100"
         )}
-      </div>
-    );
-  }
+      >
+        <div className="flex items-center gap-3">
+          <Icon
+            className={cn(
+              "h-4 w-4 shrink-0 transition-colors",
+              isActive
+                ? "text-blue-500"
+                : "text-zinc-500 group-hover:text-zinc-300"
+            )}
+          />
+          <span>{item.name}</span>
+        </div>
+        {item.children && (
+          <ChevronDown
+            className={cn(
+              "h-3 w-3 transition-transform duration-200 opacity-40",
+              !open && "-rotate-90"
+            )}
+          />
+        )}
+      </button>
 
-  return null;
+      {open && item.children && (
+        <div className="ml-4 mt-1 space-y-1 border-l border-zinc-800/60 pl-4">
+          {item.children.map((c) => (
+            <Link
+              key={c.href}
+              href={c.href}
+              className={cn(
+                "block rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                pathname === c.href
+                  ? "text-blue-400 bg-blue-500/10"
+                  : "text-zinc-500 hover:text-zinc-200 hover:bg-white/5"
+              )}
+            >
+              {c.name}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
-
-/* =====================================================
-   SIDEBAR
-===================================================== */
 
 export function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const [searchQuery, setSearchQuery] = useState("");
+
   const role = session?.user?.role || "admin";
 
-  // const items = navigation.filter((n) => n.roles.includes(role));
-  const items = navigation
-    .filter((n) => n.roles.includes(role))
-    .map((n) => ({
-      ...n,
-      children: n.children?.filter((c) => !c.roles || c.roles.includes(role)),
-    }));
+  // Filter items based on Role AND Search Query
+  const filteredItems = useMemo(() => {
+    return navigation
+      .filter((n) => n.roles.includes(role))
+      .map((n) => {
+        const filteredChildren = n.children?.filter(
+          (c) =>
+            (!c.roles || c.roles.includes(role)) &&
+            c.name.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+
+        // If parent name matches or has matching children, keep it
+        if (
+          n.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (filteredChildren && filteredChildren.length > 0)
+        ) {
+          return { ...n, children: filteredChildren };
+        }
+        return null;
+      })
+      .filter(Boolean);
+  }, [role, searchQuery]);
 
   return (
     <>
-      <aside className="hidden lg:block fixed left-0 top-0 h-full w-64 bg-black border-r border-white/10">
-        <SidebarContent pathname={pathname} items={items} />
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:flex fixed left-0 top-0 h-screen w-64 flex-col bg-[#0c0c0e] border-r border-zinc-800/50 z-40">
+        <SidebarContent
+          pathname={pathname}
+          items={filteredItems}
+          user={session?.user}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+        />
       </aside>
 
-      <Sheet>
-        <SheetTrigger asChild>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="lg:hidden fixed top-3 left-3 z-50 text-white bg-black/70 backdrop-blur"
+      {/* Mobile Wrapper */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 flex items-center px-4 bg-[#0c0c0e] border-b border-zinc-800 z-50">
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button size="icon" variant="ghost" className="text-zinc-400">
+              <Menu className="h-5 w-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent
+            side="left"
+            className="p-0 w-64 bg-[#0c0c0e] border-zinc-800"
           >
-            <Menu className="h-6 w-6" />
-          </Button>
-        </SheetTrigger>
-
-        <SheetContent side="left" className="p-0 w-64 bg-black z-50">
-          <SidebarContent pathname={pathname} items={items} />
-        </SheetContent>
-      </Sheet>
+            <SidebarContent
+              pathname={pathname}
+              items={filteredItems}
+              user={session?.user}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+            />
+          </SheetContent>
+        </Sheet>
+        <div className="ml-4 flex items-center gap-2">
+          <School className="h-5 w-5 text-blue-500" />
+          <span className="font-bold text-sm text-white uppercase tracking-wider">
+            EduManage
+          </span>
+        </div>
+      </div>
     </>
   );
 }
 
-function SidebarContent({ pathname, items }) {
+function SidebarContent({
+  pathname,
+  items,
+  user,
+  searchQuery,
+  setSearchQuery,
+}) {
   return (
-    <div className="flex flex-col h-screen ">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-4 border-b border-white/10">
-        <School className="h-8 w-8 text-blue-500" />
-        <div className="text-white">
-          <h1 className="font-bold text-lg">EduManage</h1>
-          <p className="text-xs opacity-70">School Management System</p>
+    <div className="flex flex-col h-full">
+      {/* 1. Header & Search (Fixed) */}
+      <div className="p-4 space-y-4">
+        <div className="flex items-center gap-3 px-2 py-2">
+          <div className="bg-blue-600 p-1.5 rounded-lg shadow-lg shadow-blue-900/20">
+            <School className="h-5 w-5 text-white" />
+          </div>
+          <h1 className="font-black text-lg text-white tracking-tight uppercase italic">
+            Edu<span className="text-blue-500">Manage</span>
+          </h1>
+        </div>
+
+        <div className="relative group px-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-500 group-focus-within:text-blue-500 transition-colors" />
+          <Input
+            placeholder="Search menus..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 bg-zinc-900/50 border-zinc-800 text-xs h-9 focus-visible:ring-blue-500 focus-visible:border-blue-500 placeholder:text-zinc-600"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Scrollable menu */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-        {items.map((item) => (
-          <NavItem key={item.name} item={item} pathname={pathname} />
-        ))}
-      </nav>
+      {/* 2. Scrollable Navigation */}
+      <div className="flex-1 overflow-y-auto px-3 custom-scrollbar">
+        <nav className="space-y-1 pb-10">
+          {items.length > 0 ? (
+            items.map((item) => (
+              <NavItem
+                key={item.name}
+                item={item}
+                pathname={pathname}
+                searchActive={searchQuery.length > 0}
+              />
+            ))
+          ) : (
+            <div className="text-center py-10">
+              <p className="text-xs text-zinc-600 font-medium">
+                No menus found
+              </p>
+            </div>
+          )}
+        </nav>
+      </div>
+
+      {/* 3. User Footer (Fixed) */}
+      <div className="p-4 bg-zinc-900/20 border-t border-zinc-800/50 mt-auto">
+        <div className="flex items-center gap-3 p-2 rounded-xl bg-zinc-900/40 border border-zinc-800/50">
+          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xs uppercase shadow-inner">
+            {user?.name?.[0] || "A"}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-bold text-zinc-100 truncate leading-tight">
+              {user?.name || "Admin User"}
+            </p>
+            <p className="text-[10px] text-zinc-500 truncate uppercase font-bold tracking-tighter">
+              {user?.role || "Administrator"}
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-zinc-500 hover:text-red-400 hover:bg-red-400/10"
+            onClick={() => signOut()}
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #27272a;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #3f3f46;
+        }
+      `}</style>
     </div>
   );
 }
