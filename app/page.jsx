@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { LandingNavbar } from "@/components/landing/navbar";
 import { PricingSection } from "@/components/landing/pricing";
+import { Footer } from "@/components/layout/Footer";
 
 export default function HomePage() {
   return (
@@ -102,9 +103,7 @@ export default function HomePage() {
       </section>
 
       {/* FOOTER */}
-      <footer className="py-6 border-t text-center text-sm text-muted-foreground">
-        © {new Date().getFullYear()} Smart School System. All rights reserved.
-      </footer>
+      <Footer />
     </main>
   );
 }

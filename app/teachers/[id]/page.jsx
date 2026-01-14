@@ -9,7 +9,7 @@ import { StudentProfile } from "@/components/students/student-profile";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Edit, ArrowLeft } from "lucide-react";
-import { TeacherProfile } from "@/components/teachers/teacher-profile";
+import TeacherProfile from "@/components/teachers/teacher-profile";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
