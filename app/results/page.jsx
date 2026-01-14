@@ -11,7 +11,6 @@ import { Plus } from "lucide-react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Card } from "@/components/ui/card";
 import AddResultDialogue from "./add-result-dialogue";
-import { ResultSubjectsDialog } from "@/components/results/result-subjects-dialog";
 
 const fetcher = (url) => fetch(url).then((r) => r.json());
 
@@ -47,7 +46,7 @@ export default function ResultsPage() {
   const exams = examsRes?.data || [];
   const classes = classesRes?.data || [];
 
-  console.log(results)
+  console.log("form main", results)
 
   /* ---------------- ACTIONS ---------------- */
   const handleDelete = async (id) => {
@@ -108,7 +107,7 @@ export default function ResultsPage() {
         />
 
         {/* RESULTS TABLE */}
-        <ResultSubjectsDialog
+        <ResultsTable
           results={results}
           onEdit={handleEdit}
           onDelete={handleDelete}

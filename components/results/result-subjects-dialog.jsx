@@ -28,7 +28,7 @@ export function ResultSubjectsDialog({ open, onOpenChange, result }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[950px] max-h-[95vh] overflow-y-auto bg-slate-100 p-0 border-none">
+      <DialogContent className="w-full max-h-[95vh]  bg-slate-100 p-0 border-none flex flex-col top-[50%] translate-y-[-50%]">
         {/* Actions Bar - Hidden on Print */}
         <DialogHeader className="p-4 bg-white border-b flex flex-row items-center justify-between sticky top-0 z-20 print:hidden">
           <DialogTitle className="text-lg font-bold flex items-center gap-2">

@@ -18,6 +18,8 @@ export function ResultsTable({ results, onEdit, onDelete }) {
   const [open, setOpen] = useState(false);
   const [activeResult, setActiveResult] = useState(null);
 
+   console.log("form table", results);
+
   return (
     <>
       <Table>

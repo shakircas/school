@@ -20,8 +20,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PageHeader } from "@/components/ui/page-header";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { Download, Printer, GraduationCap } from "lucide-react";
+import { Printer, GraduationCap, ShieldCheck, Award } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 
 const fetcher = (url) => fetch(url).then((r) => r.json());
 
@@ -41,119 +41,80 @@ export function DMCContent() {
     classId && sectionId
       ? `/api/students?classId=${classId}&sectionId=${sectionId}`
       : null;
-
   const { data: studentsRes } = useSWR(studentsUrl, fetcher);
-  const [filters, setFilters] = useState({
-    examId: "",
-    classId: "",
-    sectionId: "",
-    student: "",
-  });
 
   const resultsUrl = useMemo(() => {
-    const params = new URLSearchParams();
+    if (!examId || !classId) return null;
+    return `/api/results?examId=${examId}&classId=${classId}&sectionId=${sectionId}`;
+  }, [examId, classId, sectionId]);
 
-    if (filters.examId) params.append("examId", filters.examId);
-    if (filters.classId) params.append("classId", filters.classId);
-    if (filters.sectionId) params.append("sectionId", filters.sectionId);
-    if (filters.student) params.append("student", filters.student);
-
-    return `/api/results?${params.toString()}`;
-  }, [filters]);
-
-  const { data: results, isLoading } = useSWR(resultsUrl, fetcher);
+  const { data: results } = useSWR(resultsUrl, fetcher);
 
   const exams = examsRes?.data || [];
   const classes = classesRes?.data || [];
   const students = studentsRes?.students || [];
-  console.log(results);
-  const exam = exams.find((e) => e._id === examId);
 
-  // const result = results?.[0];
-  // const subjects = result?.subjects || [];
   const result = useMemo(() => {
     if (!results || !studentId) return null;
-    return results.find((r) => r.student?._id === studentId);
+    return Array.isArray(results)
+      ? results.find((r) => r.student?._id === studentId)
+      : null;
   }, [results, studentId]);
+
+  const exam = exams.find((e) => e._id === examId);
   const subjects = result?.subjects || [];
 
   /* ---------------- Grade Helper ---------------- */
   const getGrade = (p) => {
-    if (p >= 90) return { grade: "A+", class: "bg-green-600 text-white" };
-    if (p >= 80) return { grade: "A", class: "bg-green-500 text-white" };
-    if (p >= 70) return { grade: "B", class: "bg-blue-500 text-white" };
-    if (p >= 60) return { grade: "C", class: "bg-yellow-500 text-black" };
-    if (p >= 50) return { grade: "D", class: "bg-orange-500 text-white" };
-    return { grade: "F", class: "bg-red-600 text-white" };
+    if (p >= 90) return { grade: "A+", color: "#16a34a" };
+    if (p >= 80) return { grade: "A", color: "#22c55e" };
+    if (p >= 70) return { grade: "B", color: "#3b82f6" };
+    if (p >= 60) return { grade: "C", color: "#eab308" };
+    if (p >= 50) return { grade: "D", color: "#f97316" };
+    return { grade: "F", color: "#dc2626" };
   };
 
-  /* ---------------- Totals ---------------- */
-  const name = result?.student?.name || "";
-  const obtainedMarks = result?.obtainedMarks || 0;
-  const totalMarks = result?.totalMarks || 0;
-  const percentage = result?.percentage?.toFixed(2) || 0;
+  const percentage = result?.percentage || 0;
   const overallGrade = getGrade(percentage);
 
-  /* ---------------- Print ---------------- */
   const handlePrint = () => {
-    const win = window.open("", "", "width=900,height=700");
-    win.document.write(`<html><body>${dmcRef.current.innerHTML}</body></html>`);
-    win.document.close();
-    win.print();
+    window.print();
   };
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Detailed Mark Certificate (DMC)"
-        description="Exam → Class → Section → Student"
+        title="Result Center"
+        description="Generate and Print Student DMC"
       >
         <Button
-          variant="outline"
+          className="bg-indigo-600 hover:bg-indigo-700 shadow-md transition-all"
           onClick={handlePrint}
-          // disabled={!results?.length > 0}
+          disabled={!result}
         >
           <Printer className="h-4 w-4 mr-2" />
-          Print
+          Print A4 Certificate
         </Button>
       </PageHeader>
 
-      {/* ---------------- Selection ---------------- */}
-      <Card>
+      {/* ---------------- Selection Controls ---------------- */}
+      <Card className="print:hidden border-none shadow-sm bg-slate-50/50">
         <CardContent className="grid md:grid-cols-4 gap-4 pt-6">
-          {/* Exam */}
-          <Select
-            value={examId}
-            onValueChange={(v) => {
-              setExamId(v);
-              setClassId("");
-              setSectionId("");
-              setStudentId("");
-            }}
-          >
-            <SelectTrigger>
+          <Select value={examId} onValueChange={setExamId}>
+            <SelectTrigger className="bg-white">
               <SelectValue placeholder="Select Exam" />
             </SelectTrigger>
             <SelectContent>
               {exams.map((e) => (
                 <SelectItem key={e._id} value={e._id}>
-                  {e.name} ({e.examType} - {e.academicYear} - {e.classId.name})
+                  {e.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          {/* Class */}
-          <Select
-            value={classId}
-            disabled={!examId}
-            onValueChange={(v) => {
-              setClassId(v);
-              setSectionId("");
-              setStudentId("");
-            }}
-          >
-            <SelectTrigger>
+          <Select value={classId} onValueChange={setClassId} disabled={!examId}>
+            <SelectTrigger className="bg-white">
               <SelectValue placeholder="Select Class" />
             </SelectTrigger>
             <SelectContent>
@@ -165,16 +126,12 @@ export function DMCContent() {
             </SelectContent>
           </Select>
 
-          {/* Section */}
           <Select
             value={sectionId}
+            onValueChange={setSectionId}
             disabled={!classId}
-            onValueChange={(v) => {
-              setSectionId(v);
-              setStudentId("");
-            }}
           >
-            <SelectTrigger>
+            <SelectTrigger className="bg-white">
               <SelectValue placeholder="Select Section" />
             </SelectTrigger>
             <SelectContent>
@@ -188,13 +145,12 @@ export function DMCContent() {
             </SelectContent>
           </Select>
 
-          {/* Student */}
           <Select
             value={studentId}
-            disabled={!sectionId}
             onValueChange={setStudentId}
+            disabled={!sectionId}
           >
-            <SelectTrigger>
+            <SelectTrigger className="bg-white">
               <SelectValue placeholder="Select Student" />
             </SelectTrigger>
             <SelectContent>
@@ -208,114 +164,263 @@ export function DMCContent() {
         </CardContent>
       </Card>
 
-      {/* ---------------- DMC ---------------- */}
+      {/* ---------------- THE DMC (A4 PRINT READY) ---------------- */}
+      {result ? (
+        <div className="flex justify-center pb-10">
+          <div
+            ref={dmcRef}
+            className="dmc-print-area bg-white shadow-2xl print:shadow-none relative overflow-hidden"
+            style={{
+              width: "210mm",
+              minHeight: "297mm",
+              padding: "15mm",
+              fontFamily: "'Inter', sans-serif",
+            }}
+          >
+            {/* Border Accents */}
+            <div className="absolute inset-4 border border-slate-200 pointer-events-none" />
+            <div className="absolute inset-6 border-[3px] border-double border-slate-900 pointer-events-none" />
 
-      <Card>
-        <CardContent className="pt-6">
-          <div ref={dmcRef} className="p-8 bg-white border rounded-lg">
+            {/* Header */}
+            <div className="flex justify-between items-start mb-10 relative z-10">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 bg-slate-900 rounded-xl flex items-center justify-center text-white">
+                  <GraduationCap size={32} />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-black uppercase tracking-tighter text-slate-900">
+                    EduManage
+                  </h1>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                    Excellence in Education
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="bg-slate-900 text-white px-4 py-1 text-sm font-bold uppercase tracking-widest mb-2">
+                  Official Transcript
+                </div>
+                <p className="text-xs font-bold text-slate-600">
+                  ID: {result._id.slice(-10).toUpperCase()}
+                </p>
+              </div>
+            </div>
+
             <div className="text-center mb-8">
-              <GraduationCap className="mx-auto h-14 w-14 text-primary mb-2" />
-              <h1 className="text-2xl font-bold">EduManage School</h1>
-              <p className="text-muted-foreground">Detailed Mark Certificate</p>
-              <p className="mt-2 font-semibold">{exam?.name}</p>
-            </div>
-            {/* ---------- Student & Exam Info ---------- */}
-            <div className="grid grid-cols-2 gap-6 mb-6 text-sm">
-              <div className="space-y-1">
-                <p>
-                  <strong>Student Name:</strong> {result?.student.name}
-                </p>
-                <p>
-                  <strong>Roll No:</strong> {result?.student.rollNumber}
-                </p>
-                <p>
-                  <strong>Class:</strong> {result?.classId.name}
-                </p>
-              </div>
-
-              <div className="space-y-1 text-right">
-                <p>
-                  <strong>Examination:</strong> {result?.exam?.name}
-                </p>
-                <p>
-                  <strong>Academic Year:</strong> {result?.academicYear}
-                </p>
-                <p>
-                  <strong>Result Status:</strong> {result?.status}
-                </p>
-              </div>
+              <h2 className="text-3xl font-black text-slate-900 uppercase underline underline-offset-8 decoration-slate-200">
+                Detailed Marks Certificate
+              </h2>
+              <p className="mt-4 text-sm font-bold text-slate-500 italic uppercase tracking-widest">
+                {exam?.name} - {result.academicYear}
+              </p>
             </div>
 
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[50px] text-center">Sr#</TableHead>
-                  <TableHead>Subject</TableHead>
-                  <TableHead className="text-center">Total Marks</TableHead>
-                  <TableHead className="text-center">Marks Obtained</TableHead>
-                  <TableHead className="text-center">%</TableHead>
-                  <TableHead className="text-center">Grade</TableHead>
-                </TableRow>
-              </TableHeader>
+            {/* Student Info Grid */}
+            <div className="grid grid-cols-2 gap-0 border-2 border-slate-900 mb-8 rounded-sm overflow-hidden">
+              <div className="p-3 border-r border-b border-slate-900 flex flex-col">
+                <span className="text-[9px] font-black text-slate-400 uppercase">
+                  Student Name
+                </span>
+                <span className="text-sm font-bold uppercase">
+                  {result.student.name}
+                </span>
+              </div>
+              <div className="p-3 border-b border-slate-900 flex flex-col">
+                <span className="text-[9px] font-black text-slate-400 uppercase">
+                  Roll Number
+                </span>
+                <span className="text-sm font-bold uppercase">
+                  {result.student.rollNumber}
+                </span>
+              </div>
+              <div className="p-3 border-r border-slate-900 flex flex-col">
+                <span className="text-[9px] font-black text-slate-400 uppercase">
+                  Class & Section
+                </span>
+                <span className="text-sm font-bold uppercase">
+                  {result.classId.name} - {result.sectionId}
+                </span>
+              </div>
+              <div className="p-3 flex flex-col">
+                <span className="text-[9px] font-black text-slate-400 uppercase">
+                  Result Date
+                </span>
+                <span className="text-sm font-bold uppercase">
+                  {new Date().toLocaleDateString()}
+                </span>
+              </div>
+            </div>
 
-              <TableBody>
-                {subjects.map((s, i) => (
-                  <TableRow key={i}>
-                    <TableCell className="text-center">{i + 1}</TableCell>
-                    <TableCell>{s.subject}</TableCell>
-                    <TableCell className="text-center">
-                      {s.totalMarks}
+            {/* Marks Table */}
+            <div className="mb-8">
+              <Table className="border-2 border-slate-900">
+                <TableHeader className="bg-slate-900">
+                  <TableRow className="hover:bg-slate-900">
+                    <TableHead className="text-white font-black uppercase text-[10px]">
+                      Subject
+                    </TableHead>
+                    <TableHead className="text-white font-black uppercase text-[10px] text-center">
+                      Max
+                    </TableHead>
+                    <TableHead className="text-white font-black uppercase text-[10px] text-center">
+                      Obtained
+                    </TableHead>
+                    <TableHead className="text-white font-black uppercase text-[10px] text-center">
+                      Grade
+                    </TableHead>
+                    <TableHead className="text-white font-black uppercase text-[10px] text-right">
+                      Status
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {subjects.map((s, i) => (
+                    <TableRow key={i} className="border-b border-slate-900">
+                      <TableCell className="font-bold py-3 uppercase text-xs">
+                        {s.subject}
+                      </TableCell>
+                      <TableCell className="text-center font-bold text-slate-600">
+                        {s.totalMarks}
+                      </TableCell>
+                      <TableCell className="text-center font-black text-sm">
+                        {s.obtainedMarks}
+                      </TableCell>
+                      <TableCell className="text-center font-black">
+                        <span style={{ color: getGrade(s.percentage).color }}>
+                          {s.grade}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <span
+                          className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
+                            s.obtainedMarks >= s.passingMarks
+                              ? "border-green-600 text-green-600"
+                              : "border-red-600 text-red-600"
+                          }`}
+                        >
+                          {s.obtainedMarks >= s.passingMarks ? "PASS" : "FAIL"}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  <TableRow className="bg-slate-50 font-black">
+                    <TableCell className="uppercase text-xs">
+                      Aggregate Summary
                     </TableCell>
                     <TableCell className="text-center">
-                      {s.obtainedMarks}
+                      {result.totalMaxMarks}
                     </TableCell>
-                    <TableCell className="text-center">
-                      {s.percentage.toFixed(1)}%
+                    <TableCell className="text-center text-lg">
+                      {result.totalObtainedMarks}
                     </TableCell>
-                    <TableCell className="text-center">
-                      <span
-                        className={`px-2 py-1 rounded text-xs ${
-                          getGrade(s.percentage).class
-                        }`}
-                      >
-                        {s.grade}
-                      </span>
+                    <TableCell
+                      className="text-center text-lg"
+                      style={{ color: overallGrade.color }}
+                    >
+                      {overallGrade.grade}
+                    </TableCell>
+                    <TableCell className="text-right text-lg uppercase tracking-tighter">
+                      {result.status}
                     </TableCell>
                   </TableRow>
-                ))}
+                </TableBody>
+              </Table>
+            </div>
 
-                <TableRow className="font-bold bg-gray-100">
-                  <TableCell colSpan={2}>Grand Total</TableCell>
-                  <TableCell className="text-center">{totalMarks}</TableCell>
-                  <TableCell className="text-center">{obtainedMarks}</TableCell>
-                  <TableCell className="text-center">{percentage}%</TableCell>
-                  <TableCell className="text-center">
+            {/* Performance Footer */}
+            <div className="flex justify-between items-center mb-12">
+              <div className="flex gap-4">
+                <div className="border-2 border-slate-900 p-3 text-center min-w-[100px]">
+                  <p className="text-[9px] font-black text-slate-400 uppercase">
+                    Percentage
+                  </p>
+                  <p className="text-xl font-black">{percentage}%</p>
+                </div>
+                <div className="border-2 border-slate-900 p-3 text-center min-w-[100px]">
+                  <p className="text-[9px] font-black text-slate-400 uppercase">
+                    Grade
+                  </p>
+                  <p
+                    className="text-xl font-black"
+                    style={{ color: overallGrade.color }}
+                  >
                     {overallGrade.grade}
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-            {/* ---------- Footer ---------- */}
-            <div className="mt-10 grid grid-cols-3 text-sm text-center">
-              <div>
-                <p className="mt-12 border-t border-black pt-2">
-                  Class Teacher
-                </p>
+                  </p>
+                </div>
               </div>
-
-              <div>
-                <p className="mt-12 border-t border-black pt-2">
-                  Controller of Examinations
+              <div className="flex flex-col items-end">
+                <QRCodeSVG value={`verify-${result._id}`} size={60} />
+                <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">
+                  Scan to Verify Result
                 </p>
-              </div>
-
-              <div>
-                <p className="mt-12 border-t border-black pt-2">Principal</p>
               </div>
             </div>
+
+            {/* Signatures */}
+            <div className="mt-20 grid grid-cols-3 gap-10">
+              <div className="text-center">
+                <div className="border-t-2 border-slate-900 pt-2 font-black uppercase text-[10px]">
+                  Class Teacher
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="border-t-2 border-slate-900 pt-2 font-black uppercase text-[10px]">
+                  Controller Exam
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="border-t-2 border-slate-900 pt-2 font-black uppercase text-[10px]">
+                  Principal Signature
+                </div>
+              </div>
+            </div>
+
+            {/* Official Footer */}
+            <div className="absolute bottom-10 left-0 right-0 px-10 text-center">
+              <p className="text-[9px] text-slate-400 border-t pt-4">
+                This is a system-generated academic record from EduManage
+                Portal. Official validation requires school stamp and authorized
+                signature.
+              </p>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      ) : (
+        <div className="h-64 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+          <Award className="h-10 w-10 text-slate-300 mb-2" />
+          <p className="text-slate-400 font-medium">
+            Please select filters to generate the certificate
+          </p>
+        </div>
+      )}
+
+      {/* ---------------- PRINT ONLY STYLES ---------------- */}
+      <style jsx global>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          .dmc-print-area,
+          .dmc-print-area * {
+            visibility: visible;
+          }
+          .dmc-print-area {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 210mm;
+            height: 297mm;
+            margin: 0;
+            padding: 10mm;
+            box-shadow: none !important;
+            border: none !important;
+          }
+          @page {
+            size: A4;
+            margin: 0;
+          }
+        }
+      `}</style>
     </div>
   );
 }
