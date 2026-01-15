@@ -1,47 +1,40 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import useSWR from "swr";
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+  Plus,
+  Clock,
+  User,
+  Trash2,
+  Edit3,
+  AlertTriangle,
+  LayoutGrid,
+  Calendar,
+  Users,
+  BarChart3,
+  ChevronRight,
+  Search,
+  BookOpen,
+} from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
-  DialogHeader,
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { PageHeader } from "@/components/ui/page-header";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Plus, Calendar, Clock, BookOpen, User } from "lucide-react";
-import { toast } from "sonner";
-import { Ta } from "zod/v4/locales";
 import {
   Select,
   SelectTrigger,
   SelectValue,
   SelectContent,
   SelectItem,
-  SelectLabel,
-} from "../ui/select";
+} from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -53,7 +46,6 @@ const WEEKDAYS = [
   "Friday",
   "Saturday",
 ];
-
 const TIME_SLOTS = [
   "08:00 - 08:40",
   "08:40 - 09:20",
@@ -65,454 +57,479 @@ const TIME_SLOTS = [
 ];
 
 export function TimetableContent() {
-  const { data, isLoading, mutate } = useSWR(
-    "/api/academics/timetable",
-    fetcher
-  );
-
+  const { data, mutate } = useSWR("/api/academics/timetable", fetcher);
   const { data: teachersRes } = useSWR("/api/teachers", fetcher);
-  const { data: subjectsData } = useSWR("/api/academics/subjects", fetcher);
-
-  const teachers = teachersRes?.teachers || [];
-  const subjects = subjectsData?.data || [];
-  console.log("teachers", teachers);
-  console.log("tiemetable", data);
+  const { data: subjectsRes } = useSWR("/api/academics/subjects", fetcher);
 
   const [isOpen, setIsOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState(null);
-
-  const [day, setDay] = useState("");
-  const [time, setTime] = useState("");
-  const [subjectId, setSubjectId] = useState("");
-  const [subjectName, setSubjectName] = useState("");
-  const [teacher, setTeacher] = useState("");
+  const [formData, setFormData] = useState({
+    day: "",
+    time: "",
+    subjectId: "",
+    teacherId: "",
+  });
   const [editMode, setEditMode] = useState(false);
-  const [editIndex, setEditIndex] = useState(null);
-  const [editDay, setEditDay] = useState("");
+  const [editMeta, setEditMeta] = useState({ index: null, day: "" });
 
-  const openEditor = (cls) => {
+  const teachers = teachersRes?.teachers || [];
+  const subjects = subjectsRes?.data || [];
+  const classes = data?.data || [];
+
+  /* --- CALCULATE WORKLOAD --- */
+  const teacherWorkload = useMemo(() => {
+    const stats = {};
+    classes.forEach((cls) => {
+      cls.schedule?.forEach((day) => {
+        day.periods.forEach((p) => {
+          const tId = p.teacher?._id || p.teacher;
+          if (tId) {
+            stats[tId] = (stats[tId] || 0) + 1;
+          }
+        });
+      });
+    });
+    return stats;
+  }, [classes]);
+
+  /* --- CONFLICT LOGIC --- */
+  const conflict = useMemo(() => {
+    if (
+      !formData.day ||
+      !formData.time ||
+      !formData.teacherId ||
+      !classes.length
+    )
+      return null;
+    for (const cls of classes) {
+      const daySchedule = cls.schedule?.find((s) => s.day === formData.day);
+      if (daySchedule) {
+        const periodIdx = daySchedule.periods.findIndex(
+          (p) =>
+            p.time === formData.time &&
+            (p.teacher?._id === formData.teacherId ||
+              p.teacher === formData.teacherId)
+        );
+        if (periodIdx !== -1) {
+          const isSelf =
+            editMode &&
+            cls._id === selectedClass?._id &&
+            formData.day === editMeta.day &&
+            periodIdx === editMeta.index;
+          if (!isSelf) return cls.name;
+        }
+      }
+    }
+    return null;
+  }, [formData, classes, editMode, editMeta, selectedClass]);
+
+  const handleOpenEditor = (cls, p = null, day = "", idx = null) => {
     setSelectedClass(cls);
+    if (p) {
+      setEditMode(true);
+      setEditMeta({ index: idx, day });
+      setFormData({
+        day,
+        time: p.time,
+        subjectId: p.subjectId,
+        teacherId: p.teacher?._id || p.teacher,
+      });
+    } else {
+      setEditMode(false);
+      setFormData({ day: "", time: "", subjectId: "", teacherId: "" });
+    }
     setIsOpen(true);
   };
 
   const savePeriod = async () => {
-    if (!day || !time || !subjectId || !teacher)
-      return toast.error("Please fill all fields");
-
-    const cls = selectedClass;
-
-    // If editing
-    if (editMode) {
-      await fetch(`/api/academics/timetable/${cls._id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          day: editDay,
-          index: editIndex,
-          time,
-          subjectId,
+    if (conflict)
+      return toast.error(`Conflict! Teacher is busy in ${conflict}`);
+    const subjectName = subjects.find(
+      (s) => s._id === formData.subjectId
+    )?.name;
+    try {
+      const url = editMode
+        ? `/api/academics/timetable/${selectedClass._id}`
+        : "/api/academics/timetable";
+      const method = editMode ? "PATCH" : "POST";
+      let payload;
+      if (editMode) {
+        payload = {
+          ...formData,
           subjectName,
-          teacher,
-        }),
-      });
-
-      toast.success("Period updated!");
-    }
-    // If adding new
-    else {
-      // let schedule = cls.schedule || [];
-      // let targetDay = schedule.find((d) => d.day === day);
-
-      // if (!targetDay) {
-      //   targetDay = { day, periods: [] };
-      //   schedule.push(targetDay);
-      // }
-
-      // targetDay.periods.push({ time, subjectId, subjectName, teacher });
-      const schedule = structuredClone(cls.schedule || []);
-
-      let targetDay = schedule.find((d) => d.day === day);
-      if (!targetDay) {
-        targetDay = { day, periods: [] };
-        schedule.push(targetDay);
+          teacher: formData.teacherId,
+          index: editMeta.index,
+          day: editMeta.day,
+        };
+      } else {
+        const sch = structuredClone(selectedClass.schedule || []);
+        let d = sch.find((x) => x.day === formData.day);
+        if (!d) {
+          d = { day: formData.day, periods: [] };
+          sch.push(d);
+        }
+        d.periods.push({
+          ...formData,
+          subjectName,
+          teacher: formData.teacherId,
+        });
+        payload = { classId: selectedClass._id, schedule: sch };
       }
-
-      targetDay.periods.push({
-        time,
-        subjectId,
-        subjectName,
-        teacher,
-      });
-
-      await fetch("/api/academics/timetable", {
-        method: "POST",
+      await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ classId: cls._id, schedule }),
+        body: JSON.stringify(payload),
       });
-
-      toast.success("Period added!");
-      setDay("");
-      setTime("");
-      setSubjectId("");
-      setSubjectName("");
-      setTeacher("");
+      toast.success("Schedule Updated");
+      setIsOpen(false);
+      mutate();
+    } catch (e) {
+      toast.error("Update failed");
     }
-
-    setIsOpen(false);
-    setEditMode(false);
-    mutate();
-  };
-
-  const getDaySchedule = (cls, day) =>
-    cls.schedule?.find((d) => d.day === day)?.periods || [];
-
-  const deletePeriod = async (cls, day, index) => {
-    const confirmDelete = window.confirm("Delete this period?");
-    if (!confirmDelete) return;
-
-    await fetch(`/api/academics/timetable/${cls._id}`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ day, index }),
-    });
-
-    toast.success("Period deleted successfully");
-    mutate();
   };
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Class & Teacher Timetable"
-        description="Beautiful weekly and daily view for classes and teachers"
-      />
+    <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
+      {/* HEADER SECTION */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">
+            Academic Scheduler
+          </h1>
+          <p className="text-sm text-slate-500">
+            Conflicts are checked across all {classes.length} active classes.
+          </p>
+        </div>
+        <div className="flex bg-slate-100 p-1 rounded-xl">
+          <div className="px-3 py-1 text-xs font-bold text-slate-500 uppercase">
+            Year: 2026
+          </div>
+        </div>
+      </div>
 
-      {/* ───── HOW TO ADD TIMETABLE (Guide) ───── */}
-      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 shadow-sm border">
-        <CardHeader>
-          <CardTitle>How to Add Timetable</CardTitle>
-          <CardDescription>
-            Follow the steps below to create an accurate timetable
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ol className="list-decimal ml-5 space-y-2">
-            <li>
-              Select a class and click <b>Edit Timetable</b>
-            </li>
-            <li>Choose a day (Monday, Tuesday…)</li>
-            <li>Enter period time (e.g., 9:00–10:00)</li>
-            <li>Enter subject name (Math, English…)</li>
-            <li>Enter teacher name (John Doe)</li>
-            <li>
-              Click <b>Add Period</b>
-            </li>
-          </ol>
-        </CardContent>
-      </Card>
-
-      {/* ───── TAB SWITCHER ───── */}
-      <Tabs defaultValue="weekly" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-4">
-          <TabsTrigger value="weekly">Weekly View</TabsTrigger>
-          <TabsTrigger value="daily">Daily View</TabsTrigger>
+      <Tabs defaultValue="grid" className="w-full">
+        <TabsList className="bg-white border p-1 rounded-2xl mb-6 shadow-sm">
+          <TabsTrigger value="grid" className="rounded-xl px-5 gap-2">
+            <LayoutGrid className="w-4 h-4" /> Weekly Grid
+          </TabsTrigger>
+          <TabsTrigger value="daily" className="rounded-xl px-5 gap-2">
+            <Calendar className="w-4 h-4" /> Daily Glance
+          </TabsTrigger>
+          <TabsTrigger value="workload" className="rounded-xl px-5 gap-2">
+            <BarChart3 className="w-4 h-4" /> Teacher Workload
+          </TabsTrigger>
         </TabsList>
 
-        {/* ───── WEEKLY VIEW ───── */}
-        <TabsContent value="weekly">
-          <Card>
-            <CardHeader>
-              <CardTitle>Weekly Timetable</CardTitle>
-              <CardDescription>
-                Shows full week schedule for each class
-              </CardDescription>
-            </CardHeader>
+        {/* --- WEEKLY GRID CONTENT --- */}
+        <TabsContent value="grid" className="space-y-12">
+          {classes.map((cls) => (
+            <div
+              key={cls._id}
+              className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden"
+            >
+              <div className="bg-slate-50 px-6 py-4 flex justify-between items-center border-b">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold">
+                    {cls.name.charAt(0)}
+                  </div>
+                  <h2 className="text-lg font-bold text-slate-700">
+                    {cls.name}
+                  </h2>
+                </div>
+                <Button
+                  onClick={() => handleOpenEditor(cls)}
+                  size="sm"
+                  className="rounded-xl bg-indigo-600 shadow-lg shadow-indigo-100"
+                >
+                  <Plus className="w-4 h-4 mr-2" /> Add Session
+                </Button>
+              </div>
 
-            <CardContent>
-              {!data?.data?.length ? (
-                <p>No classes found</p>
-              ) : (
-                data.data.map((cls) => (
-                  <Card
-                    key={cls._id}
-                    className="mb-6 border shadow-sm p-4 rounded-xl"
-                  >
-                    <div className="flex justify-between items-center">
-                      <h2 className="text-xl font-bold">{cls.name}</h2>
-                      <Button onClick={() => openEditor(cls)}>
-                        <Calendar className="h-4 w-4 mr-2" />
-                        Edit Timetable
-                      </Button>
-                    </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mt-4">
-                      {WEEKDAYS.map((d) => (
-                        <Card
-                          key={d}
-                          className="p-3 border bg-white shadow-sm rounded-lg"
-                        >
-                          <h3 className="font-semibold text-blue-600 mb-2">
-                            {d}
-                          </h3>
-
-                          {getDaySchedule(cls, d).length === 0 ? (
-                            <p className="text-sm text-gray-400">No periods</p>
-                          ) : (
-                            getDaySchedule(cls, d).map((p, i) => (
-                              <motion.div
-                                key={p._id}
-                                initial={{ opacity: 0, y: 5 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="p-2 mb-2 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg shadow-sm"
+              <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 divide-x divide-slate-100">
+                {WEEKDAYS.map((day) => {
+                  const dayData = cls.schedule?.find((s) => s.day === day);
+                  return (
+                    <div
+                      key={day}
+                      className="p-4 bg-white hover:bg-slate-50/50 transition-colors"
+                    >
+                      <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4">
+                        {day}
+                      </p>
+                      <div className="space-y-3">
+                        {dayData?.periods.map((p, idx) => (
+                          <div
+                            key={idx}
+                            className="group p-3 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-indigo-200 transition-all relative"
+                          >
+                            <div className="flex justify-between items-start mb-2">
+                              <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">
+                                {p.time.split(" - ")[0]}
+                              </span>
+                              <button
+                                onClick={() =>
+                                  handleOpenEditor(cls, p, day, idx)
+                                }
+                                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-slate-100 rounded-md"
                               >
-                                <div className="text-xs text-gray-500">
-                                  <Clock className="inline w-3 h-3 mr-1" />
-                                  {p.time}
-                                </div>
-                                <div className="font-medium text-gray-800">
-                                  <BookOpen className="inline w-3 h-3 mr-1" />
-                                  {p.subjectName || p.subject}
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  <User className="inline w-3 h-3 mr-1" />
-                                  {p.teacher?.name}
-                                </div>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    setSelectedClass(cls);
-                                    setDay(d);
-                                    setTime(p.time);
-                                    setSubjectId(p.subjectId);
-                                    setSubjectName(p.subjectName);
-                                    setTeacher(p.teacher?._id || p.teacher);
-                                    setEditMode(true);
-                                    setEditIndex(i);
-                                    setEditDay(d);
-                                    setIsOpen(true);
-                                  }}
-                                >
-                                  Edit
-                                </Button>
-
-                                {/* DELETE BUTTON */}
-                                {/* <Button
-                                  variant="destructive"
-                                  size="icon"
-                                  className="h-6 w-6"
-                                  onClick={() => deletePeriod(cls, d, i)}
-                                >
-                                  ×
-                                </Button> */}
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  onClick={async () => {
-                                    await fetch(
-                                      `/api/academics/timetable/${cls._id}`,
-                                      {
-                                        method: "DELETE",
-                                        headers: {
-                                          "Content-Type": "application/json",
-                                        },
-                                        body: JSON.stringify({
-                                          day: d,
-                                          index: i,
-                                        }),
-                                      }
-                                    );
-
-                                    toast.success("Period deleted");
-                                    mutate();
-                                  }}
-                                >
-                                  Delete
-                                </Button>
-                              </motion.div>
-                            ))
-                          )}
-                        </Card>
-                      ))}
+                                <Edit3 className="w-3 h-3 text-slate-400" />
+                              </button>
+                            </div>
+                            <h4 className="text-[13px] font-bold text-slate-800 leading-tight">
+                              {p.subjectName}
+                            </h4>
+                            <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
+                              <User className="w-3 h-3" />{" "}
+                              {teachers.find(
+                                (t) => t._id === (p.teacher?._id || p.teacher)
+                              )?.name || "TBA"}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </Card>
-                ))
-              )}
-            </CardContent>
-          </Card>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </TabsContent>
 
-        {/* ───── DAILY VIEW ───── */}
+        {/* --- DAILY GLANCE CONTENT --- */}
         <TabsContent value="daily">
-          <Card>
-            <CardHeader>
-              <CardTitle>Daily Timetable (Class)</CardTitle>
-              <CardDescription>
-                Select any class to view today's schedule
-              </CardDescription>
-            </CardHeader>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {classes.map((cls) => {
+              const today = WEEKDAYS[new Date().getDay() - 1] || "Monday";
+              const todayPeriods =
+                cls.schedule?.find((s) => s.day === today)?.periods || [];
+              return (
+                <div
+                  key={cls._id}
+                  className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden p-6"
+                >
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-md font-bold text-slate-800">
+                      {cls.name}
+                    </h3>
+                    <Badge variant="secondary" className="rounded-lg">
+                      {today}
+                    </Badge>
+                  </div>
+                  <div className="space-y-4">
+                    {todayPeriods.length > 0 ? (
+                      todayPeriods.map((p, i) => (
+                        <div
+                          key={i}
+                          className="flex gap-4 items-center p-3 border-l-4 border-indigo-500 bg-slate-50 rounded-r-xl"
+                        >
+                          <div className="text-[11px] font-bold text-slate-400 min-w-[50px]">
+                            {p.time.split(" - ")[0]}
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-slate-700 leading-none">
+                              {p.subjectName}
+                            </p>
+                            <p className="text-[11px] text-slate-500 mt-1">
+                              {
+                                teachers.find(
+                                  (t) => t._id === (p.teacher?._id || p.teacher)
+                                )?.name
+                              }
+                            </p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-6 text-slate-400 text-sm italic">
+                        No classes today.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </TabsContent>
 
-            <CardContent>
-              {!data?.data?.length ? (
-                <p>No classes found</p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Class</TableHead>
-                      <TableHead>Today's Periods</TableHead>
-                      <TableHead> Teacher </TableHead>
-                      <TableHead>Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-
-                  <TableBody>
-                    {data.data.map((cls) => {
-                      const today = WEEKDAYS[new Date().getDay() - 1];
-                      const todayPeriods = getDaySchedule(cls, today);
-
-                      return (
-                        <TableRow key={cls._id}>
-                          <TableCell>{cls.name}</TableCell>
-
-                          <TableCell>
-                            {todayPeriods.length === 0
-                              ? "No periods today"
-                              : todayPeriods.map((p, i) => (
-                                  <span
-                                    key={i}
-                                    className="px-2 py-1 rounded bg-blue-100 text-blue-700 mr-2"
-                                  >
-                                    {p.time} –{" "}
-                                    {p.subjectName ||
-                                      p.subject ||
-                                      p.subjectId?.name}
-                                  </span>
-                                ))}
-                          </TableCell>
-
-                          <TableCell>
-                            {todayPeriods.length === 0
-                              ? "No periods today"
-                              : todayPeriods.map((p, i) => (
-                                  <span
-                                    key={i}
-                                    className="px-2 py-1 rounded bg-blue-100 text-blue-700 mr-2"
-                                  >
-                                    {p.teacher.name}
-                                  </span>
-                                ))}
-                          </TableCell>
-
-                          <TableCell>
-                            <Button onClick={() => openEditor(cls)}>
-                              Edit
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+        {/* --- TEACHER WORKLOAD SUMMARY --- */}
+        <TabsContent value="workload">
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 overflow-hidden">
+            <div className="mb-6">
+              <h3 className="text-lg font-bold text-slate-800">
+                Faculty Utilization
+              </h3>
+              <p className="text-sm text-slate-500">
+                Total periods assigned per week across all classes.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {teachers.map((t) => {
+                const count = teacherWorkload[t._id] || 0;
+                return (
+                  <div
+                    key={t._id}
+                    className="p-4 border rounded-2xl flex items-center justify-between hover:bg-slate-50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center font-bold text-slate-500">
+                        {t.name.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-slate-700">
+                          {t.name}
+                        </p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase">
+                          {t.subject || "Faculty"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-black text-indigo-600 leading-none">
+                        {count}
+                      </p>
+                      <p className="text-[10px] text-slate-400 font-bold">
+                        PERIODS
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
 
-      {/* ───── EDITOR DIALOG ───── */}
+      {/* --- EDITOR DIALOG --- */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Timetable – {selectedClass?.name}</DialogTitle>
-          </DialogHeader>
+        <DialogContent className="max-w-md rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
+          <div className="bg-slate-900 p-6 text-white flex justify-between items-center">
+            <DialogTitle className="text-lg font-bold">
+              {editMode ? "Refine Session" : "New Allocation"}
+            </DialogTitle>
+            <Badge variant="outline" className="text-white border-white/20">
+              {selectedClass?.name}
+            </Badge>
+          </div>
 
-          <div className="space-y-4">
-            <Label>Day</Label>
-            <select
-              value={day}
-              onChange={(e) => setDay(e.target.value)}
-              className="w-full border rounded-md p-2"
-            >
-              <option value="">Select Day</option>
-              {WEEKDAYS.map((d) => (
-                <option key={d} value={d}>
-                  {d}
-                </option>
-              ))}
-            </select>
+          <div className="p-6 space-y-5 bg-white">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
+                  Day
+                </label>
+                <Select
+                  value={formData.day}
+                  onValueChange={(v) => setFormData({ ...formData, day: v })}
+                >
+                  <SelectTrigger className="rounded-xl bg-slate-50 border-none font-bold">
+                    <SelectValue placeholder="Day" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {WEEKDAYS.map((d) => (
+                      <SelectItem key={d} value={d}>
+                        {d}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
+                  Time
+                </label>
+                <Select
+                  value={formData.time}
+                  onValueChange={(v) => setFormData({ ...formData, time: v })}
+                >
+                  <SelectTrigger className="rounded-xl bg-slate-50 border-none font-bold">
+                    <SelectValue placeholder="Slot" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TIME_SLOTS.map((t) => (
+                      <SelectItem key={t} value={t}>
+                        {t}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-            {/* <Label>Time</Label>
-            <Input
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-              placeholder="9:00 - 10:00"
-            /> */}
-
-            {/* Time Slot */}
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Time Slot
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
+                Subject
               </label>
-              <Select value={time} onValueChange={setTime}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Time" />
+              <Select
+                value={formData.subjectId}
+                onValueChange={(v) =>
+                  setFormData({ ...formData, subjectId: v })
+                }
+              >
+                <SelectTrigger className="rounded-xl bg-slate-50 border-none font-bold h-12">
+                  <SelectValue placeholder="Select Subject" />
                 </SelectTrigger>
                 <SelectContent>
-                  {TIME_SLOTS.map((slot) => (
-                    <SelectItem key={slot} value={slot}>
-                      {slot}
+                  {subjects.map((s) => (
+                    <SelectItem key={s._id} value={s._id}>
+                      {s.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            <Label>Subject</Label>
-            <select
-              value={subjectId}
-              onChange={(e) => {
-                const id = e.target.value;
-                const subj = subjects.find((s) => s._id === id);
-                setSubjectId(id);
-                setSubjectName(subj?.name || "");
-              }}
-              className="w-full border rounded-md p-2"
-            >
-              <option value="">Select Subject</option>
-              {subjects?.map((s) => (
-                <option key={s._id} value={s._id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
+                Faculty Member
+              </label>
+              <Select
+                value={formData.teacherId}
+                onValueChange={(v) =>
+                  setFormData({ ...formData, teacherId: v })
+                }
+              >
+                <SelectTrigger className="rounded-xl bg-slate-50 border-none font-bold h-12">
+                  <SelectValue placeholder="Assign Teacher" />
+                </SelectTrigger>
+                <SelectContent>
+                  {teachers.map((t) => (
+                    <SelectItem key={t._id} value={t._id}>
+                      {t.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-            <Label>Teacher</Label>
-            <select
-              value={teacher}
-              onChange={(e) => setTeacher(e.target.value)}
-              className="w-full border rounded-md p-2"
-            >
-              <option value="">Select Teacher</option>
-              {teachers?.map((t) => (
-                <option key={t._id} value={t._id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
+            {conflict && (
+              <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl flex items-start gap-3">
+                <AlertTriangle className="w-4 h-4 text-rose-500 mt-0.5" />
+                <div>
+                  <p className="text-rose-600 font-bold text-xs">
+                    Teacher Conflict Detected
+                  </p>
+                  <p className="text-rose-500/80 text-[11px]">
+                    Occupied in <b>{conflict}</b> during this slot.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
-          <DialogFooter>
-            {/* <Button onClick={addPeriod}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Period
-            </Button> */}
+          <DialogFooter className="p-6 bg-slate-50">
             <Button
-              onClick={savePeriod}
-              disabled={!day || !time || !subjectId || !teacher}
+              variant="ghost"
+              onClick={() => setIsOpen(false)}
+              className="rounded-xl text-slate-400 font-bold"
             >
-              <Plus className="h-4 w-4 mr-2" />
-              {editMode ? "Save Changes" : "Add Period"}
+              Cancel
+            </Button>
+            <Button
+              disabled={!!conflict}
+              onClick={savePeriod}
+              className="rounded-xl px-8 bg-slate-900 font-bold shadow-lg shadow-slate-200"
+            >
+              {editMode ? "Save Changes" : "Confirm"}
             </Button>
           </DialogFooter>
         </DialogContent>
