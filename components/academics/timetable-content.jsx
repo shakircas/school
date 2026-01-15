@@ -291,14 +291,14 @@ export function TimetableContent() {
               key={cls._id}
               className="bg-white rounded-[2rem] border-2 border-slate-50 shadow-xl shadow-slate-200/50 overflow-hidden"
             >
-              <div className="bg-slate-900 px-8 py-5 flex justify-between items-center">
+              <div className="bg-blue-900 px-8 py-5 flex justify-between items-center">
                 <h2 className="text-lg font-black text-white tracking-widest uppercase">
                   {cls.name}
                 </h2>
                 <Button
                   onClick={() => handleOpenEditor(cls)}
                   size="sm"
-                  className="rounded-full bg-indigo-500 hover:bg-indigo-400 font-bold px-6 border-none"
+                  className="rounded-full bg-slate-900 hover:bg-indigo-400 font-bold px-6 border-none"
                 >
                   <Plus className="w-4 h-4 mr-2" /> New Entry
                 </Button>
@@ -308,7 +308,7 @@ export function TimetableContent() {
                   const dayData = cls.schedule?.find((s) => s.day === day);
                   return (
                     <div key={day} className="p-4 bg-white">
-                      <p className="text-[11px] font-black text-slate-400 uppercase mb-4 text-center tracking-tighter">
+                      <p className="text-[11px] font-black text-slate-900 uppercase mb-4 text-center tracking-tighter">
                         {day}
                       </p>
                       <div className="space-y-3">
