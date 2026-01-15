@@ -83,128 +83,109 @@ export default function SubjectDialog({
 
   console.log(teachers);
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl rounded-2xl">
-        <DialogHeader>
-          <DialogTitle>
-            {selectedSubject ? "Edit Subject" : "Add New Subject"}
-          </DialogTitle>
-        </DialogHeader>
+ return (
+   <Dialog open={open} onOpenChange={onOpenChange}>
+     <DialogContent className="max-w-xl p-0 overflow-hidden rounded-3xl border-none shadow-2xl">
+       <DialogHeader className="p-8 bg-slate-900 text-white">
+         <DialogTitle className="text-2xl font-bold">
+           {selectedSubject ? "Modify Subject" : "New Curriculum Subject"}
+         </DialogTitle>
+         <p className="text-slate-400 text-sm">
+           Fill in the details to define subject scope and faculty.
+         </p>
+       </DialogHeader>
 
-        <form onSubmit={onSubmit} className="space-y-5">
-          {/* Subject Dropdown */}
-          <div className="space-y-2">
-            <Label>Subject Name</Label>
-            <Select
-              value={watch("name")}
-              onValueChange={(value) => {
-                const selected = subjectsKPK.find((s) => s.value === value);
-                setValue("name", value, { shouldValidate: true });
-                setValue("code", selected?.code || "", {
-                  shouldValidate: true,
-                });
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select Subject" />
-              </SelectTrigger>
-              <SelectContent>
-                {subjectsKPK.map((sub) => (
-                  <SelectItem key={sub.value} value={sub.value}>
-                    {sub.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+       <form onSubmit={onSubmit} className="p-8 space-y-6 bg-white">
+         <div className="grid grid-cols-2 gap-6">
+           <div className="col-span-2 md:col-span-1 space-y-2">
+             <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">
+               Subject Name
+             </Label>
+             <Select
+               value={watch("name")}
+               onValueChange={(v) => setValue("name", v)}
+             >
+               <SelectTrigger className="rounded-xl border-slate-200 h-11">
+                 <SelectValue placeholder="Select Subject" />
+               </SelectTrigger>
+               <SelectContent>
+                 {subjectsKPK.map((sub) => (
+                   <SelectItem key={sub.value} value={sub.value}>
+                     {sub.label}
+                   </SelectItem>
+                 ))}
+               </SelectContent>
+             </Select>
+           </div>
 
-            {errors.subject && (
-              <p className="text-sm text-destructive">
-                {errors.subject.message}
-              </p>
-            )}
-          </div>
+           <div className="col-span-2 md:col-span-1 space-y-2">
+             <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">
+               Subject Code
+             </Label>
+             <Input
+               {...register("code")}
+               disabled
+               className="rounded-xl bg-slate-50 h-11 border-slate-200 font-mono font-bold text-primary"
+             />
+           </div>
+         </div>
 
-          {/* Subject Code */}
+         <div className="space-y-2">
+           <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">
+             Assignment Type
+           </Label>
+           <div className="grid grid-cols-3 gap-3">
+             {["Compulsory", "Elective", "Optional"].map((type) => (
+               <button
+                 type="button"
+                 key={type}
+                 onClick={() => setValue("type", type)}
+                 className={`py-2 px-4 rounded-xl border text-sm font-medium transition-all ${
+                   watch("type") === type
+                     ? "bg-primary text-white border-primary shadow-md shadow-primary/20"
+                     : "bg-white text-slate-600 border-slate-200 hover:border-primary"
+                 }`}
+               >
+                 {type}
+               </button>
+             ))}
+           </div>
+         </div>
 
-          <div className="space-y-2">
-            <Label>Subject Code</Label>
-            <Select value={watch("code")} disabled>
-              <SelectTrigger>
-                <SelectValue placeholder="Auto-generated code" />
-              </SelectTrigger>
-              <SelectContent>
-                {subjectsKPK.map((sub) => (
-                  <SelectItem key={sub.code} value={sub.code}>
-                    {sub.code}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+         <div className="space-y-4 pt-4 border-t border-slate-100">
+           <div className="space-y-2">
+             <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">
+               Target Classes
+             </Label>
+             <MultiSelect
+               options={classes.map((c) => ({ value: c._id, label: c.name }))}
+               value={watch("classes") || []}
+               onChange={(v) => setValue("classes", v)}
+             />
+           </div>
 
-          {/* Subject Type */}
-          <div className="space-y-2">
-            <Label>Subject Type</Label>
-            <Select
-              value={watch("type")}
-              onValueChange={(v) => setValue("type", v)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Compulsory">Compulsory</SelectItem>
-                <SelectItem value="Elective">Elective</SelectItem>
-                <SelectItem value="Optional">Optional</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+           <div className="space-y-2">
+             <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">
+               Assigned Teachers
+             </Label>
+             <MultiSelect
+               options={teachers.map((t) => ({ value: t._id, label: t.name }))}
+               value={watch("teachers") || []}
+               onChange={(v) => setValue("teachers", v)}
+             />
+           </div>
+         </div>
 
-          {/* Classes MultiSelect */}
-          <div className="space-y-2">
-            <Label>Classes</Label>
-            <MultiSelect
-              options={classes.map((c) => ({
-                value: c._id,
-                label: `${c.name} (${c.academicYear})`,
-              }))}
-              value={watch("classes") || []}
-              onChange={(v) => setValue("classes", v, { shouldValidate: true })}
-              placeholder="Select Classes"
-            />
-          </div>
-
-          {/* Teachers MultiSelect */}
-          <div className="space-y-2">
-            <Label>Teachers</Label>
-            <MultiSelect
-              options={teachers.map((t) => ({
-                value: t._id,
-                label: `${t.name}`,
-              }))}
-              value={watch("teachers") || []}
-              onChange={(v) =>
-                setValue("teachers", v, { shouldValidate: true })
-              }
-              placeholder="Select Teachers"
-            />
-          </div>
-
-          <DialogFooter className="pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit">
-              {selectedSubject ? "Update Subject" : "Add Subject"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
+         <DialogFooter className="pt-6">
+           <Button
+             type="submit"
+             className="w-full h-12 rounded-xl text-md font-bold shadow-lg shadow-primary/20 transition-all active:scale-95"
+           >
+             {selectedSubject ? "Save Changes" : "Create Subject"}
+           </Button>
+         </DialogFooter>
+       </form>
+     </DialogContent>
+   </Dialog>
+ );
 }

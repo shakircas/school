@@ -113,7 +113,7 @@ const navigation = [
       { name: "Student Attendance", href: "/attendance/students" },
       { name: "Teacher Attendance", href: "/attendance/teachers" },
       { name: "Reports", href: "/attendance/reports" },
-      { name: "Register", href: "/attendance/register" },
+      { name: "Register", href: "/attendance/register/print" },
     ],
   },
 

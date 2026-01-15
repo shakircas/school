@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,13 +14,29 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ImageUpload } from "@/components/ui/image-upload";
-import { useEffect } from "react";
+import {
+  User,
+  Users,
+  GraduationCap,
+  Info,
+  Save,
+  XCircle,
+  Phone,
+  Mail,
+  Calendar,
+  MapPin,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
-// const classes = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
-const sections = ["A", "B", "C", "D"];
 const genders = ["Male", "Female", "Other"];
 const bloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 const statuses = [
@@ -31,8 +49,13 @@ const statuses = [
   "Pending",
 ];
 
-export function StudentForm({ defaultValues, onSubmit, isLoading, classes }) {
-
+export function StudentForm({
+  defaultValues,
+  onSubmit,
+  isLoading,
+  classes = [],
+}) {
+  const router = useRouter();
   const {
     register,
     handleSubmit,
@@ -47,7 +70,7 @@ export function StudentForm({ defaultValues, onSubmit, isLoading, classes }) {
       dateOfBirth: "",
       gender: "",
       bloodGroup: "",
-      status: "",
+      status: "Active",
       classId: "",
       sectionId: "",
       rollNumber: "",
@@ -78,18 +101,22 @@ export function StudentForm({ defaultValues, onSubmit, isLoading, classes }) {
         allergies: "",
         conditions: "",
         medications: "",
-        createAccount: true,
       },
+      createAccount: true,
     },
   });
+
+  const watchedValues = watch();
 
   useEffect(() => {
     if (!defaultValues) return;
 
+    // Deeply set values for nested objects
     Object.keys(defaultValues).forEach((key) => {
       if (
         typeof defaultValues[key] === "object" &&
-        defaultValues[key] !== null
+        defaultValues[key] !== null &&
+        key !== "photo"
       ) {
         Object.keys(defaultValues[key]).forEach((subKey) => {
           setValue(`${key}.${subKey}`, defaultValues[key][subKey] ?? "");
@@ -99,38 +126,53 @@ export function StudentForm({ defaultValues, onSubmit, isLoading, classes }) {
       }
     });
 
-    // CRITICAL
-    setValue("classId", defaultValues.classId ?? "");
-    setValue("sectionId", defaultValues.sectionId ?? "");
+    // Special handling for selection fields
+    if (defaultValues.classId) setValue("classId", defaultValues.classId);
+    if (defaultValues.sectionId) setValue("sectionId", defaultValues.sectionId);
 
-    // Image
+    // Image handling
     if (defaultValues.photo?.url) {
       setValue("photo", { url: defaultValues.photo.url });
     }
   }, [defaultValues, setValue]);
 
-  const watchedValues = watch();
-
-  
+  const selectedClass = classes.find((c) => c._id === watchedValues.classId);
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <Tabs defaultValue="personal" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="personal">Personal</TabsTrigger>
-          <TabsTrigger value="guardian">Guardian</TabsTrigger>
-          <TabsTrigger value="academic">Academic</TabsTrigger>
-          <TabsTrigger value="other">Other</TabsTrigger>
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="space-y-8 max-w-5xl mx-auto"
+    >
+      <Tabs defaultValue="personal" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 h-auto p-1 bg-slate-100 rounded-xl">
+          <TabsTrigger value="personal" className="py-3 rounded-lg flex gap-2">
+            <User className="h-4 w-4" /> Personal
+          </TabsTrigger>
+          <TabsTrigger value="guardian" className="py-3 rounded-lg flex gap-2">
+            <Users className="h-4 w-4" /> Guardian
+          </TabsTrigger>
+          <TabsTrigger value="academic" className="py-3 rounded-lg flex gap-2">
+            <GraduationCap className="h-4 w-4" /> Academic
+          </TabsTrigger>
+          <TabsTrigger value="other" className="py-3 rounded-lg flex gap-2">
+            <Info className="h-4 w-4" /> Medical/Misc
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="personal">
-          <Card>
+        <TabsContent
+          value="personal"
+          className="mt-6 animate-in fade-in-50 duration-300"
+        >
+          <Card className="border-slate-200 shadow-sm">
             <CardHeader>
-              <CardTitle>Personal Information</CardTitle>
+              <CardTitle className="text-xl">Personal Details</CardTitle>
+              <CardDescription>
+                Basic information and contact details of the student.
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-col md:flex-row gap-6">
-                <div className="flex-shrink-0">
+            <CardContent className="space-y-6">
+              <div className="flex flex-col md:flex-row gap-8">
+                <div className="flex-shrink-0 mx-auto md:mx-0">
                   <ImageUpload
                     value={watchedValues.photo?.url}
                     onChange={(url) => setValue("photo", { url })}
@@ -138,23 +180,28 @@ export function StudentForm({ defaultValues, onSubmit, isLoading, classes }) {
                   />
                 </div>
 
-                <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Full Name *</Label>
+                    <Label htmlFor="name" className="text-slate-700">
+                      Full Name <span className="text-rose-500">*</span>
+                    </Label>
                     <Input
                       id="name"
                       {...register("name", { required: "Name is required" })}
                       placeholder="Enter full name"
+                      className={cn(errors.name && "border-rose-500")}
                     />
                     {errors.name && (
-                      <p className="text-sm text-destructive">
+                      <p className="text-[11px] text-rose-500 font-medium">
                         {errors.name.message}
                       </p>
                     )}
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email" className="text-slate-700">
+                      Email Address
+                    </Label>
                     <Input
                       id="email"
                       type="email"
@@ -164,7 +211,9 @@ export function StudentForm({ defaultValues, onSubmit, isLoading, classes }) {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Phone</Label>
+                    <Label htmlFor="phone" className="text-slate-700">
+                      Phone Number
+                    </Label>
                     <Input
                       id="phone"
                       {...register("phone")}
@@ -173,34 +222,32 @@ export function StudentForm({ defaultValues, onSubmit, isLoading, classes }) {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="dateOfBirth">Date of Birth *</Label>
+                    <Label htmlFor="dateOfBirth" className="text-slate-700">
+                      Date of Birth <span className="text-rose-500">*</span>
+                    </Label>
                     <Input
                       id="dateOfBirth"
                       type="date"
-                      {...register("dateOfBirth", {
-                        required: "Date of birth is required",
-                      })}
+                      {...register("dateOfBirth", { required: "Required" })}
+                      className={cn(errors.dateOfBirth && "border-rose-500")}
                     />
-                    {errors.dateOfBirth && (
-                      <p className="text-sm text-destructive">
-                        {errors.dateOfBirth.message}
-                      </p>
-                    )}
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Gender *</Label>
+                    <Label className="text-slate-700">
+                      Gender <span className="text-rose-500">*</span>
+                    </Label>
                     <Select
                       value={watchedValues.gender}
-                      onValueChange={(value) => setValue("gender", value)}
+                      onValueChange={(v) => setValue("gender", v)}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select gender" />
+                        <SelectValue placeholder="Select" />
                       </SelectTrigger>
                       <SelectContent>
-                        {genders.map((gender) => (
-                          <SelectItem key={gender} value={gender}>
-                            {gender}
+                        {genders.map((g) => (
+                          <SelectItem key={g} value={g}>
+                            {g}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -208,13 +255,13 @@ export function StudentForm({ defaultValues, onSubmit, isLoading, classes }) {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Blood Group</Label>
+                    <Label className="text-slate-700">Blood Group</Label>
                     <Select
                       value={watchedValues.bloodGroup}
-                      onValueChange={(value) => setValue("bloodGroup", value)}
+                      onValueChange={(v) => setValue("bloodGroup", v)}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select blood group" />
+                        <SelectValue placeholder="Select" />
                       </SelectTrigger>
                       <SelectContent>
                         {bloodGroups.map((bg) => (
@@ -228,343 +275,244 @@ export function StudentForm({ defaultValues, onSubmit, isLoading, classes }) {
                 </div>
               </div>
 
+              <div className="pt-4 border-t border-slate-100">
+                <div className="flex items-center gap-2 mb-4 text-slate-800 font-semibold">
+                  <MapPin className="h-4 w-4 text-indigo-500" /> Address
+                  Information
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="lg:col-span-2 space-y-2">
+                    <Label className="text-slate-600 text-xs uppercase font-bold tracking-wider">
+                      Street
+                    </Label>
+                    <Input
+                      {...register("address.street")}
+                      placeholder="Enter street address"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-600 text-xs uppercase font-bold tracking-wider">
+                      City
+                    </Label>
+                    <Input {...register("address.city")} placeholder="City" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-600 text-xs uppercase font-bold tracking-wider">
+                      Zip Code
+                    </Label>
+                    <Input {...register("address.zipCode")} placeholder="Zip" />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent
+          value="guardian"
+          className="mt-6 animate-in fade-in-50 duration-300"
+        >
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-xl">Guardian Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                <div className="space-y-2">
+                  <Label className="text-slate-700">Father's Name *</Label>
+                  <Input
+                    {...register("fatherName", { required: "Required" })}
+                    placeholder="Enter father's name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-700">Father's Phone</Label>
+                  <Input
+                    {...register("fatherPhone")}
+                    placeholder="03XX-XXXXXXX"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-700">Mother's Name</Label>
+                  <Input
+                    {...register("motherName")}
+                    placeholder="Enter mother's name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-700">Father's Occupation</Label>
+                  <Input
+                    {...register("fatherOccupation")}
+                    placeholder="Occupation"
+                  />
+                </div>
+              </div>
+
+              <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                <h4 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-tight">
+                  Legal Guardian (If different)
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Input
+                    {...register("guardianName")}
+                    placeholder="Guardian Name"
+                  />
+                  <Input
+                    {...register("guardianPhone")}
+                    placeholder="Guardian Phone"
+                  />
+                  <Input
+                    {...register("guardianRelation")}
+                    placeholder="Relation (e.g. Uncle)"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent
+          value="academic"
+          className="mt-6 animate-in fade-in-50 duration-300"
+        >
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-xl">Academic Record</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
               <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
+                <Label className="text-slate-700">Roll Number *</Label>
+                <Input
+                  {...register("rollNumber", { required: "Required" })}
+                  placeholder="e.g. 2024-001"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-slate-700">Registration Number *</Label>
+                <Input
+                  {...register("registrationNumber", { required: "Required" })}
+                  placeholder="System Reg ID"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-slate-700">Assign Class *</Label>
                 <Select
-                  value={watchedValues.status}
-                  onValueChange={(value) => setValue("status", value)}
+                  value={watchedValues.classId}
+                  onValueChange={(v) => {
+                    setValue("classId", v);
+                    setValue("sectionId", "");
+                  }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
+                    <SelectValue placeholder="Choose Class" />
                   </SelectTrigger>
                   <SelectContent>
-                    {statuses.map((status) => (
-                      <SelectItem key={status} value={status}>
-                        {status}
+                    {classes.map((cls) => (
+                      <SelectItem key={cls._id} value={cls._id}>
+                        {cls.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="address.street">Street Address</Label>
-                  <Input
-                    id="address.street"
-                    {...register("address.street")}
-                    placeholder="Enter street address"
-                  />
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="address.city">City</Label>
-                  <Input
-                    id="address.city"
-                    {...register("address.city")}
-                    placeholder="Enter city"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label className="text-slate-700">Assign Section *</Label>
+                <Select
+                  value={watchedValues.sectionId}
+                  onValueChange={(v) => setValue("sectionId", v)}
+                  disabled={!watchedValues.classId}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose Section" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectedClass?.sections.map((sec) => (
+                      <SelectItem key={sec._id} value={sec.name}>
+                        Section {sec.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="address.state">State/Province</Label>
-                  <Input
-                    id="address.state"
-                    {...register("address.state")}
-                    placeholder="Enter state"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label className="text-slate-700">Admission Date</Label>
+                <Input type="date" {...register("admissionDate")} />
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="address.zipCode">Zip Code</Label>
-                  <Input
-                    id="address.zipCode"
-                    {...register("address.zipCode")}
-                    placeholder="Enter zip code"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label className="text-slate-700">Account Status</Label>
+                <Select
+                  value={watchedValues.status}
+                  onValueChange={(v) => setValue("status", v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statuses.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="guardian">
-          <Card>
+        <TabsContent
+          value="other"
+          className="mt-6 animate-in fade-in-50 duration-300"
+        >
+          <Card className="border-slate-200 shadow-sm">
             <CardHeader>
-              <CardTitle>Guardian Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="fatherName">Father's Name *</Label>
-                  <Input
-                    id="fatherName"
-                    {...register("fatherName", {
-                      required: "Father's name is required",
-                    })}
-                    placeholder="Enter father's name"
-                  />
-                  {errors.fatherName && (
-                    <p className="text-sm text-destructive">
-                      {errors.fatherName.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="fatherPhone">Father's Phone</Label>
-                  <Input
-                    id="fatherPhone"
-                    {...register("fatherPhone")}
-                    placeholder="03XX-XXXXXXX"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="fatherOccupation">Father's Occupation</Label>
-                  <Input
-                    id="fatherOccupation"
-                    {...register("fatherOccupation")}
-                    placeholder="Enter occupation"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="motherName">Mother's Name</Label>
-                  <Input
-                    id="motherName"
-                    {...register("motherName")}
-                    placeholder="Enter mother's name"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="motherPhone">Mother's Phone</Label>
-                  <Input
-                    id="motherPhone"
-                    {...register("motherPhone")}
-                    placeholder="03XX-XXXXXXX"
-                  />
-                </div>
-              </div>
-
-              <div className="border-t border-border pt-4 mt-4">
-                <h4 className="font-medium mb-4">
-                  Guardian (if different from parents)
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="guardianName">Guardian Name</Label>
-                    <Input
-                      id="guardianName"
-                      {...register("guardianName")}
-                      placeholder="Enter guardian name"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="guardianPhone">Guardian Phone</Label>
-                    <Input
-                      id="guardianPhone"
-                      {...register("guardianPhone")}
-                      placeholder="03XX-XXXXXXX"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="guardianRelation">Relation</Label>
-                    <Input
-                      id="guardianRelation"
-                      {...register("guardianRelation")}
-                      placeholder="e.g., Uncle, Aunt"
-                    />
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="academic">
-          <Card>
-            <CardHeader>
-              <CardTitle>Academic Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="rollNumber">Roll Number *</Label>
-                  <Input
-                    id="rollNumber"
-                    {...register("rollNumber", {
-                      required: "Roll number is required",
-                    })}
-                    placeholder="Enter roll number"
-                  />
-                  {errors.rollNumber && (
-                    <p className="text-sm text-destructive">
-                      {errors.rollNumber.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="registrationNumber">
-                    Registration Number *
-                  </Label>
-                  <Input
-                    id="registrationNumber"
-                    {...register("registrationNumber", {
-                      required: "Registration number is required",
-                    })}
-                    placeholder="Enter registration number"
-                  />
-                  {errors.registrationNumber && (
-                    <p className="text-sm text-destructive">
-                      {errors.registrationNumber.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Class *</Label>
-                  <Select
-                    value={watchedValues.classId}
-                    onValueChange={(value) => {
-                      setValue("classId", value);
-                      setValue("sectionId", ""); // reset section when class changes
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select class" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {classes.map((cls) => (
-                        <SelectItem key={cls._id} value={cls._id}>
-                          {cls.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Section *</Label>
-                  <Select
-                    value={watchedValues.sectionId}
-                    onValueChange={(value) => setValue("sectionId", value)}
-                    disabled={!watchedValues.classId}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select section" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {classes
-                        .find((c) => c._id === watchedValues.classId)
-                        ?.sections.map((sec) => (
-                          <SelectItem key={sec._id} value={sec.name}>
-                            Section {sec.name}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="admissionDate">Admission Date</Label>
-                  <Input
-                    id="admissionDate"
-                    type="date"
-                    {...register("admissionDate")}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="previousSchool">Previous School</Label>
-                  <Input
-                    id="previousSchool"
-                    {...register("previousSchool")}
-                    placeholder="Enter previous school name"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="other">
-          <Card>
-            <CardHeader>
-              <CardTitle>Emergency Contact & Medical Information</CardTitle>
+              <CardTitle className="text-xl">Medical & Emergency</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div>
-                <h4 className="font-medium mb-4">Emergency Contact</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="emergencyContact.name">Contact Name</Label>
-                    <Input
-                      id="emergencyContact.name"
-                      {...register("emergencyContact.name")}
-                      placeholder="Enter name"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="emergencyContact.relation">Relation</Label>
-                    <Input
-                      id="emergencyContact.relation"
-                      {...register("emergencyContact.relation")}
-                      placeholder="e.g., Uncle"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="emergencyContact.phone">Phone</Label>
-                    <Input
-                      id="emergencyContact.phone"
-                      {...register("emergencyContact.phone")}
-                      placeholder="03XX-XXXXXXX"
-                    />
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Emergency Contact Person</Label>
+                  <Input
+                    {...register("emergencyContact.name")}
+                    placeholder="Name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Relation</Label>
+                  <Input
+                    {...register("emergencyContact.relation")}
+                    placeholder="e.g. Brother"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Emergency Phone</Label>
+                  <Input
+                    {...register("emergencyContact.phone")}
+                    placeholder="03XX-XXXXXXX"
+                  />
                 </div>
               </div>
 
-              <div className="border-t border-border pt-4">
-                <h4 className="font-medium mb-4">Medical Information</h4>
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="medicalInfo.allergies">Allergies</Label>
-                    <Textarea
-                      id="medicalInfo.allergies"
-                      {...register("medicalInfo.allergies")}
-                      placeholder="List any allergies"
-                      rows={2}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="medicalInfo.conditions">
-                      Medical Conditions
-                    </Label>
-                    <Textarea
-                      id="medicalInfo.conditions"
-                      {...register("medicalInfo.conditions")}
-                      placeholder="List any medical conditions"
-                      rows={2}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="medicalInfo.medications">
-                      Current Medications
-                    </Label>
-                    <Textarea
-                      id="medicalInfo.medications"
-                      {...register("medicalInfo.medications")}
-                      placeholder="List any medications"
-                      rows={2}
-                    />
-                  </div>
+              <div className="space-y-4 pt-4 border-t">
+                <div className="space-y-2">
+                  <Label>Allergies</Label>
+                  <Textarea
+                    {...register("medicalInfo.allergies")}
+                    placeholder="List any allergies..."
+                    rows={2}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Medical Conditions</Label>
+                  <Textarea
+                    {...register("medicalInfo.conditions")}
+                    placeholder="Known medical history..."
+                    rows={2}
+                  />
                 </div>
               </div>
             </CardContent>
@@ -572,27 +520,48 @@ export function StudentForm({ defaultValues, onSubmit, isLoading, classes }) {
         </TabsContent>
       </Tabs>
 
-      <div className="flex justify-end gap-4">
-        <Button type="button" variant="outline">
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? "Saving..." : "Save Student"}
-        </Button>
-      </div>
-      <div className="flex items-center space-x-3 rounded-lg border p-4">
-        <input
-          type="checkbox"
-          id="createAccount"
-          {...register("createAccount")}
-          className="h-4 w-4"
-        />
-        <label htmlFor="createAccount" className="text-sm font-medium">
-          Create student login account
-          <p className="text-xs text-muted-foreground">
-            Student will be able to log in using roll number & password
-          </p>
-        </label>
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-6 rounded-xl border border-indigo-100 shadow-sm">
+        <div className="flex items-start space-x-3 cursor-pointer">
+          <input
+            type="checkbox"
+            id="createAccount"
+            {...register("createAccount")}
+            className="mt-1 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+          />
+          <label
+            htmlFor="createAccount"
+            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+          >
+            Create student login account
+            <p className="text-[11px] text-slate-500 mt-1">
+              Student can access dashboard using Roll No.
+            </p>
+          </label>
+        </div>
+
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1 md:flex-none"
+            onClick={() => router.back()}
+          >
+            <XCircle className="h-4 w-4 mr-2" /> Cancel
+          </Button>
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-100"
+          >
+            {isLoading ? (
+              "Saving..."
+            ) : (
+              <span className="flex items-center gap-2">
+                <Save className="h-4 w-4" /> Save Student
+              </span>
+            )}
+          </Button>
+        </div>
       </div>
     </form>
   );
