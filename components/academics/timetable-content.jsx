@@ -207,7 +207,7 @@ export function TimetableContent() {
         </div>
       </div>
 
-      <Tabs defaultValue="grid" className="w-full">
+      <Tabs defaultValue="grid gap-6" className="w-full">
         <TabsList className="bg-white border p-1 rounded-2xl mb-6 shadow-sm">
           <TabsTrigger value="grid" className="rounded-xl px-5 gap-2">
             <LayoutGrid className="w-4 h-4" /> Weekly Grid
