@@ -14,9 +14,10 @@ import {
   Calendar,
   Users,
   BarChart3,
-  ChevronRight,
+  ShieldAlert,
   Search,
-  BookOpen,
+  CheckCircle2,
+  Info,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -76,24 +77,72 @@ export function TimetableContent() {
   const subjects = subjectsRes?.data || [];
   const classes = data?.data || [];
 
-  /* --- CALCULATE WORKLOAD --- */
+  /* --- DELETE LOGIC --- */
+  const deletePeriod = async (cls, day, index) => {
+    if (!confirm("Are you sure you want to delete this period?")) return;
+    try {
+      const sch = structuredClone(cls.schedule || []);
+      const dayData = sch.find((x) => x.day === day);
+      if (dayData) {
+        dayData.periods.splice(index, 1);
+        const res = await fetch(`/api/academics/timetable/${cls._id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ schedule: sch }),
+        });
+        if (res.ok) {
+          toast.success("Period removed");
+          mutate();
+        }
+      }
+    } catch (e) {
+      toast.error("Delete failed");
+    }
+  };
+
+  /* --- WORKLOAD LOGIC --- */
   const teacherWorkload = useMemo(() => {
     const stats = {};
     classes.forEach((cls) => {
       cls.schedule?.forEach((day) => {
         day.periods.forEach((p) => {
           const tId = p.teacher?._id || p.teacher;
-          if (tId) {
-            stats[tId] = (stats[tId] || 0) + 1;
-          }
+          if (tId) stats[tId] = (stats[tId] || 0) + 1;
         });
       });
     });
     return stats;
   }, [classes]);
 
-  /* --- CONFLICT LOGIC --- */
-  const conflict = useMemo(() => {
+  /* --- GLOBAL CONFLICT SCANNER --- */
+  const globalConflicts = useMemo(() => {
+    const conflicts = [];
+    const scheduleMap = {};
+    classes.forEach((cls) => {
+      cls.schedule?.forEach((day) => {
+        day.periods.forEach((p) => {
+          const tId = p.teacher?._id || p.teacher;
+          if (!tId) return;
+          const key = `${day.day}-${p.time}-${tId}`;
+          if (scheduleMap[key]) {
+            conflicts.push({
+              teacher: teachers.find((t) => t._id === tId)?.name || "Unknown",
+              day: day.day,
+              time: p.time,
+              classA: scheduleMap[key].className,
+              classB: cls.name,
+            });
+          } else {
+            scheduleMap[key] = { className: cls.name };
+          }
+        });
+      });
+    });
+    return conflicts;
+  }, [classes, teachers]);
+
+  /* --- IN-EDITOR CONFLICT CHECK --- */
+  const currentConflict = useMemo(() => {
     if (
       !formData.day ||
       !formData.time ||
@@ -142,8 +191,8 @@ export function TimetableContent() {
   };
 
   const savePeriod = async () => {
-    if (conflict)
-      return toast.error(`Conflict! Teacher is busy in ${conflict}`);
+    if (currentConflict)
+      return toast.error(`Conflict! Teacher is busy in ${currentConflict}`);
     const subjectName = subjects.find(
       (s) => s._id === formData.subjectId
     )?.name;
@@ -190,99 +239,114 @@ export function TimetableContent() {
 
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
-      {/* HEADER SECTION */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">
-            Academic Scheduler
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+            Academic Control Center
           </h1>
-          <p className="text-sm text-slate-500">
-            Conflicts are checked across all {classes.length} active classes.
+          <p className="text-sm text-indigo-600 font-bold">
+            2026 Academic Session
           </p>
         </div>
-        <div className="flex bg-slate-100 p-1 rounded-xl">
-          <div className="px-3 py-1 text-xs font-bold text-slate-500 uppercase">
-            Year: 2026
-          </div>
-        </div>
+        {globalConflicts.length > 0 && (
+          <Badge className="bg-rose-600 text-white animate-pulse px-4 py-2 rounded-full border-none font-bold">
+            <ShieldAlert className="w-4 h-4 mr-2" /> {globalConflicts.length}{" "}
+            Conflicts
+          </Badge>
+        )}
       </div>
 
-      <Tabs defaultValue="grid gap-6" className="w-full">
-        <TabsList className="bg-white border p-1 rounded-2xl mb-6 shadow-sm">
-          <TabsTrigger value="grid" className="rounded-xl px-5 gap-2">
+      <Tabs defaultValue="grid" className="w-full">
+        <TabsList className="bg-slate-100 border p-1 rounded-2xl mb-8 shadow-inner flex-wrap h-auto">
+          <TabsTrigger
+            value="grid"
+            className="rounded-xl px-5 py-2.5 gap-2 font-bold"
+          >
             <LayoutGrid className="w-4 h-4" /> Weekly Grid
           </TabsTrigger>
-          <TabsTrigger value="daily" className="rounded-xl px-5 gap-2">
+          <TabsTrigger
+            value="daily"
+            className="rounded-xl px-5 py-2.5 gap-2 font-bold"
+          >
             <Calendar className="w-4 h-4" /> Daily Glance
           </TabsTrigger>
-          <TabsTrigger value="workload" className="rounded-xl px-5 gap-2">
-            <BarChart3 className="w-4 h-4" /> Teacher Workload
+          <TabsTrigger
+            value="workload"
+            className="rounded-xl px-5 py-2.5 gap-2 font-bold"
+          >
+            <BarChart3 className="w-4 h-4" /> Workload
+          </TabsTrigger>
+          <TabsTrigger
+            value="conflicts"
+            className="rounded-xl px-5 py-2.5 gap-2 font-bold text-rose-600 active:bg-rose-100"
+          >
+            <ShieldAlert className="w-4 h-4" /> Conflicts
           </TabsTrigger>
         </TabsList>
 
-        {/* --- WEEKLY GRID CONTENT --- */}
-        <TabsContent value="grid" className="space-y-12">
+        {/* --- GRID VIEW --- */}
+        <TabsContent value="grid" className="space-y-10">
           {classes.map((cls) => (
             <div
               key={cls._id}
-              className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden"
+              className="bg-white rounded-[2rem] border-2 border-slate-50 shadow-xl shadow-slate-200/50 overflow-hidden"
             >
-              <div className="bg-slate-50 px-6 py-4 flex justify-between items-center border-b">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold">
-                    {cls.name.charAt(0)}
-                  </div>
-                  <h2 className="text-lg font-bold text-slate-700">
-                    {cls.name}
-                  </h2>
-                </div>
+              <div className="bg-slate-900 px-8 py-5 flex justify-between items-center">
+                <h2 className="text-lg font-black text-white tracking-widest uppercase">
+                  {cls.name}
+                </h2>
                 <Button
                   onClick={() => handleOpenEditor(cls)}
                   size="sm"
-                  className="rounded-xl bg-indigo-600 shadow-lg shadow-indigo-100"
+                  className="rounded-full bg-indigo-500 hover:bg-indigo-400 font-bold px-6 border-none"
                 >
-                  <Plus className="w-4 h-4 mr-2" /> Add Session
+                  <Plus className="w-4 h-4 mr-2" /> New Entry
                 </Button>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 divide-x divide-slate-100">
+              <div className="grid grid-cols-1 md:grid-cols-6 divide-x-2 divide-slate-50">
                 {WEEKDAYS.map((day) => {
                   const dayData = cls.schedule?.find((s) => s.day === day);
                   return (
-                    <div
-                      key={day}
-                      className="p-4 bg-white hover:bg-slate-50/50 transition-colors"
-                    >
-                      <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4">
+                    <div key={day} className="p-4 bg-white">
+                      <p className="text-[11px] font-black text-slate-400 uppercase mb-4 text-center tracking-tighter">
                         {day}
                       </p>
                       <div className="space-y-3">
                         {dayData?.periods.map((p, idx) => (
                           <div
                             key={idx}
-                            className="group p-3 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-indigo-200 transition-all relative"
+                            className="group p-3 bg-slate-50 hover:bg-white border-2 border-transparent hover:border-indigo-500 rounded-2xl transition-all shadow-sm"
                           >
-                            <div className="flex justify-between items-start mb-2">
-                              <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">
+                            <div className="flex justify-between items-start mb-1">
+                              <span className="text-[10px] font-black text-indigo-600">
                                 {p.time.split(" - ")[0]}
                               </span>
-                              <button
-                                onClick={() =>
-                                  handleOpenEditor(cls, p, day, idx)
-                                }
-                                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-slate-100 rounded-md"
-                              >
-                                <Edit3 className="w-3 h-3 text-slate-400" />
-                              </button>
+                              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                  onClick={() =>
+                                    handleOpenEditor(cls, p, day, idx)
+                                  }
+                                  className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-indigo-600"
+                                >
+                                  <Edit3 className="w-3 h-3" />
+                                </button>
+                                <button
+                                  onClick={() => deletePeriod(cls, day, idx)}
+                                  className="p-1 hover:bg-rose-50 rounded text-slate-400 hover:text-rose-600"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </div>
                             </div>
-                            <h4 className="text-[13px] font-bold text-slate-800 leading-tight">
+                            <h4 className="text-[13px] font-black text-slate-800 leading-tight">
                               {p.subjectName}
                             </h4>
-                            <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
-                              <User className="w-3 h-3" />{" "}
-                              {teachers.find(
-                                (t) => t._id === (p.teacher?._id || p.teacher)
-                              )?.name || "TBA"}
+                            <p className="text-[11px] font-bold text-slate-500 mt-1">
+                              {
+                                teachers.find(
+                                  (t) => t._id === (p.teacher?._id || p.teacher)
+                                )?.name
+                              }
                             </p>
                           </div>
                         ))}
@@ -295,24 +359,24 @@ export function TimetableContent() {
           ))}
         </TabsContent>
 
-        {/* --- DAILY GLANCE CONTENT --- */}
+        {/* --- FIXED DAILY GLANCE --- */}
         <TabsContent value="daily">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {classes.map((cls) => {
-              const today = WEEKDAYS[new Date().getDay() - 1] || "Monday";
+              const todayName = WEEKDAYS[new Date().getDay() - 1] || "Monday";
               const todayPeriods =
-                cls.schedule?.find((s) => s.day === today)?.periods || [];
+                cls.schedule?.find((s) => s.day === todayName)?.periods || [];
               return (
                 <div
                   key={cls._id}
-                  className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden p-6"
+                  className="bg-white rounded-3xl border-2 border-slate-100 p-6 shadow-lg shadow-slate-100"
                 >
                   <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-md font-bold text-slate-800">
+                    <h3 className="text-lg font-black text-slate-900">
                       {cls.name}
                     </h3>
-                    <Badge variant="secondary" className="rounded-lg">
-                      {today}
+                    <Badge className="bg-indigo-100 text-indigo-700 font-bold">
+                      {todayName}
                     </Badge>
                   </div>
                   <div className="space-y-4">
@@ -320,16 +384,16 @@ export function TimetableContent() {
                       todayPeriods.map((p, i) => (
                         <div
                           key={i}
-                          className="flex gap-4 items-center p-3 border-l-4 border-indigo-500 bg-slate-50 rounded-r-xl"
+                          className="flex gap-4 items-center p-4 bg-slate-50 rounded-2xl border-l-4 border-indigo-600"
                         >
-                          <div className="text-[11px] font-bold text-slate-400 min-w-[50px]">
+                          <div className="text-[11px] font-black text-indigo-600 w-12">
                             {p.time.split(" - ")[0]}
                           </div>
                           <div>
-                            <p className="text-sm font-bold text-slate-700 leading-none">
+                            <p className="text-sm font-black text-slate-800 leading-none">
                               {p.subjectName}
                             </p>
-                            <p className="text-[11px] text-slate-500 mt-1">
+                            <p className="text-[11px] font-bold text-slate-500 mt-1 uppercase tracking-tight">
                               {
                                 teachers.find(
                                   (t) => t._id === (p.teacher?._id || p.teacher)
@@ -340,8 +404,8 @@ export function TimetableContent() {
                         </div>
                       ))
                     ) : (
-                      <div className="text-center py-6 text-slate-400 text-sm italic">
-                        No classes today.
+                      <div className="text-center py-10 text-slate-400 font-bold italic">
+                        No schedule for {todayName}
                       </div>
                     )}
                   </div>
@@ -351,102 +415,128 @@ export function TimetableContent() {
           </div>
         </TabsContent>
 
-        {/* --- TEACHER WORKLOAD SUMMARY --- */}
+        {/* --- WORKLOAD --- */}
         <TabsContent value="workload">
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 overflow-hidden">
-            <div className="mb-6">
-              <h3 className="text-lg font-bold text-slate-800">
-                Faculty Utilization
-              </h3>
-              <p className="text-sm text-slate-500">
-                Total periods assigned per week across all classes.
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {teachers.map((t) => {
-                const count = teacherWorkload[t._id] || 0;
-                return (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {teachers.map((t) => {
+              const count = teacherWorkload[t._id] || 0;
+              const isOver = count > 15;
+              return (
+                <div
+                  key={t._id}
+                  className={`p-5 rounded-3xl border-2 transition-all ${
+                    isOver
+                      ? "bg-rose-50 border-rose-200"
+                      : "bg-white border-slate-100 shadow-sm"
+                  }`}
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center font-black text-sm">
+                      {t.name.charAt(0)}
+                    </div>
+                    <Badge className={isOver ? "bg-rose-600" : "bg-indigo-600"}>
+                      {count} Slots
+                    </Badge>
+                  </div>
+                  <h4 className="text-md font-black text-slate-900">
+                    {t.name}
+                  </h4>
+                  <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                    {t.subject || "Faculty"}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </TabsContent>
+
+        {/* --- CONFLICTS LIST --- */}
+        <TabsContent value="conflicts">
+          <div className="bg-white rounded-3xl border-2 border-slate-50 shadow-xl p-8">
+            {globalConflicts.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {globalConflicts.map((conf, i) => (
                   <div
-                    key={t._id}
-                    className="p-4 border rounded-2xl flex items-center justify-between hover:bg-slate-50 transition-colors"
+                    key={i}
+                    className="flex items-center justify-between p-5 bg-rose-50 rounded-2xl border-2 border-rose-100"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center font-bold text-slate-500">
-                        {t.name.charAt(0)}
+                    <div className="flex gap-4 items-center">
+                      <div className="w-12 h-12 bg-rose-600 rounded-2xl flex items-center justify-center text-white">
+                        <ShieldAlert />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-slate-700">
-                          {t.name}
+                        <p className="text-sm font-black text-rose-900">
+                          {conf.teacher}
                         </p>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase">
-                          {t.subject || "Faculty"}
+                        <p className="text-xs font-bold text-rose-700">
+                          {conf.day} | {conf.time}
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-lg font-black text-indigo-600 leading-none">
-                        {count}
-                      </p>
-                      <p className="text-[10px] text-slate-400 font-bold">
-                        PERIODS
-                      </p>
+                    <div className="flex flex-col items-end gap-1">
+                      <Badge className="bg-rose-600">{conf.classA}</Badge>
+                      <Badge className="bg-rose-600">{conf.classB}</Badge>
                     </div>
                   </div>
-                );
-              })}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center py-20 text-emerald-500">
+                <CheckCircle2 className="w-16 h-16 mb-4" />
+                <p className="text-xl font-black">All Clear!</p>
+              </div>
+            )}
           </div>
         </TabsContent>
       </Tabs>
 
       {/* --- EDITOR DIALOG --- */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-md rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
-          <div className="bg-slate-900 p-6 text-white flex justify-between items-center">
-            <DialogTitle className="text-lg font-bold">
-              {editMode ? "Refine Session" : "New Allocation"}
+        <DialogContent className="max-w-md rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl">
+          <div className="bg-slate-900 p-8 text-white">
+            <DialogTitle className="text-xl font-black">
+              {editMode ? "Edit Session" : "Assign Session"}
             </DialogTitle>
-            <Badge variant="outline" className="text-white border-white/20">
+            <p className="text-indigo-400 text-xs font-black mt-1 uppercase tracking-widest">
               {selectedClass?.name}
-            </Badge>
+            </p>
           </div>
-
-          <div className="p-6 space-y-5 bg-white">
+          <div className="p-8 space-y-6 bg-white">
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-slate-400 uppercase ml-1">
                   Day
                 </label>
                 <Select
                   value={formData.day}
                   onValueChange={(v) => setFormData({ ...formData, day: v })}
                 >
-                  <SelectTrigger className="rounded-xl bg-slate-50 border-none font-bold">
-                    <SelectValue placeholder="Day" />
+                  <SelectTrigger className="rounded-2xl bg-slate-100 border-none font-black h-12 text-slate-800">
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {WEEKDAYS.map((d) => (
-                      <SelectItem key={d} value={d}>
+                      <SelectItem key={d} value={d} className="font-bold">
                         {d}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-slate-400 uppercase ml-1">
                   Time
                 </label>
                 <Select
                   value={formData.time}
                   onValueChange={(v) => setFormData({ ...formData, time: v })}
                 >
-                  <SelectTrigger className="rounded-xl bg-slate-50 border-none font-bold">
-                    <SelectValue placeholder="Slot" />
+                  <SelectTrigger className="rounded-2xl bg-slate-100 border-none font-black h-12 text-slate-800">
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {TIME_SLOTS.map((t) => (
-                      <SelectItem key={t} value={t}>
+                      <SelectItem key={t} value={t} className="font-bold">
                         {t}
                       </SelectItem>
                     ))}
@@ -454,9 +544,8 @@ export function TimetableContent() {
                 </Select>
               </div>
             </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
+            <div className="space-y-1">
+              <label className="text-[10px] font-black text-slate-400 uppercase ml-1">
                 Subject
               </label>
               <Select
@@ -465,22 +554,21 @@ export function TimetableContent() {
                   setFormData({ ...formData, subjectId: v })
                 }
               >
-                <SelectTrigger className="rounded-xl bg-slate-50 border-none font-bold h-12">
-                  <SelectValue placeholder="Select Subject" />
+                <SelectTrigger className="rounded-2xl bg-slate-100 border-none font-black h-12 text-slate-800">
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {subjects.map((s) => (
-                    <SelectItem key={s._id} value={s._id}>
+                    <SelectItem key={s._id} value={s._id} className="font-bold">
                       {s.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
-                Faculty Member
+            <div className="space-y-1">
+              <label className="text-[10px] font-black text-slate-400 uppercase ml-1">
+                Teacher
               </label>
               <Select
                 value={formData.teacherId}
@@ -488,48 +576,41 @@ export function TimetableContent() {
                   setFormData({ ...formData, teacherId: v })
                 }
               >
-                <SelectTrigger className="rounded-xl bg-slate-50 border-none font-bold h-12">
-                  <SelectValue placeholder="Assign Teacher" />
+                <SelectTrigger className="rounded-2xl bg-slate-100 border-none font-black h-12 text-slate-800">
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {teachers.map((t) => (
-                    <SelectItem key={t._id} value={t._id}>
+                    <SelectItem key={t._id} value={t._id} className="font-bold">
                       {t.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-
-            {conflict && (
-              <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl flex items-start gap-3">
-                <AlertTriangle className="w-4 h-4 text-rose-500 mt-0.5" />
-                <div>
-                  <p className="text-rose-600 font-bold text-xs">
-                    Teacher Conflict Detected
-                  </p>
-                  <p className="text-rose-500/80 text-[11px]">
-                    Occupied in <b>{conflict}</b> during this slot.
-                  </p>
-                </div>
+            {currentConflict && (
+              <div className="p-4 bg-rose-50 border-2 border-rose-100 rounded-2xl flex items-center gap-3">
+                <AlertTriangle className="w-5 h-5 text-rose-600" />
+                <p className="text-xs text-rose-700 font-black tracking-tight">
+                  Teacher Busy in {currentConflict}
+                </p>
               </div>
             )}
           </div>
-
-          <DialogFooter className="p-6 bg-slate-50">
+          <DialogFooter className="p-8 bg-slate-50">
             <Button
               variant="ghost"
               onClick={() => setIsOpen(false)}
-              className="rounded-xl text-slate-400 font-bold"
+              className="font-black text-slate-400"
             >
               Cancel
             </Button>
             <Button
-              disabled={!!conflict}
+              disabled={!!currentConflict}
               onClick={savePeriod}
-              className="rounded-xl px-8 bg-slate-900 font-bold shadow-lg shadow-slate-200"
+              className="rounded-2xl px-10 bg-slate-900 font-black h-12 shadow-lg shadow-slate-200"
             >
-              {editMode ? "Save Changes" : "Confirm"}
+              Confirm
             </Button>
           </DialogFooter>
         </DialogContent>
