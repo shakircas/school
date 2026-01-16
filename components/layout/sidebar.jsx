@@ -206,6 +206,7 @@ const navigation = [
       { name: "Generate Papers", href: "/ai/papers" },
       { name: "Generate Notes", href: "/ai/notes" },
       { name: "Generate MCQs", href: "/ai/mcqs" },
+      { name: "Generate Worksheets", href: "/ai/worksheet" },
       { name: "Auto Marking", href: "/ai/marking" },
     ],
   },

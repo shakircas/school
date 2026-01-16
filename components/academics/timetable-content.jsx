@@ -18,6 +18,7 @@ import {
   Search,
   CheckCircle2,
   Info,
+  Printer,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -76,6 +77,11 @@ export function TimetableContent() {
   const teachers = teachersRes?.teachers || [];
   const subjects = subjectsRes?.data || [];
   const classes = data?.data || [];
+
+  /* --- PRINT HANDLER --- */
+  const handlePrint = () => {
+    window.print();
+  };
 
   /* --- DELETE LOGIC --- */
   const deletePeriod = async (cls, day, index) => {
@@ -239,7 +245,7 @@ export function TimetableContent() {
 
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center print:hidden">
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">
             Academic Control Center
@@ -248,6 +254,13 @@ export function TimetableContent() {
             2026 Academic Session
           </p>
         </div>
+        <Button
+          onClick={handlePrint}
+          variant="outline"
+          className="rounded-2xl font-black gap-2 border-2 hover:bg-slate-50 shadow-sm"
+        >
+          <Printer className="w-4 h-4" /> Print Reports
+        </Button>
         {globalConflicts.length > 0 && (
           <Badge className="bg-rose-600 text-white animate-pulse px-4 py-2 rounded-full border-none font-bold">
             <ShieldAlert className="w-4 h-4 mr-2" /> {globalConflicts.length}{" "}
@@ -308,7 +321,7 @@ export function TimetableContent() {
                   const dayData = cls.schedule?.find((s) => s.day === day);
                   return (
                     <div key={day} className="p-4 bg-white">
-                      <p className="text-[11px] font-black text-slate-900 uppercase mb-4 text-center tracking-tighter">
+                      <p className="text-[14px] font-black text-slate-900 uppercase mb-4 text-center tracking-tighter">
                         {day}
                       </p>
                       <div className="space-y-3">
@@ -318,7 +331,7 @@ export function TimetableContent() {
                             className="group p-3 bg-slate-50 hover:bg-white border-2 border-transparent hover:border-indigo-500 rounded-2xl transition-all shadow-sm"
                           >
                             <div className="flex justify-between items-start mb-1">
-                              <span className="text-[10px] font-black text-indigo-600">
+                              <span className="text-[12px] font-black text-indigo-600">
                                 {p.time.split(" - ")[0]}
                               </span>
                               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
