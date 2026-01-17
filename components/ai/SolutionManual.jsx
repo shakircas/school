@@ -19,11 +19,18 @@ export function SolutionManual({ paperContent, subject, classLevel }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type: "solution-manual",
-          subject,
-          class: classLevel,
+          //   subject,
+          //   class: classLevel,
           details: paperContent, // Passing the paper content to AI
         }),
       });
+
+      if (response.status === 429) {
+        toast.error(
+          "Google's free limit reached. Please wait a minute before trying again!"
+        );
+        return;
+      }
       const result = await res.json();
       setSolutions(result.paper.content);
       toast.success("Marking Scheme Generated!");

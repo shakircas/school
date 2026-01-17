@@ -61,6 +61,13 @@ export function AIWorksheetContent() {
         body: JSON.stringify({ type: "worksheet", ...data }),
       });
 
+      if (response.status === 429) {
+        toast.error(
+          "Google's free limit reached. Please wait a minute before trying again!"
+        );
+        return;
+      }
+
       const result = await response.json();
       if (result.worksheet) {
         setGeneratedWorksheet(result.worksheet);
@@ -88,21 +95,6 @@ export function AIWorksheetContent() {
             Activity & Assessment Builder for BISE Curriculum
           </p>
         </div>
-
-        {isGenerating && (
-          <div className="absolute inset-0 z-10 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center rounded-[2rem]">
-            <div className="relative">
-              <div className="h-24 w-24 rounded-full border-t-4 border-indigo-600 animate-spin"></div>
-              <Sparkles className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-indigo-600 w-8 h-8 animate-pulse" />
-            </div>
-            <p className="mt-6 text-xl font-black text-slate-900 animate-pulse">
-              Generating Worksheet...
-            </p>
-            <p className="text-slate-400 font-bold">
-              This usually takes 15-20 seconds for a full worksheet.
-            </p>
-          </div>
-        )}
 
         {generatedWorksheet && (
           <div className="flex gap-2">
@@ -144,6 +136,37 @@ export function AIWorksheetContent() {
                     {[6, 7, 8, 9, 10].map((c) => (
                       <SelectItem key={c} value={c.toString()}>
                         Grade {c}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-black text-slate-400 uppercase ml-1">
+                  Subject
+                </Label>
+                <Select
+                  onValueChange={(v) => setValue("subject", v)}
+                  defaultValue="Physics"
+                >
+                  <SelectTrigger className="rounded-xl border-2 font-black">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[
+                      "Physics",
+                      "Chemistry",
+                      "Biology",
+                      "Mathematics",
+                      "Computer Science",
+                      "English",
+                      "Urdu",
+                      "Islamiat",
+                      "Pak Studies",
+                    ].map((s) => (
+                      <SelectItem key={s} value={s} className="font-bold">
+                        {s}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -245,6 +268,20 @@ export function AIWorksheetContent() {
 
         {/* Worksheet Preview */}
         <Card className="xl:col-span-8 border-2 border-slate-100 shadow-2xl rounded-[2.5rem] bg-white overflow-hidden min-h-[800px] print:border-0 print:shadow-none">
+          {isGenerating && (
+            <div className="absolute inset-0 z-10 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center rounded-[2rem]">
+              <div className="relative">
+                <div className="h-24 w-24 rounded-full border-t-4 border-indigo-600 animate-spin"></div>
+                <Sparkles className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-indigo-600 w-8 h-8 animate-pulse" />
+              </div>
+              <p className="mt-6 text-xl font-black text-slate-900 animate-pulse">
+                Generating Worksheet...
+              </p>
+              <p className="text-slate-400 font-bold">
+                This usually takes 15-20 seconds for a full worksheet.
+              </p>
+            </div>
+          )}
           {generatedWorksheet ? (
             <CardContent className="p-10 md:p-16">
               {/* Institutional Header (For Print) */}

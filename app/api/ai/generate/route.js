@@ -231,11 +231,11 @@
 // Generate ${scheme.mcqs} MCQs.
 
 // Format:
-// 1. Question  
-//    a) Option  
-//    b) Option  
-//    c) Option  
-//    d) Option  
+// 1. Question
+//    a) Option
+//    b) Option
+//    c) Option
+//    d) Option
 
 // ------------------------------------
 
@@ -243,11 +243,11 @@
 //           scheme.short.attempt * scheme.short.marksEach
 //         } Marks)**
 
-// Attempt ANY ${scheme.short.attempt} out of ${scheme.short.questions}.  
+// Attempt ANY ${scheme.short.attempt} out of ${scheme.short.questions}.
 // Each question carries **${scheme.short.marksEach} Marks**.
 
-// 1. Question  
-// 2. Question  
+// 1. Question
+// 2. Question
 
 // ------------------------------------
 
@@ -257,12 +257,12 @@
 //           scheme.long.marksEachPart
 //         } Marks)**
 
-// Attempt ANY ${scheme.long.attempt} out of ${scheme.long.questions}.  
-// Each question has TWO parts **(a & b)**.  
+// Attempt ANY ${scheme.long.attempt} out of ${scheme.long.questions}.
+// Each question has TWO parts **(a & b)**.
 // Each part carries **${scheme.long.marksEachPart} Marks**.
 
-// 1. (a) Question  
-//    (b) Question  
+// 1. (a) Question
+//    (b) Question
 
 // ------------------------------------
 
@@ -399,7 +399,7 @@ import { NextResponse } from "next/server";
 
 // 1. Official Paper Scheme Logic for BISE Standard
 function getPaperScheme(subject, classLevel) {
-  const s = subject.toLowerCase();
+  const s = subject?.toLowerCase();
   if (["biology", "physics", "chemistry"].includes(s)) {
     return {
       totalMarks: 65,
@@ -487,11 +487,12 @@ export async function POST(req) {
         break;
 
       // Add this case inside your switch(type) in the POST function
+      // Below is an exam paper for Class ${classLevel} ${subject}.
 
       case "solution-manual":
         prompt = `
     You are the Head Examiner for the BISE Mardan Board.
-    Below is an exam paper for Class ${classLevel} ${subject}.
+    
     
     PAPER CONTENT:
     ${details} // Here 'details' will contain the generated paper text
@@ -512,10 +513,54 @@ export async function POST(req) {
         return NextResponse.json({ error: "Invalid type" }, { status: 400 });
     }
 
+    // List your models in order of preference
+    // 1. Preferred Model, 2. Backup Model
+    // const modelsToTry = ["gemini-2.5-flash", "gemini-2.5-flash-lite"];
+
+    // let response;
+    // let lastError;
+
+    // for (const modelName of modelsToTry) {
+    //   try {
+    //     console.log(`Attempting generation with: ${modelName}`);
+
+    //     response = await client.models.generateContent({
+    //       model: modelName,
+    //       contents: [{ role: "user", parts: [{ text: prompt }] }],
+    //     });
+
+    //     // If successful, break the loop
+    //     if (response) break;
+    //   } catch (err) {
+    //     lastError = err;
+    //     // Check if the error is a Rate Limit (429)
+    //     // Adjust this check based on how @google/genai surfaces the status
+    //     if (
+    //       err.status === 429 ||
+    //       err.message?.includes("429") ||
+    //       err.message?.includes("quota")
+    //     ) {
+    //       console.warn(`${modelName} quota full, switching to next model...`);
+    //       continue; // Move to the next model in the array
+    //     } else {
+    //       // If it's a different error (like a syntax error), throw it immediately
+    //       throw err;
+    //     }
+    //   }
+    // }
+
+    // if (!response) {
+    //   throw lastError || new Error("All models failed to respond.");
+    // }
+
+    // const text = response?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
     // 3. Using your requested client.models.generateContent structure
     const response = await client.models.generateContent({
-      // model: "gemini-2.5-flash",
-      model: "gemini-2.5-flash-lite",
+      model: "gemini-2.5-flash",
+      // model: "gemini-2.5-flash-lite",
+      // model: "gemini-3-flash-preview",
+
       contents: [
         {
           role: "user",

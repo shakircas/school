@@ -347,6 +347,13 @@ export function AINotesContent() {
         body: JSON.stringify({ type: "notes", ...data }),
       });
 
+      if (response.status === 429) {
+        toast.error(
+          "Google's free limit reached. Please wait a minute before trying again!"
+        );
+        return;
+      }
+
       const result = await response.json();
       if (result.notes) {
         setGeneratedNotes(result.notes);

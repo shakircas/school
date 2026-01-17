@@ -380,6 +380,13 @@ export function AIMCQsContent() {
         body: JSON.stringify({ type: "mcqs", ...data }),
       });
 
+      if (response.status === 429) {
+        toast.error(
+          "Google's free limit reached. Please wait a minute before trying again!"
+        );
+        return;
+      }
+
       const result = await response.json();
       if (result.questions) {
         setGeneratedMCQs(result.questions);

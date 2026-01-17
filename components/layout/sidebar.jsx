@@ -207,7 +207,7 @@ const navigation = [
       { name: "Generate Notes", href: "/ai/notes" },
       { name: "Generate MCQs", href: "/ai/mcqs" },
       { name: "Generate Worksheets", href: "/ai/worksheet" },
-      { name: "Auto Marking", href: "/ai/marking" },
+      { name: "Auto Marking", href: "/ai/grader" },
     ],
   },
 
@@ -228,6 +228,12 @@ const navigation = [
     icon: BarChart3,
     href: "/reports",
     roles: ["admin"],
+    children: [
+      // { name: "Attendance", href: "/reports/attendance" },
+      // { name: "Exams", href: "/reports/exams" },
+      // { name: "Results", href: "/reports/results" },
+      { name: "Reports", href: "/reports" },
+    ],
   },
 
   {
@@ -235,6 +241,10 @@ const navigation = [
     icon: Bell,
     href: "/notifications",
     roles: ["admin", "teacher", "student", "parent"],
+    children: [
+      { name: "All Notifications", href: "/notifications" },
+      { name: "Create Notification", href: "/notifications/create" },
+    ],
   },
 
   {
@@ -242,6 +252,11 @@ const navigation = [
     icon: Settings,
     href: "/settings",
     roles: ["admin", "teacher", "student", "parent"],
+    children: [
+      // { name: "Profile", href: "/settings/profile" },
+      // { name: "Change Password", href: "/settings/password" },
+      { name: "Settings", href: "/settings" },
+    ],
   },
 ];
 
@@ -329,12 +344,12 @@ export function Sidebar() {
         const filteredChildren = n.children?.filter(
           (c) =>
             (!c.roles || c.roles.includes(role)) &&
-            c.name.toLowerCase().includes(searchQuery.toLowerCase())
+            c.name?.toLowerCase().includes(searchQuery?.toLowerCase())
         );
 
         // If parent name matches or has matching children, keep it
         if (
-          n.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          n.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           (filteredChildren && filteredChildren.length > 0)
         ) {
           return { ...n, children: filteredChildren };
@@ -358,7 +373,7 @@ export function Sidebar() {
       </aside>
 
       {/* Mobile Wrapper */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 flex items-center px-4 bg-[#0c0c0e] border-b border-zinc-800 z-50">
+      <div className="lg:hidden print:hidden fixed top-0 left-0 right-0 h-14 flex items-center px-4 bg-[#0c0c0e] border-b border-zinc-800 z-50">
         <Sheet>
           <SheetTrigger asChild>
             <Button size="icon" variant="ghost" className="text-zinc-400">
