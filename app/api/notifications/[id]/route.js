@@ -4,8 +4,10 @@ import Notification from "@/models/Notification"
 
 export async function DELETE(request, { params }) {
   try {
+    
     await connectDB()
-    const notification = await Notification.findByIdAndDelete(params.id)
+    const {id} = await params
+    const notification = await Notification.findByIdAndDelete(id)
 
     if (!notification) {
       return NextResponse.json({ error: "Notification not found" }, { status: 404 })

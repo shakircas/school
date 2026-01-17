@@ -17,7 +17,15 @@ const notificationSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      enum: ["General", "Fee", "Exam", "Assignment", "Attendance", "Result", "Event"],
+      enum: [
+        "General",
+        "Fee",
+        "Exam",
+        "Assignment",
+        "Attendance",
+        "Result",
+        "Event",
+      ],
       default: "General",
     },
     recipients: {
@@ -53,11 +61,17 @@ const notificationSchema = new mongoose.Schema(
       enum: ["Active", "Archived"],
       default: "Active",
     },
+    readBy: [
+      {
+        user: mongoose.Schema.Types.ObjectId,
+        readAt: Date,
+      },
+    ],
   },
   {
     timestamps: true,
-  },
-)
+  }
+);
 
 notificationSchema.index({ recipients: 1 })
 notificationSchema.index({ createdAt: -1 })

@@ -38,7 +38,6 @@ import { useClasses } from "../hooks/useClasses";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
-
 const attendanceStatuses = ["Present", "Absent", "Late", "Leave", "Half Day"];
 
 export default function StudentAttendanceContent() {
