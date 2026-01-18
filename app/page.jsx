@@ -152,6 +152,7 @@ import {
   Heart,
 } from "lucide-react";
 import { Quote, Award, BookMarked } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -205,105 +206,109 @@ export default function HomePage() {
       </div>
 
       {/* 9. HEADMASTER'S MESSAGE SECTION */}
-      <section className="py-24 relative overflow-hidden bg-white dark:bg-[#050505]">
-        {/* Decorative Background Elements */}
-        <div className="absolute top-0 right-0 w-1/3 h-full bg-emerald-50/50 dark:bg-emerald-900/5 -skew-x-12 translate-x-20 hidden lg:block" />
+      <Card className="container my-4 mx-auto px-6">
+        <section className="py-8 relative overflow-hidden bg-white dark:bg-[#050505]">
+          {/* Decorative Background Elements */}
+          <div className="absolute top-0 right-0 w-1/3 h-full bg-emerald-50/50 dark:bg-emerald-900/5 -skew-x-12 translate-x-20 hidden lg:block" />
 
-        <div className="container mx-auto px-6 relative z-10">
-          <div className="flex flex-col lg:flex-row items-center gap-16">
-            {/* Image Side */}
-            <div className="w-full lg:w-2/5">
-              <div className="relative">
-                {/* Main Photo Frame */}
-                <div className="relative z-10 rounded-[3rem] overflow-hidden border-[12px] border-white dark:border-slate-800 shadow-2xl aspect-[4/5]">
-                  <img
-                    src="/headmaster.jpg" // Replace with Dr. Abdul Hafeez's actual photo
-                    alt="Dr. Abdul Hafeez - Headmaster GHS Hamza Rashaka"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-
-                {/* Experience Badge */}
-                <div className="absolute -bottom-6 -right-6 z-20 bg-emerald-600 text-white p-6 rounded-3xl shadow-xl flex items-center gap-4">
-                  <div className="text-4xl font-black">20+</div>
-                  <div className="text-xs font-bold uppercase tracking-widest leading-tight">
-                    Years of <br /> Educational <br /> Leadership
+          <div className="container mx-auto px-6 relative z-10">
+            <div className="flex flex-col lg:flex-row items-center gap-16">
+              {/* Image Side */}
+              <div className="w-full lg:w-2/5">
+                <div className="relative">
+                  {/* Main Photo Frame */}
+                  <div className="relative z-10 rounded-[3rem] overflow-hidden border-[12px] border-white dark:border-slate-800 shadow-2xl aspect-[4/5]">
+                    <img
+                      src="/headmaster.jpg" // Replace with Dr. Abdul Hafeez's actual photo
+                      alt="Dr. Abdul Hafeez - Headmaster GHS Hamza Rashaka"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
+
+                  {/* Experience Badge */}
+                  <div className="absolute -bottom-6 -right-6 z-20 bg-emerald-600 text-white p-6 rounded-3xl shadow-xl flex items-center gap-4">
+                    <div className="text-4xl font-black">10+</div>
+                    <div className="text-xs font-bold uppercase tracking-widest leading-tight">
+                      Years of <br /> Educational <br /> Leadership
+                    </div>
+                  </div>
+
+                  {/* Decorative SVG Pattern */}
+                  <div className="absolute -top-10 -left-10 w-40 h-40 bg-emerald-100 dark:bg-emerald-900/20 rounded-full -z-10 blur-3xl" />
+                </div>
+              </div>
+
+              {/* Text Side */}
+              <div className="w-full lg:w-3/5 space-y-8">
+                <div className="space-y-4">
+                  <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-none px-4 py-1">
+                    Leadership Message
+                  </Badge>
+                  <h2 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
+                    From the Desk of the{" "}
+                    <span className="text-emerald-600 italic">Headmaster</span>
+                  </h2>
                 </div>
 
-                {/* Decorative SVG Pattern */}
-                <div className="absolute -top-10 -left-10 w-40 h-40 bg-emerald-100 dark:bg-emerald-900/20 rounded-full -z-10 blur-3xl" />
-              </div>
-            </div>
-
-            {/* Text Side */}
-            <div className="w-full lg:w-3/5 space-y-8">
-              <div className="space-y-4">
-                <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-none px-4 py-1">
-                  Leadership Message
-                </Badge>
-                <h2 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
-                  From the Desk of the{" "}
-                  <span className="text-emerald-600 italic">Headmaster</span>
-                </h2>
-              </div>
-
-              <div className="relative">
-                <Quote className="absolute -top-6 -left-8 text-emerald-100 dark:text-emerald-900/30 h-20 w-20 -z-10" />
-                <p className="text-xl text-slate-600 dark:text-slate-300 leading-relaxed font-light italic">
-                  "At GHS Hamza Rashaka Nowshera, we believe that education is
-                  not merely the acquisition of knowledge, but the formation of
-                  character. Our mission is to transform the bright young minds
-                  of Nowshera into responsible, innovative, and empathetic
-                  citizens of Pakistan."
-                </p>
-              </div>
-
-              <div className="space-y-6 text-slate-500 dark:text-slate-400">
-                <p>
-                  It is an honor to lead this historic institution. In alignment
-                  with the KPK Government's vision, we are prioritizing STEM
-                  education and digital literacy to ensure our students from
-                  Class 6th to 10th are ready for the global stage.
-                </p>
-                <p>
-                  We invite parents and the community to join us in this journey
-                  of excellence. Together, we can build a future where every
-                  child has the tools to succeed regardless of their background.
-                </p>
-              </div>
-
-              <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <div>
-                  <h4 className="text-2xl font-bold text-slate-900 dark:text-white">
-                    Dr. Abdul Hafeez
-                  </h4>
-                  <p className="text-emerald-600 font-medium tracking-wide uppercase text-sm">
-                    PhD in Education | Headmaster
+                <div className="relative">
+                  <Quote className="absolute -top-6 -left-8 text-emerald-100 dark:text-emerald-900/30 h-20 w-20 -z-10" />
+                  <p className="text-xl text-slate-600 dark:text-slate-300 leading-relaxed font-light italic">
+                    "At GHS Hamza Rashaka Nowshera, we believe that education is
+                    not merely the acquisition of knowledge, but the formation
+                    of character. Our mission is to transform the bright young
+                    minds of Nowshera into responsible, innovative, and
+                    empathetic citizens of Pakistan."
                   </p>
                 </div>
-                <div className="hidden sm:flex gap-4">
-                  <div className="flex flex-col items-center">
-                    <Award className="text-emerald-600 mb-1" />
-                    <span className="text-[10px] font-bold uppercase text-slate-400">
-                      Certified
-                    </span>
+
+                <div className="space-y-6 text-slate-500 dark:text-slate-400">
+                  <p>
+                    It is an honor to lead this historic institution. In
+                    alignment with the KPK Government's vision, we are
+                    prioritizing STEM education and digital literacy to ensure
+                    our students from Class 6th to 10th are ready for the global
+                    stage.
+                  </p>
+                  <p>
+                    We invite parents and the community to join us in this
+                    journey of excellence. Together, we can build a future where
+                    every child has the tools to succeed regardless of their
+                    background.
+                  </p>
+                </div>
+
+                <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                  <div>
+                    <h4 className="text-2xl font-bold text-slate-900 dark:text-white">
+                      Dr. Abdul Hafeez
+                    </h4>
+                    <p className="text-emerald-600 font-medium tracking-wide uppercase text-sm">
+                      PhD in Education | Headmaster
+                    </p>
                   </div>
-                  <div className="flex flex-col items-center">
-                    <BookMarked className="text-emerald-600 mb-1" />
-                    <span className="text-[10px] font-bold uppercase text-slate-400">
-                      Visionary
-                    </span>
+                  <div className="hidden sm:flex gap-4">
+                    <div className="flex flex-col items-center">
+                      <Award className="text-emerald-600 mb-1" />
+                      <span className="text-[10px] font-bold uppercase text-slate-400">
+                        Certified
+                      </span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <BookMarked className="text-emerald-600 mb-1" />
+                      <span className="text-[10px] font-bold uppercase text-slate-400">
+                        Visionary
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </Card>
 
       {/* 2. HERO CAROUSEL */}
-      <section className="relative h-[80vh] w-full overflow-hidden bg-slate-900">
+      <section className="relative h-screen py-4 w-full overflow-hidden bg-slate-900">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentSlide}
@@ -323,9 +328,9 @@ export default function HomePage() {
         <div className="absolute inset-0 z-20 flex items-center container mx-auto px-6">
           <div className="max-w-3xl space-y-6">
             <Badge className="bg-emerald-500 text-white px-4 py-1">
-              Govt. High School Nowshera
+              Govt. High School Nowshera11
             </Badge>
-            <h1 className="text-6xl md:text-8xl font-black text-white leading-tight">
+            <h1 className="text-5xl md:text-6xl font-black text-white leading-tight">
               {slides[currentSlide].title}
             </h1>
             <p className="text-xl text-slate-200">
@@ -369,88 +374,94 @@ export default function HomePage() {
       </section>
 
       {/* 4. MISSION & VISION (NEW) */}
-      <section className="py-24 container mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
-        <div>
-          <h2 className="text-4xl font-black mb-6">
-            Our Mission to <span className="text-emerald-600">Empower</span>
-          </h2>
-          <p className="text-slate-500 dark:text-slate-400 text-lg leading-relaxed mb-8">
-            To provide high-quality, accessible education that fosters critical
-            thinking, moral integrity, and social responsibility in the youth of
-            Hamza Rashaka.
-          </p>
-          <div className="space-y-4">
-            {[
-              "State-certified faculty",
-              "Modern Science & IT Labs",
-              "Free Textbooks & Uniform Support",
-            ].map((text) => (
-              <div
-                key={text}
-                className="flex items-center gap-3 font-semibold text-slate-700 dark:text-slate-200"
-              >
-                <CheckCircle className="text-emerald-500" /> {text}
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-emerald-100 dark:bg-emerald-900/20 p-8 rounded-[2rem] text-center space-y-4">
-            <Heart className="mx-auto text-emerald-600" size={40} />
-            <h3 className="font-bold">Character Building</h3>
-          </div>
-          <div className="bg-slate-100 dark:bg-slate-800/50 p-8 rounded-[2rem] text-center space-y-4 mt-8">
-            <Microscope className="mx-auto text-blue-600" size={40} />
-            <h3 className="font-bold">Practical Learning</h3>
-          </div>
-        </div>
-      </section>
-
-      {/* 5. NOTICE BOARD & DOWNLOADS */}
-      <section className="py-24 bg-slate-50 dark:bg-slate-900/20">
-        <div className="container mx-auto px-6 grid lg:grid-cols-3 gap-12">
-          <div className="lg:col-span-2 space-y-8">
-            <h2 className="text-3xl font-bold border-b pb-4">Campus Notices</h2>
+      <Card className="container my-8 mx-auto px-6 py-16">
+        <section className="py-4 container mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
+          <div>
+            <h2 className="text-4xl font-black mb-6">
+              Our Mission to <span className="text-emerald-600">Empower</span>
+            </h2>
+            <p className="text-slate-500 dark:text-slate-400 text-lg leading-relaxed mb-8">
+              To provide high-quality, accessible education that fosters
+              critical thinking, moral integrity, and social responsibility in
+              the youth of Hamza Rashaka.
+            </p>
             <div className="space-y-4">
-              <NoticeItem
-                date="Feb 15"
-                title="Middle School Annual Result Announcement"
-                tag="Result"
-              />
-              <NoticeItem
-                date="Feb 05"
-                title="Tree Plantation Drive at GHS Hamza Rashaka"
-                tag="Event"
-              />
-              <NoticeItem
-                date="Jan 25"
-                title="Class 9th Board Registration Deadline"
-                tag="Exams"
-              />
-            </div>
-          </div>
-          <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-xl">
-            <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-              <Download className="text-emerald-500" /> Resources
-            </h3>
-            <div className="space-y-3">
               {[
-                "Academic Calendar 2026",
-                "Syllabus Grade 6-10",
-                "Scholarship Form",
-              ].map((f) => (
+                "State-certified faculty",
+                "Modern Science & IT Labs",
+                "Free Textbooks & Uniform Support",
+              ].map((text) => (
                 <div
-                  key={f}
-                  className="flex items-center justify-between p-4 border rounded-xl hover:border-emerald-500 cursor-pointer transition-all"
+                  key={text}
+                  className="flex items-center gap-3 font-semibold text-slate-700 dark:text-slate-200"
                 >
-                  <span className="text-sm font-semibold">{f}</span>
-                  <ArrowRight size={16} />
+                  <CheckCircle className="text-emerald-500" /> {text}
                 </div>
               ))}
             </div>
           </div>
-        </div>
-      </section>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-emerald-100 dark:bg-emerald-900/20 p-8 rounded-[2rem] text-center space-y-4">
+              <Heart className="mx-auto text-emerald-600" size={40} />
+              <h3 className="font-bold">Character Building</h3>
+            </div>
+            <div className="bg-slate-100 dark:bg-slate-800/50 p-8 rounded-[2rem] text-center space-y-4 mt-8">
+              <Microscope className="mx-auto text-blue-600" size={40} />
+              <h3 className="font-bold">Practical Learning</h3>
+            </div>
+          </div>
+        </section>
+      </Card>
+
+      {/* 5. NOTICE BOARD & DOWNLOADS */}
+      <Card className="container my-8 mx-auto px-6 py-16">
+        <section className="py-24 bg-slate-50 dark:bg-slate-900/20">
+          <div className="container mx-auto px-6 grid lg:grid-cols-3 gap-12">
+            <div className="lg:col-span-2 space-y-8">
+              <h2 className="text-3xl font-bold border-b pb-4">
+                Campus Notices
+              </h2>
+              <div className="space-y-4">
+                <NoticeItem
+                  date="Feb 15"
+                  title="Middle School Annual Result Announcement"
+                  tag="Result"
+                />
+                <NoticeItem
+                  date="Feb 05"
+                  title="Tree Plantation Drive at GHS Hamza Rashaka"
+                  tag="Event"
+                />
+                <NoticeItem
+                  date="Jan 25"
+                  title="Class 9th Board Registration Deadline"
+                  tag="Exams"
+                />
+              </div>
+            </div>
+            <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-xl">
+              <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+                <Download className="text-emerald-500" /> Resources
+              </h3>
+              <div className="space-y-3">
+                {[
+                  "Academic Calendar 2026",
+                  "Syllabus Grade 6-10",
+                  "Scholarship Form",
+                ].map((f) => (
+                  <div
+                    key={f}
+                    className="flex items-center justify-between p-4 border rounded-xl hover:border-emerald-500 cursor-pointer transition-all"
+                  >
+                    <span className="text-sm font-semibold">{f}</span>
+                    <ArrowRight size={16} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      </Card>
 
       {/* 6. FACILITIES (NEW) */}
       <section className="py-24 container mx-auto px-6 text-center">
