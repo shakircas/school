@@ -25,7 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import { FileSpreadsheet, FileText, Users, Printer, Eye } from "lucide-react";
 import { exportToExcel, exportToCSV } from "@/lib/excel-utils";
 import { generateTeacherListPDF } from "@/lib/pdf-generator";
-import { KP_DESIGNATIONS } from "../teachers/teachers-content";
+import { KP_DESIGNATIONS } from "@/lib/constants";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
