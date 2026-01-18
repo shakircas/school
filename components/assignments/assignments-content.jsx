@@ -32,16 +32,14 @@ import {
   Edit,
   Trash2,
   Calendar,
-  Users,
   Search,
-  GraduationCap,
   ClipboardList,
   BookOpen,
-  LayoutGrid,
-  List,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { SubmissionsView } from "./SubmissionsView";
+import Link from "next/link";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -49,8 +47,8 @@ export function AssignmentsContent() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [viewingSubmissions, setViewingSubmissions] = useState(null);
 
-  // Rational Data Fetching
   const {
     data: assignments,
     mutate,
@@ -59,9 +57,9 @@ export function AssignmentsContent() {
   const { data: classesRes } = useSWR("/api/academics/classes", fetcher);
   const { data: subjectsRes } = useSWR("/api/academics/subjects", fetcher);
 
-  const classes = classesRes?.data || []
-  const subjects = subjectsRes?.data || []
-  
+  const classes = classesRes?.data || [];
+  const subjects = subjectsRes?.data || [];
+
   const {
     register,
     handleSubmit,
@@ -83,12 +81,12 @@ export function AssignmentsContent() {
       });
 
       if (!response.ok) throw new Error();
-      toast.success(isEdit ? "Updated successfully" : "Assignment published");
+      toast.success(isEdit ? "Updated" : "Published");
       setIsCreateOpen(false);
       reset();
       mutate();
     } catch (error) {
-      toast.error("An error occurred while saving.");
+      toast.error("Failed to save.");
     }
   };
 
@@ -99,13 +97,6 @@ export function AssignmentsContent() {
       : "";
     reset({ ...assignment, dueDate: date });
     setIsCreateOpen(true);
-  };
-
-  const handleDelete = async (id) => {
-    if (!confirm("Delete this assignment?")) return;
-    await fetch(`/api/assignments/${id}`, { method: "DELETE" });
-    toast.success("Deleted");
-    mutate();
   };
 
   const filteredData = Array.isArray(assignments)
@@ -122,8 +113,8 @@ export function AssignmentsContent() {
     );
 
   return (
-    <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6 animate-in fade-in duration-500">
-      {/* Search & Action Header */}
+    <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-white dark:bg-slate-900 p-5 rounded-2xl border shadow-sm">
         <div className="relative w-full sm:w-72">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -142,57 +133,38 @@ export function AssignmentsContent() {
                 setSelectedAssignment(null);
                 reset({});
               }}
-              className="w-full sm:w-auto rounded-xl bg-indigo-600 hover:bg-indigo-700 h-10 px-5 font-semibold transition-all"
+              className="rounded-xl bg-indigo-600 hover:bg-indigo-700 h-10 px-5 font-semibold"
             >
               <Plus className="h-4 w-4 mr-2" /> New Task
             </Button>
           </DialogTrigger>
-
-          {/* MEDIUM SIZE RESPONSIVE DIALOG */}
-          <DialogContent className="max-w-lg md:max-w-2xl w-[95vw] rounded-[1.5rem] p-0 overflow-hidden">
-            <div className="bg-slate-900 p-6 text-white">
-              <DialogHeader>
-                <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                  <ClipboardList className="h-5 w-5 text-indigo-400" />
-                  {selectedAssignment
-                    ? "Edit Assignment"
-                    : "Create New Assignment"}
-                </DialogTitle>
-                <DialogDescription className="text-slate-400">
-                  Fill in the information below to notify your students.
-                </DialogDescription>
-              </DialogHeader>
+          <DialogContent className="max-w-lg md:max-w-2xl rounded-[1.5rem] p-0 overflow-hidden">
+            <div className="bg-slate-900 p-6 text-white text-center">
+              <DialogTitle className="text-xl font-bold flex justify-center gap-2">
+                <ClipboardList className="h-5 w-5 text-indigo-400" />
+                {selectedAssignment ? "Edit" : "Create"} Assignment
+              </DialogTitle>
             </div>
-
-            <form
-              onSubmit={handleSubmit(onSubmit)}
-              className="p-6 space-y-4 bg-white dark:bg-slate-950"
-            >
+            <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-500 uppercase ml-1">
-                  Title
-                </Label>
+                <Label>Title</Label>
                 <Input
                   {...register("title", { required: true })}
-                  placeholder="Assignment Name"
                   className="rounded-lg"
                 />
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-slate-500 uppercase ml-1">
-                    Class
-                  </Label>
+                  <Label>Class</Label>
                   <Select
                     onValueChange={(v) => setValue("class", v)}
                     defaultValue={selectedAssignment?.class}
                   >
                     <SelectTrigger className="rounded-lg">
-                      <SelectValue placeholder="Select Class" />
+                      <SelectValue placeholder="Class" />
                     </SelectTrigger>
                     <SelectContent>
-                      {classes?.map((c) => (
+                      {classes.map((c) => (
                         <SelectItem key={c._id} value={c.name}>
                           {c.name}
                         </SelectItem>
@@ -201,18 +173,16 @@ export function AssignmentsContent() {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-slate-500 uppercase ml-1">
-                    Subject
-                  </Label>
+                  <Label>Subject</Label>
                   <Select
                     onValueChange={(v) => setValue("subject", v)}
                     defaultValue={selectedAssignment?.subject}
                   >
                     <SelectTrigger className="rounded-lg">
-                      <SelectValue placeholder="Select Subject" />
+                      <SelectValue placeholder="Subject" />
                     </SelectTrigger>
                     <SelectContent>
-                      {subjects?.map((s) => (
+                      {subjects.map((s) => (
                         <SelectItem key={s._id} value={s.name}>
                           {s.name}
                         </SelectItem>
@@ -221,45 +191,31 @@ export function AssignmentsContent() {
                   </Select>
                 </div>
               </div>
-
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-500 uppercase ml-1">
-                  Instructions
-                </Label>
+                <Label>Instructions</Label>
                 <Textarea
                   {...register("description")}
                   rows={3}
-                  placeholder="Add task details..."
                   className="rounded-lg resize-none"
                 />
               </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-slate-500 uppercase ml-1">
-                    Due Date
-                  </Label>
+                  <Label>Due Date</Label>
                   <Input
                     type="date"
                     {...register("dueDate", { required: true })}
-                    className="rounded-lg"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-slate-500 uppercase ml-1">
-                    Marks
-                  </Label>
+                  <Label>Marks</Label>
                   <Input
                     type="number"
                     {...register("totalMarks", { required: true })}
-                    placeholder="100"
-                    className="rounded-lg"
                   />
                 </div>
-                <div className="space-y-1.5 col-span-2 md:col-span-1">
-                  <Label className="text-xs font-semibold text-slate-500 uppercase ml-1">
-                    Status
-                  </Label>
+                <div className="space-y-1.5">
+                  <Label>Status</Label>
                   <Select
                     onValueChange={(v) => setValue("status", v)}
                     defaultValue={selectedAssignment?.status || "Published"}
@@ -268,7 +224,7 @@ export function AssignmentsContent() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {["Draft", "Published", "Closed", "Graded"].map((s) => (
+                      {["Draft", "Published", "Closed"].map((s) => (
                         <SelectItem key={s} value={s}>
                           {s}
                         </SelectItem>
@@ -277,20 +233,11 @@ export function AssignmentsContent() {
                   </Select>
                 </div>
               </div>
-
-              <DialogFooter className="pt-4 flex flex-row gap-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setIsCreateOpen(false)}
-                  className="flex-1 rounded-xl"
-                >
-                  Cancel
-                </Button>
+              <DialogFooter className="pt-4">
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 rounded-xl bg-indigo-600 hover:bg-indigo-700"
+                  className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-700 h-12"
                 >
                   {isSubmitting ? (
                     <LoadingSpinner size="sm" />
@@ -304,29 +251,25 @@ export function AssignmentsContent() {
         </Dialog>
       </div>
 
-      {/* COMPACT ASSIGNMENT GRID */}
+      {/* Grid */}
       {!filteredData.length ? (
-        <EmptyState
-          icon={BookOpen}
-          title="No assignments found"
-          description="Time to add some academic tasks."
-        />
+        <EmptyState icon={BookOpen} title="No assignments" />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredData.map((a) => (
             <Card
               key={a._id}
-              className="group border shadow-sm hover:shadow-md transition-all rounded-2xl bg-white dark:bg-slate-900"
+              className="group border rounded-2xl bg-white dark:bg-slate-900 overflow-hidden"
             >
               <CardHeader className="p-5 pb-2">
-                <div className="flex justify-between items-start mb-2">
+                <div className="flex justify-between mb-2">
                   <Badge
                     variant="outline"
-                    className="text-[10px] font-bold rounded-md bg-slate-50 dark:bg-slate-800 border-none px-2 py-0.5"
+                    className="text-[10px] bg-slate-50 dark:bg-slate-800 border-none"
                   >
                     {a.class} • {a.subject}
                   </Badge>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100">
                     <Button
                       variant="ghost"
                       size="icon"
@@ -345,39 +288,55 @@ export function AssignmentsContent() {
                     </Button>
                   </div>
                 </div>
-                <CardTitle className="text-base font-bold text-slate-900 dark:text-white line-clamp-1">
+                <CardTitle className="text-base font-bold truncate">
                   {a.title}
                 </CardTitle>
               </CardHeader>
-
               <CardContent className="p-5 pt-2 space-y-4">
-                <p className="text-xs text-slate-500 line-clamp-2 min-h-[32px]">
-                  {a.description || "No description provided."}
+                <p className="text-xs text-slate-500 line-clamp-2 h-8">
+                  {a.description || "No description."}
                 </p>
-
-                <div className="flex items-center justify-between pt-3 border-t border-slate-50 dark:border-slate-800">
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-                    <Calendar className="h-3.5 w-3.5 text-indigo-500" />
-                    {a.dueDate
-                      ? format(new Date(a.dueDate), "MMM d")
-                      : "No date"}
-                  </div>
-                  <div className="text-xs font-bold px-2 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 rounded-md">
+                <div className="flex justify-between pt-3 border-t text-xs">
+                  <span className="flex items-center gap-1 text-slate-500">
+                    <Calendar className="h-3 w-3" />{" "}
+                    {a.dueDate ? format(new Date(a.dueDate), "MMM d") : "-"}
+                  </span>
+                  <span className="font-bold text-indigo-600">
                     {a.totalMarks} Marks
-                  </div>
+                  </span>
                 </div>
-
                 <Button
+                  onClick={() => setViewingSubmissions(a)}
                   variant="secondary"
-                  className="w-full h-9 rounded-lg text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-indigo-600 hover:text-white transition-all"
+                  className="w-full h-9 rounded-lg text-xs font-bold hover:bg-indigo-600 hover:text-white transition-colors"
                 >
                   {a.submissions?.length || 0} Submissions
                 </Button>
+
+                <Link href={`/assignments/${a._id}`}>
+                  <Button
+                    variant="secondary"
+                    className="w-full h-9 rounded-lg text-xs font-bold hover:bg-indigo-600 hover:text-white transition-colors"
+                  >
+                    Uplod Assignment
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
           ))}
         </div>
       )}
+
+      {/* Drawer */}
+      <SubmissionsView
+        assignment={viewingSubmissions}
+        isOpen={!!viewingSubmissions}
+        onClose={() => setViewingSubmissions(null)}
+        onUpdate={() => {
+          mutate();
+          setViewingSubmissions(null);
+        }}
+      />
     </div>
   );
 }

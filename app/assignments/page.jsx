@@ -9,6 +9,7 @@ export const metadata = {
 export default function AssignmentsPage() {
   return (
     <MainLayout>
+      <h1 className="text-2xl font-bold">Assignments</h1>
       <AssignmentsContent />
     </MainLayout>
   )
