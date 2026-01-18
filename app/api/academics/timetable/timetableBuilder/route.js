@@ -3,11 +3,6 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import Class from "@/models/Class";
 
-e// /app/api/academics/timetable/route.js
-import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/db";
-import Class from "@/models/Class";
-
 export async function GET() {
   try {
     await connectDB();

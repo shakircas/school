@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
+import Class from "@/models/Class";
 import Teacher from "@/models/Teacher";
-import TeacherAttendance from "@/models/TeacherAttendance";
 
 export async function GET(req) {
   await connectDB();
@@ -17,18 +17,41 @@ export async function GET(req) {
     );
   }
 
+  // Get all teachers
   const teachers = await Teacher.find().sort({ name: 1 });
 
-  const startDate = new Date(year, month - 1, 1);
-  const endDate = new Date(year, month, 0);
+  // Get all classes with schedules and periods
+  const classes = await Class.find({}).lean();
 
-  const attendanceDocs = await TeacherAttendance.find({
-    date: { $gte: startDate, $lte: endDate },
+  // Build a map of teacher attendance based on schedule
+  const attendanceDocs = [];
+
+  classes.forEach((cls) => {
+    cls.schedule.forEach((daySchedule) => {
+      // Get all days in month
+      const daysInMonth = new Date(year, month, 0).getDate();
+      for (let d = 1; d <= daysInMonth; d++) {
+        const date = new Date(year, month - 1, d);
+        const dayName = date.toLocaleDateString("en-US", { weekday: "long" });
+
+        if (daySchedule.day === dayName) {
+          daySchedule.periods.forEach((period) => {
+            attendanceDocs.push({
+              teacher: period.teacher,
+              date,
+              className: cls.name,
+              subject: period.subjectName,
+              time: period.time,
+            });
+          });
+        }
+      }
+    });
   });
 
   return NextResponse.json({
     teachers,
     attendanceDocs,
-    daysInMonth: endDate.getDate(),
+    daysInMonth: new Date(year, month, 0).getDate(),
   });
 }
