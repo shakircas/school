@@ -153,7 +153,15 @@ import {
 } from "lucide-react";
 import { Quote, Award, BookMarked } from "lucide-react";
 import { Clock, Phone, Mail, Send } from "lucide-react";
+import { User, MessageSquare } from "lucide-react";
+import {
+  ClipboardList,
+  AlertCircle,
+  FileText,
+  CheckCircle2,
+} from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { ResultSearch } from "./results/ResultSearch";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -184,7 +192,6 @@ export default function HomePage() {
   return (
     <main className="mt-22 min-h-screen bg-[#fcfcfc] dark:bg-[#080808] text-slate-900 dark:text-white">
       <LandingNavbar />
-
       {/* 1. NEWS TICKER */}
       <div className="bg-emerald-700 text-white py-3 overflow-hidden mt-16">
         <div className="container mx-auto px-6 flex items-center">
@@ -205,7 +212,6 @@ export default function HomePage() {
           </div>
         </div>
       </div>
-
       {/* 9. HEADMASTER'S MESSAGE SECTION */}
       <Card className="container my-4 mx-auto px-6">
         <section className="py-8 relative overflow-hidden bg-white dark:bg-[#050505]">
@@ -308,6 +314,7 @@ export default function HomePage() {
         </section>
       </Card>
 
+      <ResultSearch />
       {/* 2. HERO CAROUSEL */}
       <section className="relative h-screen py-4 w-full overflow-hidden bg-slate-900">
         <AnimatePresence mode="wait">
@@ -355,7 +362,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
       {/* 3. STATS BAR */}
       <section className="container mx-auto px-6 -mt-12 relative z-30">
         <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-10 grid grid-cols-2 lg:grid-cols-4 gap-8 shadow-2xl">
@@ -373,7 +379,6 @@ export default function HomePage() {
           <StatBox icon={<MapPin />} label="Nowshera" value="KPK" />
         </div>
       </section>
-
       {/* 4. MISSION & VISION (NEW) */}
       <Card className="container my-8 mx-auto px-6 py-16">
         <section className="py-4 container mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
@@ -413,7 +418,6 @@ export default function HomePage() {
           </div>
         </section>
       </Card>
-
       {/* 5. NOTICE BOARD & DOWNLOADS */}
       <Card className="container my-8 mx-auto px-6 py-16">
         <section className="py-24 bg-slate-50 dark:bg-slate-900/20">
@@ -463,7 +467,6 @@ export default function HomePage() {
           </div>
         </section>
       </Card>
-
       {/* 6. FACILITIES (NEW) */}
       <section className="py-24 container mx-auto px-6 text-center">
         <h2 className="text-4xl font-black mb-16">
@@ -488,7 +491,6 @@ export default function HomePage() {
           />
         </div>
       </section>
-
       {/* 7. TEACHERS SECTION */}
       <section className="py-24 bg-[#0a0a0a] text-white overflow-hidden">
         <div className="container mx-auto px-6">
@@ -517,7 +519,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
       {/* 8. ADMISSION STEPS (NEW) */}
       <section className="py-24 bg-emerald-600 text-white">
         <div className="container mx-auto px-6 text-center">
@@ -532,7 +533,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
       {/* 10. CONTACT & LOCATION SECTION */}
       <section className="py-24 bg-slate-50 dark:bg-slate-900/10">
         <div className="container mx-auto px-6">
@@ -636,7 +636,223 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+      {/* 11. QUICK CONTACT FORM */}
+      <section className="pb-24 container mx-auto px-6">
+        <div className="bg-white dark:bg-slate-900 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden">
+          <div className="grid lg:grid-cols-2">
+            {/* Left Side: Illustration or Text */}
+            <div className="bg-emerald-600 p-12 lg:p-20 text-white space-y-8 flex flex-col justify-center">
+              <h2 className="text-4xl font-bold">Have a Question?</h2>
+              <p className="text-emerald-100 text-lg">
+                Whether it's about Class 6th admissions, exam schedules, or
+                general inquiries, our administrative team is here to help you.
+              </p>
 
+              <div className="space-y-6 pt-4">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center">
+                    <CheckCircle size={20} />
+                  </div>
+                  <p className="font-medium">
+                    Direct response within 24-48 hours
+                  </p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center">
+                    <CheckCircle size={20} />
+                  </div>
+                  <p className="font-medium">
+                    Secure and confidential handling
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Side: Actual Form */}
+            <div className="p-12 lg:p-20">
+              <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-400 uppercase tracking-widest ml-1">
+                      Full Name
+                    </label>
+                    <div className="relative">
+                      <User
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                        size={18}
+                      />
+                      <input
+                        type="text"
+                        placeholder="e.g. Ahmad Khan"
+                        className="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none focus:ring-2 focus:ring-emerald-500 transition-all outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-400 uppercase tracking-widest ml-1">
+                      Phone Number
+                    </label>
+                    <div className="relative">
+                      <Phone
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                        size={18}
+                      />
+                      <input
+                        type="tel"
+                        placeholder="+92 XXX XXXXXXX"
+                        className="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none focus:ring-2 focus:ring-emerald-500 transition-all outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-400 uppercase tracking-widest ml-1">
+                    Message
+                  </label>
+                  <div className="relative">
+                    <MessageSquare
+                      className="absolute left-4 top-6 text-slate-400"
+                      size={18}
+                    />
+                    <textarea
+                      rows={4}
+                      placeholder="How can we help you today?"
+                      className="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-none focus:ring-2 focus:ring-emerald-500 transition-all outline-none resize-none"
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  size="xl"
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl h-16 text-lg font-bold shadow-lg shadow-emerald-900/20"
+                >
+                  Send Inquiry <Send size={18} className="ml-2" />
+                </Button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 12. ADMISSIONS DETAIL SECTION */}
+      <section className="py-24 bg-white dark:bg-[#080808]">
+        <div className="container mx-auto px-6">
+          <div className="flex flex-col lg:flex-row gap-16">
+            {/* Age Requirements Table */}
+            <div className="flex-1 space-y-8">
+              <div className="space-y-4">
+                <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                  Eligibility
+                </Badge>
+                <h2 className="text-4xl font-black tracking-tight">
+                  Age <span className="text-emerald-600">Requirements</span>
+                </h2>
+                <p className="text-slate-500">
+                  As per the KPK Education Department regulations, students must
+                  meet the following age criteria for admission.
+                </p>
+              </div>
+
+              <div className="overflow-hidden rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 dark:bg-slate-900">
+                      <th className="p-6 font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800">
+                        Class Level
+                      </th>
+                      <th className="p-6 font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800">
+                        Minimum Age
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {[
+                      { grade: "Class 6th", age: "11 - 12 Years" },
+                      { grade: "Class 7th", age: "12 - 13 Years" },
+                      { grade: "Class 8th", age: "13 - 14 Years" },
+                      { grade: "Class 9th", age: "14 - 15 Years" },
+                      { grade: "Class 10th", age: "15 - 16 Years" },
+                    ].map((row) => (
+                      <tr
+                        key={row.grade}
+                        className="hover:bg-emerald-50/30 dark:hover:bg-emerald-900/5 transition-colors"
+                      >
+                        <td className="p-6 font-medium">{row.grade}</td>
+                        <td className="p-6 text-slate-500">{row.age}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="flex gap-4 p-4 bg-amber-50 dark:bg-amber-900/10 rounded-2xl border border-amber-100 dark:border-amber-900/30">
+                <AlertCircle className="text-amber-600 shrink-0" size={20} />
+                <p className="text-sm text-amber-800 dark:text-amber-200">
+                  <strong>Note:</strong> Age is calculated as of 1st March of
+                  the admission year. A valid B-Form is mandatory for age
+                  verification.
+                </p>
+              </div>
+            </div>
+
+            {/* Document Checklist */}
+            <div className="flex-1 bg-slate-50 dark:bg-slate-900/40 p-10 lg:p-16 rounded-[3rem] border border-slate-100 dark:border-slate-800">
+              <div className="space-y-8">
+                <div className="h-16 w-16 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center shadow-sm">
+                  <FileText className="text-emerald-600" size={32} />
+                </div>
+                <h3 className="text-3xl font-bold">
+                  Required <br />{" "}
+                  <span className="text-emerald-600">Documentation</span>
+                </h3>
+
+                <ul className="space-y-6">
+                  {[
+                    {
+                      title: "Student B-Form",
+                      desc: "Original and 2 attested photocopies.",
+                    },
+                    {
+                      title: "Father/Guardian CNIC",
+                      desc: "Attested photocopies required.",
+                    },
+                    {
+                      title: "School Leaving Certificate (SLC)",
+                      desc: "From the previous recognized institution.",
+                    },
+                    {
+                      title: "Passport Size Photos",
+                      desc: "4 recent photos with blue background.",
+                    },
+                    {
+                      title: "Character Certificate",
+                      desc: "Issued by the last school attended.",
+                    },
+                  ].map((item) => (
+                    <li key={item.title} className="flex gap-4">
+                      <CheckCircle2
+                        className="text-emerald-500 shrink-0 mt-1"
+                        size={20}
+                      />
+                      <div>
+                        <h4 className="font-bold text-slate-900 dark:text-white leading-none mb-1">
+                          {item.title}
+                        </h4>
+                        <p className="text-sm text-slate-500">{item.desc}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+
+                <Button className="w-full bg-slate-900 dark:bg-white text-white dark:text-black py-8 rounded-2xl text-lg hover:scale-[1.02] transition-transform">
+                  Download Admission Guide (PDF)
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
       <Footer />
     </main>
   );
