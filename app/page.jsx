@@ -1,127 +1,3 @@
-// import Link from "next/link";
-// import { Button } from "@/components/ui/button";
-// import { Card, CardContent } from "@/components/ui/card";
-// import {
-//   GraduationCap,
-//   Users,
-//   Wallet,
-//   BarChart3,
-//   ArrowRight,
-// } from "lucide-react";
-// import { LandingNavbar } from "@/components/landing/navbar";
-// import { PricingSection } from "@/components/landing/pricing";
-// import { Footer } from "@/components/layout/Footer";
-
-// export default function HomePage() {
-//   return (
-//     <main className="min-h-screen bg-background">
-//       <LandingNavbar isAuthenticated={false} />
-//       {/* HERO */}
-//       <section className="py-24 text-center bg-gradient-to-br from-primary/10 to-background">
-//         <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-//           Smart School Management System
-//         </h1>
-//         <p className="mt-4 text-muted-foreground max-w-xl mx-auto">
-//           Manage students, fees, attendance, exams and analytics — all in one
-//           powerful platform.
-//         </p>
-//         <div className="mt-8 flex justify-center gap-4">
-//           <Button size="lg" asChild>
-//             <Link href="/login">
-//               Get Started
-//               <ArrowRight className="h-4 w-4 ml-2" />
-//             </Link>
-//           </Button>
-//           <Button size="lg" variant="outline" asChild>
-//             <Link href="/dashboard">Dashboard</Link>
-//           </Button>
-//         </div>
-//       </section>
-
-//       {/* FEATURES */}
-//       <section id="features" className="py-20 container mx-auto">
-//         <h2 className="text-3xl font-bold text-center mb-12">
-//           Everything Your School Needs
-//         </h2>
-
-//         <div className="grid md:grid-cols-4 gap-6">
-//           <Feature
-//             icon={<GraduationCap />}
-//             title="Student Management"
-//             desc="Admissions, profiles, promotions & history"
-//           />
-//           <Feature
-//             icon={<Wallet />}
-//             title="Fee Management"
-//             desc="Monthly fees, installments, receipts & reports"
-//           />
-//           <Feature
-//             icon={<Users />}
-//             title="Attendance"
-//             desc="Daily attendance with analytics"
-//           />
-//           <Feature
-//             icon={<BarChart3 />}
-//             title="Reports & Analytics"
-//             desc="Real-time insights for management"
-//           />
-//         </div>
-//       </section>
-
-//       {/* STATS */}
-//       <section className="py-20 bg-muted">
-//         <div className="container mx-auto grid md:grid-cols-4 gap-6 text-center">
-//           <Stat number="5K+" label="Students Managed" />
-//           <Stat number="200+" label="Teachers" />
-//           <Stat number="99.9%" label="Uptime" />
-//           <Stat number="24/7" label="Support" />
-//         </div>
-//       </section>
-
-//       <PricingSection />
-
-//       {/* CTA */}
-//       <section className="py-24 text-center">
-//         <h2 className="text-3xl font-bold">Ready to Digitize Your School?</h2>
-//         <p className="mt-3 text-muted-foreground">
-//           Start managing your school smarter today.
-//         </p>
-//         <Button size="lg" className="mt-6" asChild>
-//           <Link href="/login">Launch Dashboard</Link>
-//         </Button>
-//       </section>
-
-//       {/* FOOTER */}
-//       <Footer />
-//     </main>
-//   );
-// }
-
-// /* ================= COMPONENTS ================= */
-
-// function Feature({ icon, title, desc }) {
-//   return (
-//     <Card className="text-center">
-//       <CardContent className="p-6 space-y-3">
-//         <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-lg bg-primary/10 text-primary">
-//           {icon}
-//         </div>
-//         <h3 className="font-semibold">{title}</h3>
-//         <p className="text-sm text-muted-foreground">{desc}</p>
-//       </CardContent>
-//     </Card>
-//   );
-// }
-
-// function Stat({ number, label }) {
-//   return (
-//     <div>
-//       <p className="text-3xl font-bold">{number}</p>
-//       <p className="text-muted-foreground">{label}</p>
-//     </div>
-//   );
-// }
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -162,6 +38,7 @@ import {
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { ResultSearch } from "./results/ResultSearch";
+import NoticeBoard from "./home/NoticeBoard";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -419,78 +296,10 @@ export default function HomePage() {
         </section>
       </Card>
       {/* 5. NOTICE BOARD & DOWNLOADS */}
-      <Card className="container my-8 mx-auto px-6 py-16">
-        <section className="py-24 bg-slate-50 dark:bg-slate-900/20">
-          <div className="container mx-auto px-6 grid lg:grid-cols-3 gap-12">
-            <div className="lg:col-span-2 space-y-8">
-              <h2 className="text-3xl font-bold border-b pb-4">
-                Campus Notices
-              </h2>
-              <div className="space-y-4">
-                <NoticeItem
-                  date="Feb 15"
-                  title="Middle School Annual Result Announcement"
-                  tag="Result"
-                />
-                <NoticeItem
-                  date="Feb 05"
-                  title="Tree Plantation Drive at GHS Hamza Rashaka"
-                  tag="Event"
-                />
-                <NoticeItem
-                  date="Jan 25"
-                  title="Class 9th Board Registration Deadline"
-                  tag="Exams"
-                />
-              </div>
-            </div>
-            <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-xl">
-              <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-                <Download className="text-emerald-500" /> Resources
-              </h3>
-              <div className="space-y-3">
-                {[
-                  "Academic Calendar 2026",
-                  "Syllabus Grade 6-10",
-                  "Scholarship Form",
-                ].map((f) => (
-                  <div
-                    key={f}
-                    className="flex items-center justify-between p-4 border rounded-xl hover:border-emerald-500 cursor-pointer transition-all"
-                  >
-                    <span className="text-sm font-semibold">{f}</span>
-                    <ArrowRight size={16} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
+      <Card className="container mx-auto px-6">
+        <NoticeBoard />
       </Card>
-      {/* 6. FACILITIES (NEW) */}
-      <section className="py-24 container mx-auto px-6 text-center">
-        <h2 className="text-4xl font-black mb-16">
-          World-Class{" "}
-          <span className="text-emerald-600 italic">Facilities</span>
-        </h2>
-        <div className="grid md:grid-cols-3 gap-8">
-          <FacilityCard
-            icon={<Laptop />}
-            title="IT Center"
-            desc="High-speed internet and modern computers for digital literacy."
-          />
-          <FacilityCard
-            icon={<Library />}
-            title="Central Library"
-            desc="Over 3,000+ books including curriculum and literature."
-          />
-          <FacilityCard
-            icon={<Microscope />}
-            title="Science Lab"
-            desc="Fully equipped physics, chemistry, and biology laboratories."
-          />
-        </div>
-      </section>
+
       {/* 7. TEACHERS SECTION */}
       <section className="py-24 bg-[#0a0a0a] text-white overflow-hidden">
         <div className="container mx-auto px-6">
@@ -876,43 +685,11 @@ function StatBox({ icon, label, value }) {
   );
 }
 
-function FacilityCard({ icon, title, desc }) {
-  return (
-    <div className="p-10 rounded-[3rem] border border-slate-100 dark:border-slate-800 hover:shadow-2xl transition-all hover:-translate-y-2">
-      <div className="w-16 h-16 bg-emerald-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-6">
-        {React.cloneElement(icon, { size: 32 })}
-      </div>
-      <h3 className="text-xl font-bold mb-4">{title}</h3>
-      <p className="text-slate-500 text-sm">{desc}</p>
-    </div>
-  );
-}
-
 function Step({ num, text }) {
   return (
     <div className="space-y-4">
       <div className="text-6xl font-black opacity-30">{num}</div>
       <p className="text-xl font-bold">{text}</p>
-    </div>
-  );
-}
-
-function NoticeItem({ date, title, tag }) {
-  return (
-    <div className="flex gap-6 p-6 rounded-2xl bg-white dark:bg-slate-800/40 hover:shadow-md transition-all cursor-pointer border border-transparent hover:border-emerald-100">
-      <div className="text-center shrink-0 bg-slate-100 dark:bg-slate-700 px-4 py-2 rounded-xl">
-        <p className="text-xl font-black text-emerald-600">
-          {date.split(" ")[1]}
-        </p>
-        <p className="text-[10px] font-bold uppercase">{date.split(" ")[0]}</p>
-      </div>
-      <div className="flex-1">
-        <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">
-          {tag}
-        </span>
-        <h4 className="text-lg font-bold">{title}</h4>
-      </div>
-      <ArrowRight className="text-slate-300 self-center" />
     </div>
   );
 }
@@ -923,7 +700,7 @@ function TeacherCard({ teacher }) {
       <div className="relative aspect-[3/4] overflow-hidden rounded-[2rem] bg-slate-800 shadow-2xl">
         <img
           src={
-            teacher.avatar ||
+            teacher.photo ||
             `https://api.dicebear.com/7.x/avataaars/svg?seed=${teacher.name}`
           }
           className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700"

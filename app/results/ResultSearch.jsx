@@ -141,25 +141,30 @@ export function ResultSearch() {
                   </h4>
 
                   <div className="overflow-x-auto">
-                    <table className="w-full">
+                    <table className="w-full table-fixed">
                       <thead>
                         <tr className="text-xs text-slate-400 border-b">
-                          <th className="py-2 text-left">Subject</th>
-                          <th>Total</th>
-                          <th>Obtained</th>
-                          <th>Status</th>
+                          <th className="py-2 text-left w-2/5">Subject</th>
+                          <th className="text-center w-1/5">Total</th>
+                          <th className="text-center w-1/5">Obtained</th>
+                          <th className="text-center w-1/5">Status</th>
                         </tr>
                       </thead>
+
                       <tbody>
                         {result.subjects?.map((sub, i) => (
                           <tr
                             key={i}
                             className="border-b last:border-0 text-sm"
                           >
-                            <td className="py-3 font-bold">{sub.subject}</td>
-                            <td>{sub.totalMarks}</td>
+                            <td className="py-3 font-bold text-left">
+                              {sub.subject}
+                            </td>
+
+                            <td className="text-center">{sub.totalMarks}</td>
+
                             <td
-                              className={`font-bold ${
+                              className={`text-center font-bold ${
                                 sub.obtainedMarks < sub.passingMarks
                                   ? "text-red-500"
                                   : "text-emerald-600"
@@ -167,7 +172,8 @@ export function ResultSearch() {
                             >
                               {sub.isAbsent ? "ABS" : sub.obtainedMarks}
                             </td>
-                            <td>
+
+                            <td className="text-center">
                               <Badge variant="outline" className="text-[10px]">
                                 {sub.obtainedMarks >= sub.passingMarks
                                   ? "Pass"
