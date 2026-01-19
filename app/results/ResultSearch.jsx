@@ -103,7 +103,7 @@ export function ResultSearch() {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                className="mt-12 bg-white rounded-[3rem] overflow-hidden shadow-2xl text-slate-900"
+                className="print:block mt-12 bg-white rounded-[3rem] overflow-hidden shadow-2xl text-slate-900"
               >
                 {/* Student Header */}
                 <div className="bg-slate-50 p-8 border-b flex justify-between items-center">
@@ -188,8 +188,8 @@ export function ResultSearch() {
                   </div>
                   <Button
                     onClick={handlePrint}
-                    variant="outline"
-                    className="border-white/20 hover:bg-white/10"
+                    variant="secondary"
+                    className="border-white/20 hover:bg-blue/10"
                   >
                     <Printer size={18} /> Print Marksheet
                   </Button>

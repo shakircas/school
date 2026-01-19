@@ -190,7 +190,7 @@ export default function HomePage() {
   const teachers = teachersRes?.teachers?.slice(0, 4) || [];
 
   return (
-    <main className="mt-22 min-h-screen bg-[#fcfcfc] dark:bg-[#080808] text-slate-900 dark:text-white">
+    <main className="print:hidden mt-22 min-h-screen bg-[#fcfcfc] dark:bg-[#080808] text-slate-900 dark:text-white">
       <LandingNavbar />
       {/* 1. NEWS TICKER */}
       <div className="bg-emerald-700 text-white py-3 overflow-hidden mt-16">
