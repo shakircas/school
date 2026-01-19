@@ -654,8 +654,8 @@ export default function HomePage() {
                   ))}
                 </ul>
 
-                <Button className="w-full bg-slate-900 dark:bg-white text-white dark:text-black py-8 rounded-2xl text-lg hover:scale-[1.02] transition-transform">
-                  Download Admission Guide (PDF)
+                <Button className="w-full bg-slate-900 dark:bg-white text-white dark:text-black p-6 rounded-2xl text-lg sm:text-base hover:scale-[1.02] transition-transform">
+                 <Download /> Admission Guide (PDF)
                 </Button>
               </div>
             </div>
