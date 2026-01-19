@@ -6,20 +6,20 @@ export default function AttendanceSummary({
   daysInMonth,
 }) {
   const totalStudents = students?.length || 0;
-  const daysMarked = attendanceDocs.length;
+  const daysMarked = attendanceDocs?.length;
 
   let presentCount = 0;
   let totalPossible = totalStudents * daysMarked;
 
   // Track low attendance students (< 75%)
-  const studentStats = students.map((s) => {
+  const studentStats = students?.map((s) => {
     const studentPresent = attendanceDocs.filter((doc) =>
       doc.records.find((r) => r.studentId === s._id && r.status === "Present")
     ).length;
     return { name: s.name, rate: (studentPresent / daysMarked) * 100 };
   });
 
-  attendanceDocs.forEach((doc) => {
+  attendanceDocs?.forEach((doc) => {
     doc.records.forEach((r) => {
       if (r.status === "Present") presentCount++;
     });
@@ -27,7 +27,7 @@ export default function AttendanceSummary({
 
   const avgAttendance =
     totalPossible > 0 ? Math.round((presentCount / totalPossible) * 100) : 0;
-  const criticalStudents = studentStats.filter(
+  const criticalStudents = studentStats?.filter(
     (s) => s.rate < 75 && daysMarked > 5
   ).length;
 

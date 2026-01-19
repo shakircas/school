@@ -152,6 +152,7 @@ import {
   Heart,
 } from "lucide-react";
 import { Quote, Award, BookMarked } from "lucide-react";
+import { Clock, Phone, Mail, Send } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
@@ -528,6 +529,110 @@ export default function HomePage() {
             <Step num="02" text="Submit Documents" />
             <Step num="03" text="Entrance Assessment" />
             <Step num="04" text="Final Enrollment" />
+          </div>
+        </div>
+      </section>
+
+      {/* 10. CONTACT & LOCATION SECTION */}
+      <section className="py-24 bg-slate-50 dark:bg-slate-900/10">
+        <div className="container mx-auto px-6">
+          <div className="text-center max-w-2xl mx-auto mb-16 space-y-4">
+            <h2 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white">
+              Find Us in <span className="text-emerald-600">Nowshera</span>
+            </h2>
+            <p className="text-slate-500">
+              We are located in the heart of Hamza Rashaka, easily accessible
+              for students and parents across the Kheshgi Payan area.
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-3 gap-8 items-start">
+            {/* Contact Information Cards */}
+            <div className="space-y-4">
+              <div className="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm group hover:shadow-xl transition-all">
+                <div className="h-12 w-12 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 rounded-2xl flex items-center justify-center mb-6">
+                  <MapPin size={24} />
+                </div>
+                <h3 className="text-xl font-bold mb-2 text-slate-900 dark:text-white text-wrap">
+                  Visit Us
+                </h3>
+                <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">
+                  3W26+23X, Kheshgi Payan,
+                  <br />
+                  Nowshera, Khyber Pakhtunkhwa
+                </p>
+                <Button
+                  variant="link"
+                  className="px-0 text-emerald-600 mt-4 h-auto"
+                  asChild
+                >
+                  <a
+                    href="https://maps.google.com/?cid=14556189708803996360&g_mp=Cidnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLlNlYXJjaFRleHQ"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Get Directions <ArrowRight size={14} className="ml-2" />
+                  </a>
+                </Button>
+              </div>
+
+              <div className="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm group hover:shadow-xl transition-all">
+                <div className="h-12 w-12 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-2xl flex items-center justify-center mb-6">
+                  <Clock size={24} />
+                </div>
+                <h3 className="text-xl font-bold mb-2 text-slate-900 dark:text-white">
+                  School Hours
+                </h3>
+                <div className="space-y-1 text-sm text-slate-500 dark:text-slate-400">
+                  <p className="flex justify-between">
+                    <span>Mon - Sat:</span> <span>7:00 AM - 2:00 PM</span>
+                  </p>
+                  <p className="flex justify-between font-bold text-red-500">
+                    <span>Sunday:</span> <span>Closed</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Map Embed Area */}
+            <div className="lg:col-span-2 h-full min-h-[500px] rounded-[3rem] overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl relative">
+              {/*
+          Instructions for Real Map: 
+          Replace the iframe src with your specific Google Maps Embed API key/URL.
+        */}
+              <iframe
+                title="GHS Hamza Rashaka Location"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3303.4567!2d71.9395605!3d34.0985433!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x38d933da9c9c9917%3A0xca01f96b0c757ac8!2sGovernment%20high%20school%20(GHS)%20Hamza%20Rashaka!5e0!3m2!1sen!2s!4v1700000000000"
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                className="absolute inset-0 grayscale hover:grayscale-0 transition-all duration-700"
+              />
+
+              {/* Floating Contact Overlay (Optional) */}
+              <div className="absolute bottom-6 left-6 right-6 md:right-auto md:w-80 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-6 rounded-3xl border border-white/20 shadow-2xl z-20">
+                <h4 className="font-bold mb-4">Quick Contact</h4>
+                <div className="space-y-3">
+                  <a
+                    href="tel:#"
+                    className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300 hover:text-emerald-600 transition-colors"
+                  >
+                    <Phone size={16} className="text-emerald-600" /> +92 (000)
+                    000-0000
+                  </a>
+                  <a
+                    href="mailto:info@ghshamzarashaka.edu.pk"
+                    className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300 hover:text-emerald-600 transition-colors"
+                  >
+                    <Mail size={16} className="text-emerald-600" />{" "}
+                    info@ghshamzarashaka.edu.pk
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>

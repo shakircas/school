@@ -899,7 +899,7 @@ export function StudentsContent() {
   const [search, setSearch] = useState("");
   const [classFilter, setClassFilter] = useState("all");
   const [sectionFilter, setSectionFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("Active");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
   const limit = 10;
 
@@ -961,6 +961,7 @@ export function StudentsContent() {
   const { classes, classesLoading } = useClasses();
 
   const students = data?.students || [];
+  console.log(students)
 
   const getClassById = (classId) => classes?.find((c) => c._id === classId);
 
@@ -1441,6 +1442,7 @@ export function StudentsContent() {
                     </TableHeader>
                     <TableBody>
                       {students.map((student) => (
+                        
                         <TableRow
                           key={student._id}
                           className="group transition-colors hover:bg-indigo-50/30"
@@ -1494,7 +1496,7 @@ export function StudentsContent() {
                                 "rounded-full font-bold text-[10px] uppercase tracking-tighter px-2.5",
                                 student.status === "Active"
                                   ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-                                  : "bg-slate-100 text-slate-600 border-slate-200"
+                                  : "bg-slate-100 text-red-600 border-slate-200"
                               )}
                             >
                               {student.status}

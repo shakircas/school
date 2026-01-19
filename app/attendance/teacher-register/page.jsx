@@ -11,13 +11,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { academicYears } from "@/lib/constants";
 
 export default function TeacherRegisterSelector() {
   const router = useRouter();
-  const [month, setMonth] = useState("");
-  const [year, setYear] = useState(new Date().getFullYear().toString());
 
-  const canProceed = month && year;
+  const currentDate = new Date();
+  const [month, setMonth] = useState(String(currentDate.getMonth() + 1));
+  const [year, setYear] = useState(String(currentDate.getFullYear()));
+
+  const canProceed = Boolean(month && year);
+
+  const handleGenerate = () => {
+    if (!canProceed) return;
+
+    router.push(
+      `/attendance/teacher-register/print?month=${month}&year=${year}`
+    );
+  };
 
   return (
     <Card className="max-w-md">
@@ -26,39 +37,42 @@ export default function TeacherRegisterSelector() {
       </CardHeader>
 
       <CardContent className="space-y-4">
+        {/* Month */}
         <Select value={month} onValueChange={setMonth}>
           <SelectTrigger>
             <SelectValue placeholder="Select Month" />
           </SelectTrigger>
           <SelectContent>
-            {[...Array(12)].map((_, i) => (
+            {Array.from({ length: 12 }).map((_, i) => (
               <SelectItem key={i} value={String(i + 1)}>
-                {new Date(0, i).toLocaleString("default", { month: "long" })}
+                {new Date(2000, i).toLocaleString("default", {
+                  month: "long",
+                })}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
+        {/* Year */}
         <Select value={year} onValueChange={setYear}>
           <SelectTrigger>
             <SelectValue placeholder="Select Year" />
           </SelectTrigger>
           <SelectContent>
-            {[2023, 2024, 2025, 2026].map((y) => (
-              <SelectItem key={y} value={String(y)}>
-                {y}
-              </SelectItem>
-            ))}
+            {["2022", "2023", "2024", "2025", "2026", "2027", "2028"].map(
+              (y) => (
+                <SelectItem key={y} value={String(y)}>
+                  {y}
+                </SelectItem>
+              )
+            )}
           </SelectContent>
         </Select>
 
+        {/* Action */}
         <Button
           disabled={!canProceed}
-          onClick={() =>
-            router.push(
-              `/attendance/teacher-register/print?month=${month}&year=${year}`
-            )
-          }
+          onClick={handleGenerate}
           className="w-full"
         >
           Generate Register

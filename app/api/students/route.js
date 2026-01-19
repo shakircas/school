@@ -52,7 +52,7 @@ export async function GET(request) {
     if (status && status !== "all") {
       query.status = status;
     } else {
-      query.status = { $in: ["Admitted", "Active"] };
+      query.status = { $in: ["Admitted", "Active", "Inactive"] };
     }
 
     const students = await Student.find(query)
