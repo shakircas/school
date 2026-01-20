@@ -86,7 +86,6 @@ const navigation = [
     ],
   },
 
- 
   {
     name: "Attendance",
     icon: UserCheck,
@@ -96,7 +95,7 @@ const navigation = [
       { name: "Teacher Attendance", href: "/attendance/teachers" },
       { name: "Reports", href: "/attendance/reports" },
       { name: "Student Register", href: "/attendance/register/print" },
-      { name: "Teacher Register", href: "/attendance/teacher-register" },
+      { name: "Teacher Register", href: "/attendance/teacher-register/print" },
     ],
   },
 
