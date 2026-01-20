@@ -42,10 +42,11 @@ export function LandingNavbar() {
   const navLinks = [
     { name: "Notices", href: "#notices" },
     { name: "Message", href: "#headmaster" },
-    { name: "Facilities", href: "#facilities" },
+    { name: "Mission", href: "#mission" },
     { name: "Faculty", href: "#faculty" },
     { name: "Admissions", href: "#admissions" },
     { name: "Results", href: "#results" },
+    { name: "Contact", href: "#contact" },
   ];
 
   return (
