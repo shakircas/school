@@ -86,25 +86,7 @@ const navigation = [
     ],
   },
 
-  {
-    name: "Teacher",
-    icon: Users,
-    roles: ["teacher", "admin"],
-    children: [
-      { name: "Dashboard", href: "/teacher", roles: ["teacher", "admin"] },
-      {
-        name: "Create Quiz",
-        href: "/teacher/quizzes/create",
-        roles: ["teacher"],
-      },
-      { name: "MCQ Bank", href: "/mcqs", roles: ["teacher", "admin"] },
-      {
-        name: "Analytics",
-        href: "/analytics",
-        roles: ["teacher", "admin"],
-      },
-    ],
-  },
+ 
   {
     name: "Attendance",
     icon: UserCheck,
@@ -113,7 +95,8 @@ const navigation = [
       { name: "Student Attendance", href: "/attendance/students" },
       { name: "Teacher Attendance", href: "/attendance/teachers" },
       { name: "Reports", href: "/attendance/reports" },
-      { name: "Register", href: "/attendance/register/print" },
+      { name: "Student Register", href: "/attendance/register/print" },
+      { name: "Teacher Register", href: "/attendance/teacher-register" },
     ],
   },
 
