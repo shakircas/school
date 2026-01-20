@@ -49,15 +49,13 @@ const fetcher = (url) => fetch(url).then((res) => res.json());
 
 const slides = [
   {
-    image:
-      "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?q=80&w=2071",
+    image: "/show.jpg",
     title: "GHS Hamza Rashaka Nowshera",
     subtitle:
       "A legacy of academic excellence and character building in Nowshera.",
   },
   {
-    image:
-      "https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=2170",
+    image: "/show3.jpg",
     title: "Future-Ready Education",
     subtitle:
       "From Class 6th to 10th, we prepare students for the modern world.",
@@ -70,6 +68,13 @@ export default function HomePage() {
   const { data: teachersRes } = useSWR("/api/teachers", fetcher);
 
   const teachers = teachersRes?.teachers?.slice(0, 4) || [];
+
+  const newsItems = [
+    "Annual Board Exam Forms for Grade 10 deadline: Feb 20th.",
+    "New Science Lab equipment inaugurated by DEO Nowshera.",
+    "Congratulations to our Cricket Team for winning the District Cup!",
+    "Admission for Class 6th is now open for the 2026 Session.",
+  ];
 
   // Auto-slide effect
   useEffect(() => {
@@ -84,22 +89,29 @@ export default function HomePage() {
       <LandingNavbar />
 
       {/* 1. NEWS TICKER */}
-      <div className="bg-emerald-700 text-white py-3 overflow-hidden">
+      {/* 1. NEWS TICKER - Animated Crossfade Version */}
+      <div className="mt-24 bg-emerald-700 text-white py-3 overflow-hidden border-y border-emerald-600/50">
         <div className="container mx-auto px-6 flex items-center">
-          <div className="flex items-center gap-2 bg-black/20 px-3 py-1 rounded text-xs font-bold uppercase mr-4 shrink-0">
+          {/* Label */}
+          <div className="flex items-center gap-2 bg-black/20 px-3 py-1 rounded text-xs font-bold uppercase mr-6 shrink-0 z-10">
             <Megaphone size={14} className="animate-pulse" /> Urgent
           </div>
-          <div className="whitespace-nowrap animate-marquee flex gap-12 text-sm font-medium">
-            <span>
-              • Annual Board Exam Forms for Grade 10 deadline: Feb 20th.
-            </span>
-            <span>
-              • New Science Lab equipment inaugurated by DEO Nowshera.
-            </span>
-            <span>
-              • Congratulations to our Cricket Team for winning the District
-              Cup!
-            </span>
+
+          {/* Animated News Container */}
+          <div className="relative h-6 flex-1 flex items-center overflow-hidden">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentSlide} // We reuse the currentSlide index or create a new state for news
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: -20, opacity: 0 }}
+                transition={{ duration: 0.5, ease: "easeInOut" }}
+                className="absolute whitespace-nowrap text-sm font-medium tracking-wide flex items-center gap-2"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 animate-pulse" />
+                {newsItems[currentSlide % newsItems.length]}
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
       </div>
@@ -716,7 +728,7 @@ function TeacherCard({ teacher }) {
       <div className="relative aspect-[3/4] overflow-hidden rounded-[2.5rem] bg-slate-800 shadow-2xl">
         <img
           src={
-            teacher.photo ||
+            teacher.photo.url ||
             `https://api.dicebear.com/7.x/avataaars/svg?seed=${teacher.name}`
           }
           className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 scale-105 group-hover:scale-100"
