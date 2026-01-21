@@ -1,80 +1,3 @@
-// import { NextResponse } from "next/server"
-// import connectDB from "@/lib/db"
-// import Attendance from "@/models/Attendance"
-
-// export async function GET(request) {
-//   try {
-//     await connectDB()
-
-//     const { searchParams } = new URL(request.url)
-//     const date = searchParams.get("date")
-//     const type = searchParams.get("type")
-//     const classFilter = searchParams.get("class")
-//     const section = searchParams.get("section")
-
-//     const query = {}
-
-//     if (date) {
-//       const startDate = new Date(date)
-//       startDate.setHours(0, 0, 0, 0)
-//       const endDate = new Date(date)
-//       endDate.setHours(23, 59, 59, 999)
-//       query.date = { $gte: startDate, $lte: endDate }
-//     }
-
-//     if (type) {
-//       query.type = type
-//     }
-
-//     if (classFilter) {
-//       query.class = classFilter
-//     }
-
-//     if (section) {
-//       query.section = section
-//     }
-
-//     const attendance = await Attendance.find(query).sort({ date: -1 }).lean()
-
-//     return NextResponse.json(attendance)
-//   } catch (error) {
-//     console.error("Error fetching attendance:", error)
-//     return NextResponse.json({ error: "Failed to fetch attendance" }, { status: 500 })
-//   }
-// }
-
-// export async function POST(request) {
-//   try {
-//     await connectDB()
-
-//     const data = await request.json()
-
-//     // Check if attendance already exists for this date/class/section
-//     const existingAttendance = await Attendance.findOne({
-//       date: new Date(data.date),
-//       type: data.type,
-//       class: data.class,
-//       section: data.section,
-//     })
-
-//     if (existingAttendance) {
-//       // Update existing attendance
-//       existingAttendance.records = data.records
-//       existingAttendance.markedAt = new Date()
-//       await existingAttendance.save()
-//       return NextResponse.json(existingAttendance)
-//     }
-
-//     const attendance = new Attendance(data)
-//     await attendance.save()
-
-//     return NextResponse.json(attendance, { status: 201 })
-//   } catch (error) {
-//     console.error("Error creating attendance:", error)
-//     return NextResponse.json({ error: "Failed to create attendance" }, { status: 500 })
-//   }
-// }
-
 // app/api/attendance/route.js
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
@@ -96,7 +19,7 @@ function error(message, status = 400) {
 }
 
 /* -------------------------------------------------
-   GET — Attendance (filtered, optimized)
+   GET — Attendance (Bypass Class for Teachers)
 ------------------------------------------------- */
 export async function GET(req) {
   await connectDB();
@@ -107,30 +30,47 @@ export async function GET(req) {
     const type = searchParams.get("type"); // Student | Teacher
     const classId = searchParams.get("classId");
     const sectionId = searchParams.get("section");
+    const month = searchParams.get("month"); // Optional for registry
+    const year = searchParams.get("year"); // Optional for registry
 
     const query = {};
 
-    /* ---- Date range (single day) ---- */
+    // 1. Handle Type
+    if (type) query.type = type;
+    const isTeacher = type === "Teacher"; // 2. Handle Date Filtering (Single Day or Full Month)
+
     if (date) {
+      // Single day view (used in Mark Attendance page)
       const start = new Date(date);
       start.setHours(0, 0, 0, 0);
       const end = new Date(date);
       end.setHours(23, 59, 59, 999);
       query.date = { $gte: start, $lte: end };
+    } else if (month && year) {
+      // Month view (used in Registry/Table page)
+      const start = new Date(parseInt(year), parseInt(month) - 1, 1);
+      const end = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59);
+      query.date = { $gte: start, $lte: end };
     }
 
-    if (type) query.type = type;
-
-    if (classId) {
-      if (!isValidObjectId(classId)) return error("Invalid classId");
-      query.classId = classId;
+    // 3. Bypass Logic: Only apply class/section filters if NOT a teacher
+    // or if specifically requested.
+    if (!isTeacher) {
+      if (classId) {
+        if (!isValidObjectId(classId)) return error("Invalid classId");
+        query.classId = classId;
+      }
+      if (sectionId) query.sectionId = sectionId;
+    } else {
+      // For Teachers, we strictly look for records where classId is null
+      // This ensures we don't accidentally pull student records if schema changes
+      query.classId = { $exists: false };
     }
-
-    if (sectionId) query.sectionId = sectionId;
 
     const attendance = await Attendance.find(query)
       .populate("markedBy", "name")
-      .populate("classId", "name")
+      // Only populate class if it exists (avoids errors on Teacher records)
+      .populate({ path: "classId", select: "name", strictPopulate: false })
       .sort({ date: -1 })
       .lean();
 
@@ -141,8 +81,30 @@ export async function GET(req) {
   }
 }
 
+
+// Add this helper to your route.js
+const getFindQuery = (type, date, classId, sectionId) => {
+  const start = new Date(date);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(date);
+  end.setHours(23, 59, 59, 999);
+
+  const base = {
+    date: { $gte: start, $lte: end },
+    type: type
+  };
+
+  if (type === "Teacher") {
+    base.sectionId = "Staff";
+    base.classId = { $exists: false }; // Or null
+  } else {
+    base.classId = classId;
+    base.sectionId = sectionId;
+  }
+  return base;
+};
 /* -------------------------------------------------
-   POST — Mark attendance (SAFE + SMART)
+   POST — Mark attendance (BYPASS CLASS FOR TEACHERS)
 ------------------------------------------------- */
 export async function POST(req) {
   await connectDB();
@@ -152,7 +114,7 @@ export async function POST(req) {
 
     const {
       date,
-      type,
+      type, // "Student" or "Teacher"
       classId,
       sectionId,
       records = [],
@@ -161,6 +123,11 @@ export async function POST(req) {
 
     if (!date || !type) return error("Date and type are required");
 
+    console.log(type);
+
+    // --- BYPASS LOGIC START ---
+    const isTeacher = type === "Teacher";
+
     if (type === "Student") {
       if (!classId || !sectionId) {
         return error("classId and section are required for student attendance");
@@ -168,14 +135,15 @@ export async function POST(req) {
       if (!isValidObjectId(classId)) return error("Invalid classId");
     }
 
-    if (markedBy && !isValidObjectId(markedBy)) {
-      return error("Invalid markedBy teacher ID");
-    }
-
-    /* ---- Validate class existence ---- */
-    if (classId) {
+    // Only validate Class existence if it's NOT a teacher
+    if (!isTeacher && classId) {
       const cls = await Class.findById(classId);
       if (!cls) return error("Class not found");
+    }
+    // --- BYPASS LOGIC END ---
+
+    if (markedBy && !isValidObjectId(markedBy)) {
+      return error("Invalid markedBy teacher ID");
     }
 
     /* ---- Validate records ---- */
@@ -190,33 +158,21 @@ export async function POST(req) {
       if (!r.status) return error("Attendance status required");
     }
 
-    /* ---- Validate student belongs to class + section ---- */
-    // if (type === "Student") {
-    //   const studentIds = records.map(r => r.personId);
-
-    //   const count = await Student.countDocuments({
-    //     _id: { $in: studentIds },
-    //     classId,
-    //     section: sectionId,
-    //   });
-
-    //   if (count !== studentIds.length) {
-    //     return error("One or more students do not belong to this class/section");
-    //   }
-    // }
-
     /* ---- Prevent duplicate attendance per day ---- */
     const start = new Date(date);
     start.setHours(0, 0, 0, 0);
     const end = new Date(date);
     end.setHours(23, 59, 59, 999);
 
-    const existing = await Attendance.findOne({
+    // Filter criteria: For teachers, classId and sectionId are null
+    const findQuery = {
       date: { $gte: start, $lte: end },
       type,
-      classId: classId || null,
-      sectionId: sectionId || null,
-    });
+      classId: isTeacher ? null : classId,
+      sectionId: isTeacher ? "Staff" : sectionId,
+    };
+
+    const existing = await Attendance.findOne(findQuery);
 
     if (existing) {
       existing.records = records;
@@ -229,8 +185,9 @@ export async function POST(req) {
     const attendance = await Attendance.create({
       date,
       type,
-      classId: classId || null,
-      sectionId: sectionId || null,
+      // If teacher, bypass by providing null or a specific flag
+      classId: isTeacher ? undefined : classId,
+      sectionId: isTeacher ? "Staff" : sectionId,
       records,
       markedBy: markedBy || null,
     });
@@ -239,5 +196,47 @@ export async function POST(req) {
   } catch (err) {
     console.error("POST attendance error", err);
     return error(err.message || "Failed to mark attendance");
+  }
+}
+
+/* -------------------------------------------------
+   DELETE — Clear Attendance for a specific day/class
+------------------------------------------------- */
+export async function DELETE(req) {
+  await connectDB();
+
+  try {
+    const { searchParams } = new URL(req.url);
+    const date = searchParams.get("date");
+    const type = searchParams.get("type");
+    const classId = searchParams.get("classId");
+    const sectionId = searchParams.get("sectionId");
+
+    if (!date || !type) {
+      return error("Date and Type are required to delete records", 400);
+    }
+
+    const start = new Date(date);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(date);
+    end.setHours(23, 59, 59, 999);
+
+    const findQuery = {
+      date: { $gte: start, $lte: end },
+      type: type,
+      classId: type === "Teacher" ? { $exists: false } : classId,
+      sectionId: type === "Teacher" ? "Staff" : sectionId,
+    };
+
+    const result = await Attendance.findOneAndDelete(findQuery);
+
+    if (!result) {
+      return error("No attendance record found to delete", 404);
+    }
+
+    return NextResponse.json({ message: "Attendance record deleted successfully" });
+  } catch (err) {
+    console.error("DELETE attendance error", err);
+    return error("Failed to delete attendance", 500);
   }
 }

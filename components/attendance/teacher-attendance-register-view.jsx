@@ -1,39 +1,3 @@
-// "use client";
-
-// import useSWR from "swr";
-// import AttendanceSummary from "./attendance-summary";
-// import AttendanceTable from "./attendance-table";
-
-// const fetcher = (url) => fetch(url).then((r) => r.json());
-
-// export default function TeacherAttendanceRegisterView({ month, year }) {
-//   const { data, isLoading } = useSWR(
-//     `/api/attendance/teacher-register?month=${month}&year=${year}`,
-//     fetcher
-//   );
-
-//   if (isLoading) return <p>Loading...</p>;
-
-//   return (
-//     <div className="space-y-6">
-//       <AttendanceSummary
-//         students={data.teachers}
-//         attendanceDocs={data.attendanceDocs}
-//         daysInMonth={data.daysInMonth}
-//         label="Teachers"
-//       />
-
-//       <AttendanceTable
-//         students={data.teachers}
-//         attendanceDocs={data.attendanceDocs}
-//         daysInMonth={data.daysInMonth}
-//         personKey="teacherId"
-//         showRoll={false}
-//       />
-//     </div>
-//   );
-// }
-
 "use client";
 
 import { useState } from "react";
@@ -58,6 +22,8 @@ import {
 } from "lucide-react";
 import AttendanceSummary from "./attendance-summary";
 import AttendanceTable from "./attendance-table";
+import AttendanceTrendChart from "./attendance-trend-chart";
+import TeacherAttendanceTable from "./teacher-attendance-table";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -75,12 +41,42 @@ const MONTHS = [
   { value: "11", label: "November" },
   { value: "12", label: "December" },
 ];
+function buildAttendanceMap(attendanceDocs) {
+  const map = {};
 
+  attendanceDocs.forEach((doc) => {
+    const day = new Date(doc.date).getDate();
+
+    if (!map[day]) {
+      map[day] = {};
+    }
+
+    doc.records.forEach((record) => {
+      // 1. Get the raw ID source
+      const source = record.personId || record.teacherId || record.studentId;
+
+      if (source) {
+        // 2. Check if the source is an object (with _id) or just a string/ObjectId
+        const idString =
+          typeof source === "object" && source._id
+            ? source._id.toString()
+            : source.toString();
+
+        // 3. Map the status to the CLEAN string ID
+        map[day][idString] = record.status;
+      }
+    });
+  });
+
+  return map;
+}
 // Generate last 5 years for the selector
 const YEARS = Array.from({ length: 5 }, (_, i) => {
   const year = new Date().getFullYear() - i;
   return { value: year.toString(), label: year.toString() };
 });
+
+// Mock data for the trend - In production, fetch this from /api/attendance/stats
 
 export default function TeacherAttendanceRegisterView() {
   const [filters, setFilters] = useState({
@@ -88,23 +84,25 @@ export default function TeacherAttendanceRegisterView() {
     year: new Date().getFullYear().toString(),
   });
 
+  const { data: trendData } = useSWR(
+    "/api/attendance/stats?type=Teacher",
+    fetcher
+  );
+
+  console.log(trendData);
   const queryPath = `/api/attendance/teacher-register?month=${filters.month}&year=${filters.year}`;
   const { data, isLoading } = useSWR(queryPath, fetcher);
 
+  console.log(data);
   // --- CSV EXPORT LOGIC ---
   const handleExportCSV = () => {
     if (!data) return;
 
     const { teachers, attendanceDocs, daysInMonth } = data;
 
-    const attendanceMap = attendanceDocs.reduce((acc, doc) => {
-      const day = new Date(doc.date).getDate();
-      acc[day] = acc[day] || {};
-      acc[day][doc.teacherId] = doc.status;
-      return acc;
-    }, {});
+    // Use the fixed helper that handles object IDs
+    const attendanceMap = buildAttendanceMap(attendanceDocs);
 
-    // 1. Updated Header to "Personal No."
     const headers = [
       "Personal No.",
       "Teacher Name",
@@ -117,21 +115,20 @@ export default function TeacherAttendanceRegisterView() {
     const rows = teachers.map((t) => {
       let pCount = 0;
       let aCount = 0;
+      const tId = t._id.toString();
 
       const dailyStatus = Array.from({ length: daysInMonth }, (_, i) => {
-        const status = attendanceMap[i + 1]?.[t._id];
+        const status = attendanceMap[i + 1]?.[tId];
         if (status === "Present") pCount++;
         if (status === "Absent") aCount++;
         return status || "-";
       });
 
-      const percentage =
-        pCount + aCount > 0
-          ? Math.round((pCount / (pCount + aCount)) * 100)
-          : 0;
+      const total = pCount + aCount;
+      const percentage = total > 0 ? Math.round((pCount / total) * 100) : 0;
 
       return [
-        t.personalNo || t.employeeId || "N/A", // Using Personal No. field
+        t.personalNo || "N/A",
         t.name,
         ...dailyStatus,
         pCount,
@@ -148,7 +145,6 @@ export default function TeacherAttendanceRegisterView() {
     link.download = `Teacher_Attendance_${filters.month}_${filters.year}.csv`;
     link.click();
   };
-
   return (
     <div className="space-y-6">
       {/* FILTER BAR */}
@@ -253,7 +249,12 @@ export default function TeacherAttendanceRegisterView() {
             personKey="teacherId"
           />
 
-          <div className="print:m-0 print:p-0">
+          {/* The Trend Chart takes up 1 column */}
+          <div className="lg:col-span-1">
+            <AttendanceTrendChart data={trendData || []} label="Staff" />
+          </div>
+
+          {/* <div className="print:m-0 print:p-0">
             <AttendanceTable
               students={data.teachers}
               attendanceDocs={data.attendanceDocs}
@@ -263,6 +264,15 @@ export default function TeacherAttendanceRegisterView() {
               personKey="teacherId"
               showRoll={false} // This triggers "Personal No" logic in the table
               idLabel="Personal No." // Pass the custom label to your table
+            />
+          </div> */}
+          <div className="print:m-0 print:p-0">
+            <TeacherAttendanceTable
+              teachers={data.teachers}
+              attendanceDocs={data.attendanceDocs}
+              daysInMonth={data.daysInMonth}
+              month={filters.month}
+              year={filters.year}
             />
           </div>
         </div>

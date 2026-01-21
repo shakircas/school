@@ -14,7 +14,7 @@ const attendanceSchema = new mongoose.Schema(
     classId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Class",
-      required: true,
+      required: false,
     },
     sectionId: {
       type: String,

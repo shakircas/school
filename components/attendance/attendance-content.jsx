@@ -39,93 +39,6 @@ import { useClasses } from "../hooks/useClasses";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
-// Mock student data
-const mockStudents = [
-  {
-    _id: "1",
-    rollNumber: "001",
-    name: "Ahmed Khan",
-    class: "10",
-    section: "A",
-    photo: null,
-  },
-  {
-    _id: "2",
-    rollNumber: "002",
-    name: "Sara Ali",
-    class: "10",
-    section: "A",
-    photo: null,
-  },
-  {
-    _id: "3",
-    rollNumber: "003",
-    name: "Usman Ahmed",
-    class: "10",
-    section: "A",
-    photo: null,
-  },
-  {
-    _id: "4",
-    rollNumber: "004",
-    name: "Fatima Zahra",
-    class: "10",
-    section: "A",
-    photo: null,
-  },
-  {
-    _id: "5",
-    rollNumber: "005",
-    name: "Hassan Raza",
-    class: "10",
-    section: "A",
-    photo: null,
-  },
-  {
-    _id: "6",
-    rollNumber: "006",
-    name: "Ayesha Bibi",
-    class: "10",
-    section: "A",
-    photo: null,
-  },
-  {
-    _id: "7",
-    rollNumber: "007",
-    name: "Ali Hassan",
-    class: "10",
-    section: "A",
-    photo: null,
-  },
-  {
-    _id: "8",
-    rollNumber: "008",
-    name: "Zainab Fatima",
-    class: "10",
-    section: "A",
-    photo: null,
-  },
-  {
-    _id: "9",
-    rollNumber: "009",
-    name: "Ibrahim Khan",
-    class: "10",
-    section: "A",
-    photo: null,
-  },
-  {
-    _id: "10",
-    rollNumber: "010",
-    name: "Maryam Ali",
-    class: "10",
-    section: "A",
-    photo: null,
-  },
-];
-
-// const classes = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
-// const sections = ["A", "B", "C", "D"]
-
 export function AttendanceContent() {
   const { toast } = useToast();
   const [selectedClass, setSelectedClass] = useState("10");
@@ -141,8 +54,7 @@ export function AttendanceContent() {
   // Fetch students
   const { data: studentsData, isLoading: loadingStudents } = useSWR(
     `/api/students?class=${selectedClass}&section=${selectedSection}`,
-    fetcher,
-    { fallbackData: { students: mockStudents } }
+    fetcher
   );
 
   // Fetch existing attendance
@@ -155,7 +67,7 @@ export function AttendanceContent() {
     fetcher
   );
 
-  const students = studentsData?.students || mockStudents;
+  const students = studentsData?.students || [];
 
   // Initialize attendance state
   useEffect(() => {
@@ -285,11 +197,12 @@ export function AttendanceContent() {
                   <SelectValue placeholder="Select class" />
                 </SelectTrigger>
                 <SelectContent>
-                  {classes && classes?.map((cls) => (
-                    <SelectItem key={cls} value={cls}>
-                      Class {cls}
-                    </SelectItem>
-                  ))}
+                  {classes &&
+                    classes?.map((cls) => (
+                      <SelectItem key={cls} value={cls}>
+                        Class {cls}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
