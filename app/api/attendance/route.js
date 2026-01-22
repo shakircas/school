@@ -28,8 +28,8 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url);
     const date = searchParams.get("date");
     const type = searchParams.get("type"); // Student | Teacher
-    const classId = searchParams.get("classId");
-    const sectionId = searchParams.get("section");
+    const classId = searchParams.get("classId" || "all");
+    const sectionId = searchParams.get("section" || "all");
     const month = searchParams.get("month"); // Optional for registry
     const year = searchParams.get("year"); // Optional for registry
 

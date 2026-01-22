@@ -16,13 +16,14 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import {
   Printer,
   Filter,
-  FileBarChart,
   Calendar as CalendarIcon,
   Download,
 } from "lucide-react";
 import AttendanceSummary from "./attendance-summary";
 import AttendanceTable from "./attendance-table";
 import AttendanceTrendChart from "./attendance-trend-chart";
+import AttendanceRegisterStats from "./AttendanceRegisterStats";
+import { buildAttendanceMap } from "@/lib/attendance-utils";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -41,6 +42,8 @@ const MONTHS = [
   { value: "12", label: "December" },
 ];
 
+const YEARS = ["2024", "2025", "2026"].map((y) => ({ value: y, label: y }));
+
 export default function AttendanceRegisterView() {
   const [filters, setFilters] = useState({
     classId: "",
@@ -58,26 +61,29 @@ export default function AttendanceRegisterView() {
     fetcher
   );
 
-  const selectedClass = classes.find((c) => c._id === filters.classId);
+  console.log(data);
 
-  // --- CSV EXPORT LOGIC ---
+  const { data: trendData } = useSWR(
+    "/api/attendance/stats?type=Student",
+    fetcher
+  );
+
   const handleExportCSV = () => {
     if (!data) return;
-
     const { students, attendanceDocs, daysInMonth } = data;
-    const attendanceMap = buildAttendanceMap(attendanceDocs); // Assuming this is imported
+    const attendanceMap = buildAttendanceMap(attendanceDocs);
 
-    // 1. Create Headers: Roll, Name, 1, 2, 3... Days, P, A, %
     const headers = [
       "Roll",
       "Name",
       ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
-      "Present",
-      "Absent",
-      "Percentage",
+      "Curr P",
+      "Curr A",
+      "Prev P",
+      "Grand Total",
+      "%",
     ];
 
-    // 2. Map Student Data to Rows
     const rows = students.map((s) => {
       let pCount = 0;
       let aCount = 0;
@@ -89,6 +95,8 @@ export default function AttendanceRegisterView() {
         return status || "-";
       });
 
+      const grandTotal = s.totalPresentTillDate || 0;
+      const prevP = grandTotal - pCount;
       const percentage =
         pCount + aCount > 0
           ? Math.round((pCount / (pCount + aCount)) * 100)
@@ -100,40 +108,32 @@ export default function AttendanceRegisterView() {
         ...dailyStatus,
         pCount,
         aCount,
+        prevP > 0 ? prevP : 0,
+        grandTotal,
         `${percentage}%`,
       ];
     });
 
-    // 3. Combine and Download
     const csvContent = [headers, ...rows].map((e) => e.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute(
-      "download",
-      `Attendance_${filters.month}_${filters.year}.csv`
-    );
+    link.href = URL.createObjectURL(blob);
+    link.download = `Attendance_${filters.month}_${filters.year}.csv`;
     link.click();
   };
 
-  const { data: trendData } = useSWR(
-    "/api/attendance/stats?type=Student",
-    fetcher
-  );
-
-  console.log(trendData);
+  const selectedClass = classes.find((c) => c._id === filters.classId);
 
   return (
     <div className="space-y-6">
-      {/* FILTER BAR - Hidden on Print */}
       <Card className="print:hidden border-none shadow-sm bg-slate-50/50">
         <CardContent className="p-4">
           <div className="flex items-center gap-2 mb-4 text-slate-700 font-semibold">
             <Filter className="h-4 w-4" />
             <span>Query Filters</span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3 items-end">
+            {/* Class Select */}
             <div className="space-y-1.5">
               <Label className="text-xs uppercase font-bold text-slate-500">
                 Class
@@ -145,7 +145,7 @@ export default function AttendanceRegisterView() {
                 }
               >
                 <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="Select Class" />
+                  <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
                   {classes.map((cls) => (
@@ -157,6 +157,7 @@ export default function AttendanceRegisterView() {
               </Select>
             </div>
 
+            {/* Section Select */}
             <div className="space-y-1.5">
               <Label className="text-xs uppercase font-bold text-slate-500">
                 Section
@@ -167,7 +168,7 @@ export default function AttendanceRegisterView() {
                 disabled={!filters.classId}
               >
                 <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="Select Section" />
+                  <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
                   {selectedClass?.sections?.map((s) => (
@@ -179,6 +180,7 @@ export default function AttendanceRegisterView() {
               </Select>
             </div>
 
+            {/* Month Select */}
             <div className="space-y-1.5">
               <Label className="text-xs uppercase font-bold text-slate-500">
                 Month
@@ -200,21 +202,43 @@ export default function AttendanceRegisterView() {
               </Select>
             </div>
 
+            {/* Year Select */}
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase font-bold text-slate-500">
+                Year
+              </Label>
+              <Select
+                value={filters.year}
+                onValueChange={(v) => setFilters({ ...filters, year: v })}
+              >
+                <SelectTrigger className="bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {YEARS.map((y) => (
+                    <SelectItem key={y.value} value={y.value}>
+                      {y.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <Button
               variant="outline"
               onClick={handleExportCSV}
               disabled={!data}
-              className="bg-white border-slate-200 hover:bg-slate-50"
+              className="bg-white"
             >
-              <Download className="h-4 w-4 mr-2 text-slate-600" /> Export CSV
+              <Download className="h-4 w-4 mr-2" /> Export
             </Button>
 
             <Button
               onClick={() => window.print()}
               disabled={!data}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-100"
+              className="bg-indigo-600 text-white"
             >
-              <Printer className="h-4 w-4 mr-2" /> Print Register
+              <Printer className="h-4 w-4 mr-2" /> Print
             </Button>
           </div>
         </CardContent>
@@ -230,27 +254,24 @@ export default function AttendanceRegisterView() {
           <LoadingSpinner size="lg" />
         </div>
       ) : (
-        <div className="space-y-6 animate-in fade-in duration-500">
+        <div className="space-y-6">
           <AttendanceSummary
             students={data.students}
             attendanceDocs={data.attendanceDocs}
             daysInMonth={data.daysInMonth}
           />
-
-          {/* The Trend Chart takes up 1 column */}
-          <div className="lg:col-span-1">
-            <AttendanceTrendChart data={trendData || []} label="Staff" />
-          </div>
-
-          <div className="print:m-0 print:p-0">
-            <AttendanceTable
-              students={data.students}
-              attendanceDocs={data.attendanceDocs}
-              daysInMonth={data.daysInMonth}
-              month={filters.month}
-              year={filters.year}
-            />
-          </div>
+          <AttendanceTrendChart
+            data={trendData || []}
+            label="Attendance Trend"
+          />
+          <AttendanceTable
+            students={data.students}
+            attendanceDocs={data.attendanceDocs}
+            daysInMonth={data.daysInMonth}
+            month={filters.month}
+            year={filters.year}
+          />
+          <AttendanceRegisterStats data={data} />
         </div>
       )}
     </div>

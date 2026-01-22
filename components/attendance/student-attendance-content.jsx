@@ -537,7 +537,8 @@ export default function StudentAttendanceContent() {
   const [attendance, setAttendance] = useState({});
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-
+  // ... existing states
+  const [searchTerm, setSearchTerm] = useState("");
   const [classId, setClassId] = useState("");
   const [sectionId, setSectionId] = useState("");
   const { classes } = useClasses();
@@ -567,7 +568,9 @@ export default function StudentAttendanceContent() {
     fetcher
   );
 
-  const students = studentsData?.students || [];
+  const students =
+    studentsData?.students.sort((a, b) => a.rollNumber - b.rollNumber) || [];
+
   const hasExistingData = !!dbResponse?.attendance?.length;
 
   // Sync Logic
@@ -731,6 +734,16 @@ export default function StudentAttendanceContent() {
     }
   };
 
+  // Filter students based on name or roll number
+  const filteredStudents = useMemo(() => {
+    if (!searchTerm) return students;
+    return students.filter(
+      (s) =>
+        s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        s.rollNumber.toString().includes(searchTerm)
+    );
+  }, [students, searchTerm]);
+
   return (
     <div className="space-y-6 pb-12">
       <PageHeader
@@ -858,13 +871,27 @@ export default function StudentAttendanceContent() {
 
       {students.length > 0 && (
         <Card className="overflow-hidden border-none shadow-sm">
-          <div className="bg-white border-b p-4 flex justify-between items-center">
-            <h3 className="font-bold text-slate-700">Attendance List</h3>
-            <div className="flex gap-2">
+          <div className="bg-white border-b p-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-4 w-full md:w-auto">
+              <h3 className="font-bold text-slate-700 whitespace-nowrap">
+                Attendance List
+              </h3>
+              <div className="relative w-full md:w-64">
+                <Input
+                  placeholder="Search name or roll no..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="h-9 pl-9 text-sm focus-visible:ring-indigo-500"
+                />
+                <UserCheck className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+              </div>
+            </div>
+
+            <div className="flex gap-2 w-full md:w-auto justify-end">
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-emerald-600 text-xs font-bold"
+                className="text-emerald-600 text-xs font-bold hover:bg-emerald-50"
                 onClick={() => handleMarkAll("Present")}
               >
                 MARK ALL P
@@ -872,7 +899,7 @@ export default function StudentAttendanceContent() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-rose-600 text-xs font-bold"
+                className="text-rose-600 text-xs font-bold hover:bg-rose-50"
                 onClick={() => handleMarkAll("Absent")}
               >
                 MARK ALL A
@@ -880,110 +907,149 @@ export default function StudentAttendanceContent() {
             </div>
           </div>
 
+          {/* Metadata bar */}
           {hasExistingData && dbResponse.attendance[0].markedBy && (
-            <div className="flex items-center gap-2 mb-4 text-xs text-muted-foreground bg-slate-100 p-2 rounded">
-              <UserCheck className="h-3.5 w-3.5" />
+            <div className="flex items-center gap-2 m-4 mt-0 text-[11px] text-muted-foreground bg-slate-50 p-2 rounded border border-slate-100">
+              <Clock className="h-3.5 w-3.5 text-indigo-500" />
               <span>
-                Last marked by <b>{dbResponse.attendance[0].markedBy.name}</b>{" "}
-                on{" "}
-                {new Date(dbResponse.attendance[0].updatedAt).toLocaleString()}
+                Records managed by{" "}
+                <b className="text-slate-700">
+                  {dbResponse.attendance[0].markedBy.name}
+                </b>{" "}
+                • Last Update:{" "}
+                {new Date(
+                  dbResponse.attendance[0].updatedAt
+                ).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
               </span>
             </div>
           )}
-          <Table>
-            <TableHeader className="bg-slate-50">
-              <TableRow>
-                <TableHead className="w-16 text-center">#</TableHead>
-                <TableHead>Student Details</TableHead>
-                <TableHead>Class</TableHead>
-                <TableHead>Roll No.</TableHead>
-                <TableHead>Status Selection</TableHead>
-                <TableHead className="w-32">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {students.map((student, index) => (
-                <TableRow key={student._id} className="hover:bg-slate-50/50">
-                  <TableCell className="text-center font-medium text-slate-400">
-                    {index + 1}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-9 w-9 border">
-                        <AvatarFallback className="text-xs bg-indigo-50 text-indigo-700">
-                          {student.name?.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="font-bold text-slate-700 text-sm">
-                        {student.name}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {student.classId.name} - {student.sectionId}
-                  </TableCell>
-                  <TableCell className="font-mono text-xs text-slate-500">
-                    {student.rollNumber}
-                  </TableCell>
 
-                  {/* Status Selection Column */}
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Select
-                        value={attendance[student._id] || "Present"}
-                        onValueChange={(v) =>
-                          handleIndividualUpdate(student._id, v)
-                        }
+          {/* Table Area */}
+          <div className="p-0">
+            {loadingStudents ? (
+              <div className="py-20 text-center">
+                <LoadingSpinner size="lg" />
+              </div>
+            ) : filteredStudents.length === 0 ? (
+              <div className="py-20 text-center bg-white border-t">
+                <RotateCcw className="h-8 w-8 text-slate-300 mx-auto mb-2" />
+                <p className="text-sm text-slate-500">
+                  No students match your search "{searchTerm}"
+                </p>
+                <Button
+                  variant="link"
+                  className="text-indigo-600 text-xs"
+                  onClick={() => setSearchTerm("")}
+                >
+                  Clear search
+                </Button>
+              </div>
+            ) : (
+              <div className="rounded-b-lg overflow-hidden border-t">
+                <Table>
+                  <TableHeader className="bg-slate-50/80">
+                    <TableRow>
+                      <TableHead className="w-16 text-center">#</TableHead>
+                      <TableHead>Student Details</TableHead>
+                      <TableHead>Roll No.</TableHead>
+                      <TableHead>Status Selection</TableHead>
+                      <TableHead className="text-right pr-6">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="bg-white">
+                    {filteredStudents.map((student, index) => (
+                      <TableRow
+                        key={student._id}
+                        className="hover:bg-slate-50/50 transition-colors"
                       >
-                        <SelectTrigger className="w-32 h-8 text-xs font-semibold">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {attendanceStatuses.map((s) => (
-                            <SelectItem key={s} value={s}>
-                              {s}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        <TableCell className="text-center text-slate-400 font-mono text-xs">
+                          {index + 1}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8 border-2 border-white shadow-sm">
+                              <AvatarFallback className="text-[10px] bg-indigo-100 text-indigo-700 font-bold">
+                                {student.name?.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex flex-col">
+                              <span className="font-bold text-slate-700 text-sm leading-none mb-1">
+                                {student.name}
+                              </span>
+                              <span className="text-[10px] text-slate-500 uppercase tracking-tight">
+                                {student.classId.name} • {student.sectionId}
+                              </span>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-mono text-xs text-slate-600 font-semibold">
+                          {student.rollNumber}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Select
+                              value={attendance[student._id] || "Present"}
+                              onValueChange={(v) =>
+                                handleIndividualUpdate(student._id, v)
+                              }
+                            >
+                              <SelectTrigger className="w-28 h-8 text-[11px] font-bold">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {attendanceStatuses.map((s) => (
+                                  <SelectItem
+                                    key={s}
+                                    value={s}
+                                    className="text-xs"
+                                  >
+                                    {s}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
 
-                      <div className="flex gap-1 border-l pl-2">
-                        <QuickActionBtn
-                          active={attendance[student._id] === "Present"}
-                          color="bg-emerald-500"
-                          icon={<CheckCircle />}
-                          onClick={() =>
-                            handleIndividualUpdate(student._id, "Present")
-                          }
-                        />
-                        <QuickActionBtn
-                          active={attendance[student._id] === "Absent"}
-                          color="bg-rose-500"
-                          icon={<XCircle />}
-                          onClick={() =>
-                            handleIndividualUpdate(student._id, "Absent")
-                          }
-                        />
-                      </div>
-                    </div>
-                  </TableCell>
-
-                  {/* Individual Delete Column */}
-                  <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-slate-400 hover:text-red-600"
-                      onClick={() => handleIndividualDelete(student._id)}
-                      disabled={!hasExistingData}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                            <div className="flex gap-1 border-l pl-2">
+                              <QuickActionBtn
+                                active={attendance[student._id] === "Present"}
+                                color="bg-emerald-500"
+                                icon={<CheckCircle />}
+                                onClick={() =>
+                                  handleIndividualUpdate(student._id, "Present")
+                                }
+                              />
+                              <QuickActionBtn
+                                active={attendance[student._id] === "Absent"}
+                                color="bg-rose-500"
+                                icon={<XCircle />}
+                                onClick={() =>
+                                  handleIndividualUpdate(student._id, "Absent")
+                                }
+                              />
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right pr-6">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-slate-300 hover:text-rose-600 hover:bg-rose-50"
+                            onClick={() => handleIndividualDelete(student._id)}
+                            disabled={!hasExistingData}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
         </Card>
       )}
     </div>
