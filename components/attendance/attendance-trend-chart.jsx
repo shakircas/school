@@ -3,45 +3,52 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { TrendingUp, TrendingDown, BarChart2, Download } from "lucide-react";
+import {
+  TrendingUp,
+  TrendingDown,
+  BarChart2,
+  Download,
+  AlertCircle,
+} from "lucide-react";
 
 export default function AttendanceTrendChart({ data = [], label = "Staff" }) {
-  // Logic to export data to Excel (CSV)
-  const exportToExcel = () => {
-    if (!data || data.length === 0) return;
-
-    const headers = ["Month", "Attendance Percentage"];
-    const rows = data.map((item) => `${item.month},${item.percentage}%`);
-    const csvContent = [headers.join(","), ...rows].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute(
-      "download",
-      `${label}_Attendance_Trend_${new Date().getFullYear()}.csv`
-    );
-    link.click();
-  };
-
-  if (!data || data.length < 0) {
+  // 1. Safety Guard: If data is not an array or is empty
+  if (!Array.isArray(data) || data.length === 0) {
     return (
-      <Card className="border-none shadow-sm bg-white h-full flex items-center justify-center p-6">
+      <Card className="border-none shadow-sm bg-white h-full min-h-[200px] flex items-center justify-center p-6">
         <div className="text-center space-y-2">
-          <BarChart2 className="mx-auto h-8 w-8 text-slate-300" />
-          <p className="text-xs font-medium text-slate-400 uppercase tracking-tighter text-slate-400">
-            Trend data appearing soon...
+          <BarChart2 className="mx-auto h-8 w-8 text-slate-200" />
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+            No trend data available for {label}
           </p>
         </div>
       </Card>
     );
   }
 
-  const maxVal = Math.max(...data.map((d) => d.percentage || 0), 80);
-  const currentMonth = data[data?.length - 1];
-  const prevMonth = data[data?.length - 2];
-  const difference = currentMonth?.percentage - prevMonth?.percentage;
+  const exportToExcel = () => {
+    const headers = ["Month", "Attendance Percentage"];
+    const rows = data.map((item) => `${item.month},${item.percentage}%`);
+    const csvContent = [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${label}_Trend_${new Date().getFullYear()}.csv`;
+    link.click();
+  };
+
+  // 2. Calculation Safety: Ensure maxVal is never 0 to avoid Division by Zero
+  const maxVal = Math.max(...data.map((d) => d.percentage || 0), 100);
+
+  const currentMonth = data[data.length - 1];
+  const prevMonth = data.length > 1 ? data[data.length - 2] : null;
+
+  // Only calculate difference if we have 2 months of data
+  const difference = prevMonth
+    ? (currentMonth.percentage - prevMonth.percentage).toFixed(1)
+    : 0;
+  const isPositive = difference >= 0;
 
   return (
     <Card className="print:hidden border-none shadow-sm bg-white h-full">
@@ -49,31 +56,37 @@ export default function AttendanceTrendChart({ data = [], label = "Staff" }) {
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <CardTitle className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-              6-Month {label} Trend
+              {label} Attendance Trend
             </CardTitle>
-            <div
-              className={`flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded w-fit ${
-                difference >= 0
-                  ? "text-emerald-600 bg-emerald-50"
-                  : "text-rose-600 bg-rose-50"
-              }`}
-            >
-              {difference >= 0 ? (
-                <TrendingUp size={10} />
-              ) : (
-                <TrendingDown size={10} />
-              )}
-              {Math.abs(difference)}% from last month
-            </div>
+
+            {/* 3. Trend Badge - Only show if comparison exists */}
+            {prevMonth ? (
+              <div
+                className={`flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded w-fit ${
+                  isPositive
+                    ? "text-emerald-600 bg-emerald-50"
+                    : "text-rose-600 bg-rose-50"
+                }`}
+              >
+                {isPositive ? (
+                  <TrendingUp size={10} />
+                ) : (
+                  <TrendingDown size={10} />
+                )}
+                {Math.abs(difference)}% from {prevMonth.month}
+              </div>
+            ) : (
+              <div className="text-[10px] font-bold text-slate-400 px-1.5 py-0.5 bg-slate-50 rounded w-fit">
+                First month of data
+              </div>
+            )}
           </div>
 
-          {/* New Download Button */}
           <Button
             variant="ghost"
             size="icon"
             className="h-8 w-8 text-slate-400 hover:text-indigo-600"
             onClick={exportToExcel}
-            title="Download Excel Report"
           >
             <Download size={16} />
           </Button>
@@ -81,28 +94,46 @@ export default function AttendanceTrendChart({ data = [], label = "Staff" }) {
       </CardHeader>
 
       <CardContent>
-        <div className="flex items-end justify-between h-32 gap-2 mt-2">
+        {/* 4. Chart Container with defined height */}
+        <div className="flex items-end justify-between h-32 gap-3 mt-4">
           {data.map((item, index) => {
-            const heightPercentage = (item.percentage / maxVal) * 100;
+            // Safety: Ensure height is at least 5% so bar is visible even if 0%
+            const heightPercentage = Math.max(
+              (item.percentage / maxVal) * 100,
+              5
+            );
+
             return (
               <div
                 key={index}
-                className="flex-1 flex flex-col items-center gap-2 group"
+                className="flex-1 flex flex-col items-center gap-2 group relative"
               >
                 <div className="relative w-full flex justify-center items-end h-full">
-                  <div className="absolute -top-7 bg-slate-800 text-white text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                  {/* Tooltip */}
+                  <div className="absolute -top-8 bg-slate-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20 pointer-events-none font-bold">
                     {item.percentage}%
                   </div>
+
+                  {/* Bar */}
                   <motion.div
                     initial={{ height: 0 }}
                     animate={{ height: `${heightPercentage}%` }}
-                    transition={{ duration: 0.8, delay: index * 0.1 }}
-                    className={`w-full max-w-[30px] rounded-t-sm ${
+                    transition={{
+                      duration: 0.8,
+                      delay: index * 0.1,
+                      ease: "easeOut",
+                    }}
+                    className={`w-full max-w-[32px] rounded-t-sm relative ${
                       item.percentage < 75 ? "bg-rose-400" : "bg-indigo-500"
                     }`}
-                  />
+                  >
+                    {/* Inner glow for active bar */}
+                    <div className="absolute inset-0 bg-white/10 rounded-t-sm" />
+                  </motion.div>
                 </div>
-                <span className="text-[9px] font-bold text-slate-400 uppercase">
+
+                {/* Month Label */}
+                <span className="text-[9px] font-black text-slate-400 uppercase truncate w-full text-center">
                   {item.month}
                 </span>
               </div>

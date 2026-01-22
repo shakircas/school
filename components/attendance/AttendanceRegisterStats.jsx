@@ -1,33 +1,55 @@
+"use client";
+
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Users, Target, BarChart3, TrendingUp } from "lucide-react";
+import {
+  Users,
+  Target,
+  BarChart3,
+  TrendingUp,
+  AlertCircle,
+} from "lucide-react";
 
 export default function AttendanceRegisterStats({ data }) {
-  const { students, attendanceDocs, daysInMonth, sessionStats } = data;
+  // 1. Safety Guard: If data is missing or ill-formatted, don't crash the app
+  if (!data || !data.students || !data.attendanceDocs) {
+    return (
+      <div className="p-8 text-center border-2 border-dashed rounded-xl text-slate-400">
+        <AlertCircle className="mx-auto h-8 w-8 mb-2 opacity-20" />
+        <p>Statistics calculation pending data...</p>
+      </div>
+    );
+  }
 
-  // 1. Calculations for Current Month
+  const { students, attendanceDocs, sessionStats } = data;
+
+  // 2. Monthly Calculations
   const totalStudents = students.length;
-  const totalPossibleEntries = attendanceDocs.length * totalStudents;
+  const markedDays = attendanceDocs.length;
+  // Possible entries = (number of students) * (number of days attendance was taken)
+  const totalPossibleEntries = markedDays * totalStudents;
 
   let monthlyPresent = 0;
   attendanceDocs.forEach((doc) => {
-    doc.records.forEach((r) => {
+    doc.records?.forEach((r) => {
       if (r.status === "Present") monthlyPresent++;
     });
   });
 
-  const monthlyAvg =
+  const monthlyAvgNum =
     totalPossibleEntries > 0
-      ? ((monthlyPresent / totalPossibleEntries) * 100).toFixed(1)
-      : "0";
+      ? (monthlyPresent / totalPossibleEntries) * 100
+      : 0;
+  const monthlyAvg = monthlyAvgNum.toFixed(1);
 
-  // 2. Session Calculations
-  const sessionAvg =
-    sessionStats?.totalRecords > 0
-      ? ((sessionStats.totalPresent / sessionStats.totalRecords) * 100).toFixed(
-          1
-        )
-      : "0";
+  // 3. Session YTD Calculations
+  // Logic: Session % is based on (Total Session Presents) / (Expected Session Records)
+  // Note: We use a safe fallback if totalRecords isn't in your API yet
+  const sessionPresent = sessionStats?.totalPresent || 0;
+  const sessionTotalRecords =
+    sessionStats?.totalRecords || totalPossibleEntries || 1;
+
+  const sessionAvgNum = (sessionPresent / sessionTotalRecords) * 100;
+  const sessionAvg = sessionAvgNum > 0 ? sessionAvgNum.toFixed(1) : monthlyAvg;
 
   return (
     <div className="mt-8 space-y-4 print:mt-4">
@@ -41,18 +63,18 @@ export default function AttendanceRegisterStats({ data }) {
         <StatBox
           title="Student Enrollment"
           mainValue={totalStudents}
-          subLeft={`Start: ${totalStudents}`}
-          subRight={`End: ${totalStudents}`}
-          icon={<Users className="text-blue-500" />}
+          subLeft={`Active: ${totalStudents}`}
+          subRight="Current Term"
+          icon={<Users className="text-blue-500 h-4 w-4" />}
         />
 
         {/* Attendance Volume */}
         <StatBox
-          title="Total Attendance"
+          title="Attendance Count"
           mainValue={monthlyPresent}
-          subLeft="Total Present Marks"
-          subRight={`${attendanceDocs.length} Days Marked`}
-          icon={<Target className="text-emerald-500" />}
+          subLeft="Total Presents"
+          subRight={`${markedDays} Days Marked`}
+          icon={<Target className="text-emerald-500 h-4 w-4" />}
         />
 
         {/* Monthly Average */}
@@ -60,29 +82,26 @@ export default function AttendanceRegisterStats({ data }) {
           title="Monthly Average"
           mainValue={`${monthlyAvg}%`}
           subLeft="Class Performance"
-          progress={parseFloat(monthlyAvg)}
-          icon={<TrendingUp className="text-indigo-500" />}
+          progress={monthlyAvgNum}
+          icon={<TrendingUp className="text-indigo-500 h-4 w-4" />}
         />
 
         {/* Session YTD */}
         <StatBox
           title="Session YTD"
           mainValue={`${sessionAvg}%`}
-          subLeft="Cumulative Progress"
+          subLeft="Session Progress"
           progress={parseFloat(sessionAvg)}
           isSession
         />
       </div>
 
       {/* Verification Footer for Printing */}
-      <div className="hidden print:flex justify-between mt-12 border-t pt-8 text-xs font-bold text-slate-500 uppercase">
-        <div className="text-center w-48 border-t border-slate-900 pt-2">
+      <div className="hidden print:flex justify-between mt-12 border-t pt-8 text-[10px] font-bold text-slate-500 uppercase">
+        <div className="text-center w-48 border-t-2 border-slate-900 pt-2">
           Class Teacher
         </div>
-        <div className="text-center w-48 border-t border-slate-900 pt-2">
-          Attendance Officer
-        </div>
-        <div className="text-center w-48 border-t border-slate-900 pt-2">
+        <div className="text-center w-48 border-t-2 border-slate-900 pt-2">
           Principal Signature
         </div>
       </div>
@@ -101,16 +120,12 @@ function StatBox({
 }) {
   return (
     <Card
-      className={`border-none shadow-sm ${
-        isSession ? "bg-slate-900 text-white" : "bg-white"
-      }`}
+      className={`border-none shadow-sm ${isSession ? "bg-slate-900 text-white" : "bg-white"}`}
     >
       <CardContent className="p-4">
         <div className="flex justify-between items-start mb-2">
           <p
-            className={`text-[10px] font-bold uppercase ${
-              isSession ? "text-slate-400" : "text-slate-500"
-            }`}
+            className={`text-[10px] font-bold uppercase ${isSession ? "text-slate-400" : "text-slate-500"}`}
           >
             {title}
           </p>
@@ -120,12 +135,16 @@ function StatBox({
 
         {progress !== undefined ? (
           <div className="space-y-1.5">
-            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+            <div className="w-full bg-slate-200/20 h-1.5 rounded-full overflow-hidden">
               <div
                 className={`h-full transition-all duration-1000 ${
-                  progress > 85 ? "bg-emerald-500" : "bg-amber-500"
+                  progress > 85
+                    ? "bg-emerald-500"
+                    : progress > 70
+                      ? "bg-amber-500"
+                      : "bg-rose-500"
                 }`}
-                style={{ width: `${progress}%` }}
+                style={{ width: `${Math.min(progress, 100)}%` }}
               />
             </div>
             <p className="text-[10px] font-medium opacity-70">{subLeft}</p>

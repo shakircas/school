@@ -2,34 +2,25 @@
 
 import { getMonthName } from "@/lib/constants";
 import { Card } from "@/components/ui/card";
+import { AlertTriangle, CheckCircle2, Users } from "lucide-react";
 
+// Helper remains the same
 function buildAttendanceMap(attendanceDocs) {
   const map = {};
-
   attendanceDocs.forEach((doc) => {
     const day = new Date(doc.date).getDate();
-
-    if (!map[day]) {
-      map[day] = {};
-    }
-
+    if (!map[day]) map[day] = {};
     doc.records.forEach((record) => {
-      // 1. Get the raw ID source
       const source = record.personId || record.teacherId || record.studentId;
-
       if (source) {
-        // 2. Check if the source is an object (with _id) or just a string/ObjectId
         const idString =
           typeof source === "object" && source._id
             ? source._id.toString()
             : source.toString();
-
-        // 3. Map the status to the CLEAN string ID
         map[day][idString] = record.status;
       }
     });
   });
-
   return map;
 }
 
@@ -40,47 +31,102 @@ export default function TeacherAttendanceTable({
   month,
   year,
 }) {
-  // This helper correctly parses the records array from your schema
   const attendanceMap = buildAttendanceMap(attendanceDocs);
+
+  // --- STATISTICS CALCULATIONS ---
+  // 1. Calculate Daily Totals (Bottom Row)
+  const dailyPresentCount = Array(daysInMonth)
+    .fill(0)
+    .map((_, d) => {
+      let count = 0;
+      teachers.forEach((t) => {
+        if (attendanceMap[d + 1]?.[t._id.toString()] === "Present") count++;
+      });
+      return count;
+    });
+
+  // 2. Aggregate School-wide Stats
+  const totalPossibleManDays = teachers.length * attendanceDocs.length;
+  let totalPresentsAcrossSchool = 0;
+  dailyPresentCount.forEach((count) => (totalPresentsAcrossSchool += count));
+  const schoolStaffingRate =
+    totalPossibleManDays > 0
+      ? Math.round((totalPresentsAcrossSchool / totalPossibleManDays) * 100)
+      : 0;
 
   return (
     <Card className="border-none shadow-lg print:shadow-none">
       <div className="p-6 print:p-0">
-        {/* PRINT HEADER */}
-        <div className="hidden print:block text-center mb-6">
-          <h1 className="text-2xl font-bold uppercase text-slate-900">
-            Official Staff Attendance Register
-          </h1>
-          <p className="text-lg text-slate-600">
-            {getMonthName(month)} {year}
-          </p>
+        {/* TOP ANALYTICS BAR (Screen Only) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 print:hidden">
+          <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 flex items-center gap-3">
+            <Users className="text-indigo-600 h-5 w-5" />
+            <div>
+              <p className="text-[10px] font-bold text-slate-500 uppercase">
+                Staffing Rate
+              </p>
+              <p className="text-lg font-black">{schoolStaffingRate}%</p>
+            </div>
+          </div>
+          <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 flex items-center gap-3">
+            <CheckCircle2 className="text-emerald-600 h-5 w-5" />
+            <div>
+              <p className="text-[10px] font-bold text-slate-500 uppercase">
+                Avg Daily Presence
+              </p>
+              <p className="text-lg font-black">
+                {(
+                  totalPresentsAcrossSchool / (attendanceDocs.length || 1)
+                ).toFixed(1)}
+              </p>
+            </div>
+          </div>
+          <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 flex items-center gap-3">
+            <AlertTriangle className="text-amber-600 h-5 w-5" />
+            <div>
+              <p className="text-[10px] font-bold text-slate-500 uppercase">
+                Critical Days
+              </p>
+              <p className="text-lg font-black">
+                {
+                  dailyPresentCount.filter(
+                    (c) => c > 0 && c / teachers.length < 0.7
+                  ).length
+                }
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-[10px] sm:text-xs">
             <thead>
-              <tr className="bg-slate-50 print:bg-transparent">
-                <th className="border border-slate-300 p-2 text-left">
-                  Personal No.
-                </th>
-                <th className="border border-slate-300 p-2 text-left min-w-[150px]">
+              <tr className="bg-slate-800 text-white print:bg-slate-100 print:text-black">
+                <th className="border border-slate-300 p-2 text-left">PN</th>
+                <th className="border border-slate-300 p-2 text-left min-w-[140px]">
                   Teacher Name
                 </th>
                 {[...Array(daysInMonth)].map((_, i) => (
                   <th
                     key={i}
-                    className="border border-slate-300 w-7 text-center bg-slate-100/30"
+                    className="border border-slate-300 w-7 text-center"
                   >
                     {i + 1}
                   </th>
                 ))}
-                <th className="border border-slate-300 p-2 bg-emerald-50 text-emerald-700">
+                <th className="border border-slate-300 p-2 bg-emerald-600 text-white">
                   P
                 </th>
-                <th className="border border-slate-300 p-2 bg-rose-50 text-rose-700">
-                  A
+                <th className="border border-slate-300 p-1 bg-rose-600">
+                  CURR A
                 </th>
-                <th className="border border-slate-300 p-2 bg-slate-100 font-bold">
+                <th className="border border-slate-300 p-1 bg-slate-700">
+                  PREV A
+                </th>
+                <th className="border border-slate-300 p-1 bg-rose-800 font-bold">
+                  GT-A
+                </th>
+                <th className="border border-slate-300 p-2 bg-slate-900 text-white font-bold">
                   %
                 </th>
               </tr>
@@ -89,11 +135,23 @@ export default function TeacherAttendanceTable({
               {teachers.map((teacher) => {
                 let pCount = 0;
                 let aCount = 0;
-
-                // IMPORTANT: MongoDB IDs must be converted to strings for lookup
                 const tId = teacher._id.toString();
 
-                // Calculate summary for the row
+                let currentMonthAbsents = 0;
+                let currentMonthPresents = 0;
+
+                // Calculate current month data
+                [...Array(daysInMonth)].forEach((_, d) => {
+                  const status = attendanceMap[d + 1]?.[tId];
+                  if (status === "Present") currentMonthPresents++;
+                  if (status === "Absent") currentMonthAbsents++;
+                });
+
+                // Calculate Rolling Totals
+                const grandTotalAbsents = teacher.sessionAbsentsTillDate || 0;
+                const prevMonthAbsents =
+                  grandTotalAbsents - currentMonthAbsents;
+
                 [...Array(daysInMonth)].forEach((_, d) => {
                   const status = attendanceMap[d + 1]?.[tId];
                   if (status === "Present") pCount++;
@@ -104,16 +162,26 @@ export default function TeacherAttendanceTable({
                 const percentage =
                   total > 0 ? Math.round((pCount / total) * 100) : 0;
 
+                // CRITICAL WARNING LOGIC
+                const isLowAttendance = total > 5 && percentage < 75;
+
                 return (
                   <tr
                     key={tId}
-                    className="hover:bg-slate-50/50 transition-colors"
+                    className={`hover:bg-slate-50/50 ${isLowAttendance ? "bg-rose-50/30" : ""}`}
                   >
                     <td className="border border-slate-200 p-2 font-medium">
-                      {teacher.personalNo || teacher.employeeId || "—"}
+                      {teacher.personalNo || "—"}
                     </td>
-                    <td className="border border-slate-200 p-2 font-semibold uppercase">
+                    <td
+                      className={`border border-slate-200 p-2 font-semibold uppercase ${isLowAttendance ? "text-rose-700" : ""}`}
+                    >
                       {teacher.name}
+                      {isLowAttendance && (
+                        <span className="ml-1 text-[8px] bg-rose-100 text-rose-600 px-1 rounded print:hidden">
+                          LOW
+                        </span>
+                      )}
                     </td>
 
                     {[...Array(daysInMonth)].map((_, d) => {
@@ -125,15 +193,15 @@ export default function TeacherAttendanceTable({
                             status === "Absent"
                               ? "text-rose-600 bg-rose-50/20"
                               : status === "Present"
-                              ? "text-emerald-600"
-                              : ""
+                                ? "text-emerald-600"
+                                : ""
                           }`}
                         >
                           {status === "Present"
                             ? "P"
                             : status === "Absent"
-                            ? "A"
-                            : ""}
+                              ? "A"
+                              : ""}
                         </td>
                       );
                     })}
@@ -141,53 +209,62 @@ export default function TeacherAttendanceTable({
                     <td className="border border-slate-200 text-center font-bold text-emerald-600">
                       {pCount}
                     </td>
-                    <td className="border border-slate-200 text-center font-bold text-rose-600">
-                      {aCount}
+                    {/* CURR A */}
+                    <td className="border border-slate-200 text-center font-bold text-rose-600 bg-rose-50/10">
+                      {currentMonthAbsents}
                     </td>
-                    <td className="border border-slate-200 text-center font-black bg-slate-50">
+
+                    {/* PREV A (Carried Forward) */}
+                    <td className="border border-slate-200 text-center font-medium text-slate-500 bg-slate-50">
+                      {prevMonthAbsents > 0 ? prevMonthAbsents : 0}
+                    </td>
+
+                    {/* GRAND TOTAL A */}
+                    <td className="border border-slate-200 text-center font-black text-rose-800 bg-rose-100/30">
+                      {grandTotalAbsents}
+                    </td>
+                    <td
+                      className={`border border-slate-200 text-center font-black ${isLowAttendance ? "text-rose-600 bg-rose-50" : "bg-slate-50"}`}
+                    >
                       {percentage}%
                     </td>
                   </tr>
                 );
               })}
             </tbody>
+
+            {/* FOOTER: DAILY TOTALS FOR QUICK ASSUMPTIONS */}
+            <tfoot>
+              <tr className="bg-slate-100 font-bold border-t-2 border-slate-400">
+                <td
+                  colSpan={2}
+                  className="border border-slate-300 p-2 text-right uppercase text-[9px]"
+                >
+                  Staff Present
+                </td>
+                {dailyPresentCount.map((count, i) => (
+                  <td
+                    key={i}
+                    className={`border border-slate-300 text-center text-[9px] ${
+                      count > 0 && count / teachers.length < 0.7
+                        ? "bg-amber-100 text-amber-700"
+                        : ""
+                    }`}
+                  >
+                    {count > 0 ? count : ""}
+                  </td>
+                ))}
+                <td
+                  colSpan={5}
+                  className="bg-slate-800 text-white text-center p-1 text-[9px]"
+                >
+                  Daily Strength
+                </td>
+              </tr>
+            </tfoot>
           </table>
         </div>
-
-        {/* SIGNATURE SECTION */}
-        <div className="mt-12 hidden print:flex justify-between items-end px-10">
-          <div className="text-center border-t-2 border-slate-900 pt-2 min-w-[200px]">
-            <p className="text-xs font-bold uppercase">Department Head</p>
-          </div>
-          <div className="text-center border-t-2 border-slate-900 pt-2 min-w-[200px]">
-            <p className="text-xs font-bold uppercase">Principal Signature</p>
-          </div>
-        </div>
       </div>
-      <style jsx global>{`
-        @media print {
-          @page {
-            size: landscape;
-            margin: 1cm;
-          }
-          nav,
-          button,
-          header,
-          .print\:hidden {
-            display: none !important;
-          }
-          table {
-            width: 100% !important;
-            border-collapse: collapse !important;
-          }
-          th,
-          td {
-            border: 1px solid #000 !important;
-            color: #000 !important;
-            padding: 4px !important;
-          }
-        }
-      `}</style>
     </Card>
   );
 }

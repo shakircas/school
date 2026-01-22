@@ -358,6 +358,30 @@ export default function AttendanceTable({
           </div>
         </div>
       </div>
+      <style jsx global>{`
+        @media print {
+          @page {
+            size: landscape;
+            margin: 1cm;
+          }
+          nav,
+          button,
+          header,
+          .print\:hidden {
+            display: none !important;
+          }
+          table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+          }
+          th,
+          td {
+            border: 1px solid #000 !important;
+            color: #000 !important;
+            padding: 4px !important;
+          }
+        }
+      `}</style>
     </Card>
   );
 }
