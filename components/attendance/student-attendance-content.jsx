@@ -571,25 +571,28 @@ export default function StudentAttendanceContent() {
   const hasExistingData = !!dbResponse?.attendance?.length;
 
   // Sync Logic
+  // 2. Sync Logic - This updates the 'attendance' state whenever DB data or Student list changes
   useEffect(() => {
     if (!students.length) return;
 
+    // Check if we have records for this specific day in the database
     const existingDoc = dbResponse?.attendance?.[0];
-    if (existingDoc?.records) {
-      const map = {};
-      existingDoc.records.forEach((r) => {
-        map[r.personId] = r.status;
+
+    if (existingDoc && existingDoc.records) {
+      const attendanceMap = {};
+      existingDoc.records.forEach((record) => {
+        attendanceMap[record.personId] = record.status; // Pulls 'Absent', 'Late', etc.
       });
-      setAttendance(map);
+      setAttendance(attendanceMap);
     } else {
-      const defaults = {};
-      students.forEach((s) => {
-        defaults[s._id] = "Present";
+      // If NO data exists in DB for this date, default to 'Present'
+      const defaultAttendance = {};
+      students.forEach((student) => {
+        defaultAttendance[student._id] = "Present";
       });
-      setAttendance(defaults);
+      setAttendance(defaultAttendance);
     }
   }, [dbResponse, students]);
-
   const handleStatusChange = (id, status) =>
     setAttendance((prev) => ({ ...prev, [id]: status }));
 
@@ -666,6 +669,67 @@ export default function StudentAttendanceContent() {
     }),
     [attendance]
   );
+
+  // Inside your Student Attendance Component
+
+  const handleIndividualUpdate = async (studentId, newStatus) => {
+    // 1. Update UI immediately for responsiveness
+    setAttendance((prev) => ({ ...prev, [studentId]: newStatus }));
+
+    // 2. Use dbResponse (the variable you actually defined)
+    if (dbResponse?.attendance?.length > 0) {
+      const attendanceId = dbResponse.attendance[0]._id;
+
+      try {
+        const res = await fetch("/api/attendance/record", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            attendanceId,
+            personId: studentId,
+            status: newStatus,
+          }),
+        });
+
+        if (res.ok) {
+          toast({ title: "Updated", description: "Status synced." });
+          mutateAttendance(); // Use the correct mutate function name
+        }
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Sync failed",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleIndividualDelete = async (studentId) => {
+    if (!confirm("Remove this student's record for today?")) return;
+    // Use dbResponse here too
+    if (!dbResponse?.attendance?.[0]) return;
+
+    const attendanceId = dbResponse.attendance[0]._id;
+
+    try {
+      const res = await fetch(
+        `/api/attendance/record?attendanceId=${attendanceId}&personId=${studentId}`,
+        { method: "DELETE" }
+      );
+
+      if (res.ok) {
+        toast({ title: "Removed", description: "Record deleted." });
+        mutateAttendance(); // Use the correct mutate function name
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Delete failed",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="space-y-6 pb-12">
@@ -815,28 +879,37 @@ export default function StudentAttendanceContent() {
               </Button>
             </div>
           </div>
+
+          {hasExistingData && dbResponse.attendance[0].markedBy && (
+            <div className="flex items-center gap-2 mb-4 text-xs text-muted-foreground bg-slate-100 p-2 rounded">
+              <UserCheck className="h-3.5 w-3.5" />
+              <span>
+                Last marked by <b>{dbResponse.attendance[0].markedBy.name}</b>{" "}
+                on{" "}
+                {new Date(dbResponse.attendance[0].updatedAt).toLocaleString()}
+              </span>
+            </div>
+          )}
           <Table>
             <TableHeader className="bg-slate-50">
               <TableRow>
                 <TableHead className="w-16 text-center">#</TableHead>
                 <TableHead>Student Details</TableHead>
+                <TableHead>Class</TableHead>
                 <TableHead>Roll No.</TableHead>
                 <TableHead>Status Selection</TableHead>
+                <TableHead className="w-32">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {students.map((student, index) => (
-                <TableRow
-                  key={student._id}
-                  className="hover:bg-slate-50/50 transition-colors"
-                >
+                <TableRow key={student._id} className="hover:bg-slate-50/50">
                   <TableCell className="text-center font-medium text-slate-400">
                     {index + 1}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9 border">
-                        <AvatarImage src={student.photo?.url} />
                         <AvatarFallback className="text-xs bg-indigo-50 text-indigo-700">
                           {student.name?.charAt(0)}
                         </AvatarFallback>
@@ -846,15 +919,20 @@ export default function StudentAttendanceContent() {
                       </span>
                     </div>
                   </TableCell>
+                  <TableCell>
+                    {student.classId.name} - {student.sectionId}
+                  </TableCell>
                   <TableCell className="font-mono text-xs text-slate-500">
                     {student.rollNumber}
                   </TableCell>
+
+                  {/* Status Selection Column */}
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Select
                         value={attendance[student._id] || "Present"}
                         onValueChange={(v) =>
-                          handleStatusChange(student._id, v)
+                          handleIndividualUpdate(student._id, v)
                         }
                       >
                         <SelectTrigger className="w-32 h-8 text-xs font-semibold">
@@ -868,13 +946,14 @@ export default function StudentAttendanceContent() {
                           ))}
                         </SelectContent>
                       </Select>
-                      <div className="flex gap-1 border-l pl-2 ml-1">
+
+                      <div className="flex gap-1 border-l pl-2">
                         <QuickActionBtn
                           active={attendance[student._id] === "Present"}
                           color="bg-emerald-500"
                           icon={<CheckCircle />}
                           onClick={() =>
-                            handleStatusChange(student._id, "Present")
+                            handleIndividualUpdate(student._id, "Present")
                           }
                         />
                         <QuickActionBtn
@@ -882,11 +961,24 @@ export default function StudentAttendanceContent() {
                           color="bg-rose-500"
                           icon={<XCircle />}
                           onClick={() =>
-                            handleStatusChange(student._id, "Absent")
+                            handleIndividualUpdate(student._id, "Absent")
                           }
                         />
                       </div>
                     </div>
+                  </TableCell>
+
+                  {/* Individual Delete Column */}
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-slate-400 hover:text-red-600"
+                      onClick={() => handleIndividualDelete(student._id)}
+                      disabled={!hasExistingData}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
