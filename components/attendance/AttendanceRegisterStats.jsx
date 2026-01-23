@@ -22,6 +22,10 @@ export default function AttendanceRegisterStats({ data }) {
 
   const { students, attendanceDocs, sessionStats } = data;
 
+  // Calculate specific counts
+  const activeCount = students.filter(s => s.status === "Active").length;
+  const withdrawnThisMonth = students.filter(s => s.status === "Withdrawn").length;
+
   // 2. Monthly Calculations
   const totalStudents = students.length;
   const markedDays = attendanceDocs.length;
@@ -58,13 +62,21 @@ export default function AttendanceRegisterStats({ data }) {
         Register Summary & Final Statistics
       </h3>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         {/* Enrollment Stats */}
         <StatBox
           title="Student Enrollment"
           mainValue={totalStudents}
           subLeft={`Active: ${totalStudents}`}
           subRight="Current Term"
+          icon={<Users className="text-blue-500 h-4 w-4" />}
+        />
+
+        <StatBox
+          title="Enrollment"
+          mainValue={activeCount}
+          subLeft={`Withdrawn: ${withdrawnThisMonth}`}
+          subRight={`Total: ${students.length}`}
           icon={<Users className="text-blue-500 h-4 w-4" />}
         />
 

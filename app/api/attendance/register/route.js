@@ -76,8 +76,18 @@ export async function GET(req) {
 
   // 1️⃣ Current Month Data
   const [students, attendanceDocs] = await Promise.all([
-    Student.find({ classId, sectionId, status: "Active" })
-      .select("name rollNumber")
+    Student.find({
+      classId,
+      sectionId,
+      $or: [
+        { status: "Active" },
+        {
+          status: "Withdrawn",
+          withdrawalDate: { $gte: startDate }, // Include if they were withdrawn this month or later
+        },
+      ],
+    })
+      .select("name rollNumber status withdrawalDate withdrawalReason")
       .sort({ rollNumber: 1 })
       .lean(),
     Attendance.find({

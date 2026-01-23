@@ -95,28 +95,34 @@ export default function TeacherAttendanceRegisterView() {
 
   console.log(data);
   // --- CSV EXPORT LOGIC ---
+  // ... inside your TeacherAttendanceRegisterView component ...
+
   const handleExportCSV = () => {
     if (!data) return;
 
     const { teachers, attendanceDocs, daysInMonth } = data;
-
-    // Use the fixed helper that handles object IDs
     const attendanceMap = buildAttendanceMap(attendanceDocs);
 
+    // 1. Setup Headers
     const headers = [
       "Personal No.",
       "Teacher Name",
-      ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
-      "Present",
-      "Absent",
-      "Percentage",
+      ...Array.from({ length: daysInMonth }, (_, i) => `Day ${i + 1}`),
+      "Month Present (P)",
+      "Month Absent (Curr A)",
+      "Previous Absents (Prev A)",
+      "Grand Total Absents (GT-A)",
+      "Status Assumption",
+      "Attendance %",
     ];
 
+    // 2. Generate Rows with Rolling Logic
     const rows = teachers.map((t) => {
       let pCount = 0;
       let aCount = 0;
       const tId = t._id.toString();
 
+      // Calculate daily status for the month
       const dailyStatus = Array.from({ length: daysInMonth }, (_, i) => {
         const status = attendanceMap[i + 1]?.[tId];
         if (status === "Present") pCount++;
@@ -124,8 +130,21 @@ export default function TeacherAttendanceRegisterView() {
         return status || "-";
       });
 
-      const total = pCount + aCount;
-      const percentage = total > 0 ? Math.round((pCount / total) * 100) : 0;
+      // rolling totals logic
+      const grandTotalAbsents = t.sessionAbsentsTillDate || 0;
+      const prevMonthAbsents = grandTotalAbsents - aCount;
+      const percentage =
+        pCount + aCount > 0
+          ? Math.round((pCount / (pCount + aCount)) * 100)
+          : 0;
+
+      // Status Logic
+      const statusLabel =
+        grandTotalAbsents >= 20
+          ? "CRITICAL"
+          : grandTotalAbsents > 15
+            ? "WARNING"
+            : "REGULAR";
 
       return [
         t.personalNo || "N/A",
@@ -133,16 +152,20 @@ export default function TeacherAttendanceRegisterView() {
         ...dailyStatus,
         pCount,
         aCount,
+        prevMonthAbsents > 0 ? prevMonthAbsents : 0,
+        grandTotalAbsents,
+        statusLabel,
         `${percentage}%`,
       ];
     });
 
+    // 3. Compile and Download
     const csvContent = [headers, ...rows].map((e) => e.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `Teacher_Attendance_${filters.month}_${filters.year}.csv`;
+    link.download = `Staff_Register_${filters.month}_${filters.year}.csv`;
     link.click();
   };
   return (

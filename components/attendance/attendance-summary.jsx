@@ -1,35 +1,55 @@
 // import { Card, CardContent } from "../ui/card";
 
 // export default function AttendanceSummary({
-//   students,
+//   students, // This represents the list of people (Students or Teachers)
 //   attendanceDocs,
 //   daysInMonth,
+//   label = "Students", // Default label for the footer/UI
+//   personKey = "studentId", // Key to look for in the attendance records
 // }) {
-//   const totalStudents = students?.length || 0;
-//   const daysMarked = attendanceDocs?.length;
+//   const totalPeople = students?.length || 0;
+//   const daysMarked = attendanceDocs?.length || 0;
 
 //   let presentCount = 0;
-//   let totalPossible = totalStudents * daysMarked;
 
-//   // Track low attendance students (< 75%)
-//   const studentStats = students?.map((s) => {
-//     const studentPresent = attendanceDocs.filter((doc) =>
-//       doc.records.find((r) => r.studentId === s._id && r.status === "Present")
-//     ).length;
-//     return { name: s.name, rate: (studentPresent / daysMarked) * 100 };
-//   });
-
+//   // 1. Calculate cumulative presents across all documents
 //   attendanceDocs?.forEach((doc) => {
-//     doc.records.forEach((r) => {
+//     doc.records?.forEach((r) => {
 //       if (r.status === "Present") presentCount++;
 //     });
 //   });
 
+//   // 2. Calculate average attendance
+//   const totalPossible = totalPeople * daysMarked;
 //   const avgAttendance =
 //     totalPossible > 0 ? Math.round((presentCount / totalPossible) * 100) : 0;
-//   const criticalStudents = studentStats?.filter(
-//     (s) => s.rate < 75 && daysMarked > 5
-//   ).length;
+
+//   // 3. Track low attendance individuals (< 75%)
+//   const stats = students?.map((person) => {
+//     const personPresentCount = attendanceDocs.filter((doc) =>
+//       doc.records.some(
+//         (r) => r[personKey] === person._id && r.status === "Present"
+//       )
+//     ).length;
+
+//     const avg = presentCount / students.length;
+//     const avg1 = totalPossible / students.length;
+
+//     console.log(avg);
+
+//     console.log(avg1);
+
+//     return {
+//       rate: daysMarked > 0 ? (personPresentCount / daysMarked) * 100 : 0,
+//     };
+//   });
+
+//   const criticalCount =
+//     stats?.filter((s) => s.rate < 75 && daysMarked > 5).length || 0;
+
+//   // UI Theme color based on label (Emerald for Staff/Teachers, Indigo for Students)
+//   const themeColor =
+//     label === "Students" ? "text-indigo-600" : "text-emerald-600";
 
 //   return (
 //     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 print:hidden">
@@ -37,7 +57,7 @@
 //         title="Overall Attendance"
 //         value={`${avgAttendance}%`}
 //         footer="Monthly average"
-//         color="text-indigo-600"
+//         color={themeColor}
 //       />
 //       <StatCard
 //         title="Days Conducted"
@@ -53,9 +73,9 @@
 //       />
 //       <StatCard
 //         title="Critical Cases"
-//         value={criticalStudents}
-//         footer="Students < 75%"
-//         color={criticalStudents > 0 ? "text-rose-600" : "text-emerald-600"}
+//         value={criticalCount}
+//         footer={`${label} < 75%`}
+//         color={criticalCount > 0 ? "text-rose-600" : "text-emerald-600"}
 //       />
 //     </div>
 //   );
@@ -75,76 +95,100 @@
 //   );
 // }
 
+"use client";
+
 import { Card, CardContent } from "../ui/card";
 
 export default function AttendanceSummary({
-  students, // This represents the list of people (Students or Teachers)
+  students,
   attendanceDocs,
   daysInMonth,
-  label = "Students", // Default label for the footer/UI
-  personKey = "studentId", // Key to look for in the attendance records
+  label = "Students",
 }) {
   const totalPeople = students?.length || 0;
   const daysMarked = attendanceDocs?.length || 0;
 
-  let presentCount = 0;
-
-  // 1. Calculate cumulative presents across all documents
+  // 1. Monthly Stats Calculation
+  let monthlyPresentCount = 0;
   attendanceDocs?.forEach((doc) => {
     doc.records?.forEach((r) => {
-      if (r.status === "Present") presentCount++;
+      if (r.status === "Present") monthlyPresentCount++;
     });
   });
 
-  // 2. Calculate average attendance
-  const totalPossible = totalPeople * daysMarked;
-  const avgAttendance =
-    totalPossible > 0 ? Math.round((presentCount / totalPossible) * 100) : 0;
+  const totalMonthlyPossible = totalPeople * daysMarked;
+  const monthlyClassAvg =
+    totalMonthlyPossible > 0
+      ? Math.round((monthlyPresentCount / totalMonthlyPossible) * 100)
+      : 0;
+  const monthlyClassAvg1 =
+    totalMonthlyPossible > 0
+      ? (monthlyPresentCount / totalPeople)
+      : 0;
 
-  // 3. Track low attendance individuals (< 75%)
-  const stats = students?.map((person) => {
-    const personPresentCount = attendanceDocs.filter((doc) =>
-      doc.records.some(
-        (r) => r[personKey] === person._id && r.status === "Present"
-      )
-    ).length;
+  // 2. Cumulative (Session) Stats Calculation
+  // We sum up the totalPresentTillDate (which includes previous months + current)
+  const totalSessionPresents =
+    students?.reduce((acc, s) => acc + (s.totalPresentTillDate || 0), 0) || 0;
 
-    return {
-      rate: daysMarked > 0 ? (personPresentCount / daysMarked) * 100 : 0,
-    };
-  });
+  // To get the session average, we need to know how many days have been marked in the whole session
+  // We can estimate this from the first student's session stats or pass it from API
+  // Here we calculate the average presents per student for the session
+  const avgSessionPresentsPerStudent =
+    totalPeople > 0 ? (totalSessionPresents / totalPeople).toFixed(1) : 0;
 
+  // 3. Critical Cases Check (Current Month < 75%)
   const criticalCount =
-    stats?.filter((s) => s.rate < 75 && daysMarked > 5).length || 0;
-
-  // UI Theme color based on label (Emerald for Staff/Teachers, Indigo for Students)
-  const themeColor =
-    label === "Students" ? "text-indigo-600" : "text-emerald-600";
+    students?.filter((person) => {
+      const personPresentCount = attendanceDocs.filter((doc) =>
+        doc.records.some(
+          (r) =>
+            (r.personId === person._id || r.studentId === person._id) &&
+            r.status === "Present"
+        )
+      ).length;
+      const rate = daysMarked > 0 ? (personPresentCount / daysMarked) * 100 : 0;
+      return rate < 75 && daysMarked > 5;
+    }).length || 0;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 print:hidden">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 print:hidden">
+      {/* Monthly Class Average */}
       <StatCard
-        title="Overall Attendance"
-        value={`${avgAttendance}%`}
-        footer="Monthly average"
-        color={themeColor}
+        title="Class Monthly Avg"
+        value={`${monthlyClassAvg}%`}
+        footer="Current month performance"
+        color="text-indigo-600"
       />
+      {/* Monthly Class Average */}
       <StatCard
-        title="Days Conducted"
-        value={daysMarked}
-        footer={`Out of ${daysInMonth} days`}
-        color="text-slate-900"
+        title="Class Monthly Avg"
+        value={`${monthlyClassAvg1}`}
+        footer="Current month performance"
+        color="text-indigo-600"
       />
+
+      {/* Monthly Cumulative Presents */}
       <StatCard
-        title="Total Presents"
-        value={presentCount}
-        footer="Cumulative count"
+        title="Monthly Presents"
+        value={monthlyPresentCount}
+        footer={`Total across ${daysMarked} days`}
         color="text-emerald-600"
       />
+
+      {/* Session Cumulative Stats (Prev + Current) */}
+      <StatCard
+        title="Session Grand Total"
+        value={totalSessionPresents}
+        footer="Cumulative (Session YTD)"
+        color="text-blue-700"
+      />
+
+      {/* Critical Cases */}
       <StatCard
         title="Critical Cases"
         value={criticalCount}
-        footer={`${label} < 75%`}
+        footer={`${label} below 75%`}
         color={criticalCount > 0 ? "text-rose-600" : "text-emerald-600"}
       />
     </div>
