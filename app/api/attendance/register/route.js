@@ -1,56 +1,3 @@
-// import { connectDB } from "@/lib/db";
-// import Student from "@/models/Student";
-// import Attendance from "@/models/Attendance";
-// import { NextResponse } from "next/server";
-
-// export async function GET(req) {
-//   await connectDB();
-
-//   const { searchParams } = new URL(req.url);
-
-//   const classId = searchParams.get("classId");
-//   const sectionId = searchParams.get("sectionId");
-
-//   const uiMonth = Number(searchParams.get("month")); // 1–12
-//   const year = Number(searchParams.get("year"));
-
-//   if (!classId || !sectionId || !uiMonth || !year) {
-//     return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
-//   }
-
-//   const month = uiMonth - 1; // ✅ FIX
-
-//   // 1️⃣ Load students
-//   const students = await Student.find({
-//     classId,
-//     sectionId,
-//     status: "Active",
-//   })
-//     .select("name rollNumber")
-//     .sort({ rollNumber: 1 })
-//     .lean();
-
-//   // 2️⃣ Month date range (SAFE)
-//   const startDate = new Date(year, month, 1, 0, 0, 0);
-//   const endDate = new Date(year, month + 1, 0, 23, 59, 59);
-
-//   // 3️⃣ Attendance docs
-//   const attendanceDocs = await Attendance.find({
-//     type: "Student",
-//     classId,
-//     sectionId,
-//     date: { $gte: startDate, $lte: endDate },
-//   })
-//     .select("date records")
-//     .lean();
-
-//   return NextResponse.json({
-//     students,
-//     attendanceDocs,
-//     daysInMonth: endDate.getDate(),
-//   });
-// }
-
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Student from "@/models/Student";
@@ -75,6 +22,39 @@ export async function GET(req) {
   const endDate = new Date(year, month + 1, 0, 23, 59, 59);
 
   // 1️⃣ Current Month Data
+  // const [students, attendanceDocs] = await Promise.all([
+  //   Student.find({
+  //     classId,
+  //     sectionId,
+  //     $or: [
+  //       { status: "Active" },
+  //       {
+  //         status: "Inactive",
+  //         withdrawalDate: { $gte: startDate }, // Include if they were withdrawn this month or later
+  //       },
+  //     ],
+  //   })
+  //     .select("name rollNumber status withdrawalDate withdrawalReason")
+  //     .sort({ rollNumber: 1 })
+  //     .lean(),
+  //   Attendance.find({
+  //     type: "Student",
+  //     classId,
+  //     sectionId,
+  //     date: { $gte: startDate, $lte: endDate },
+  //   })
+  //     .select("date records")
+  //     .lean(),
+  // 1️⃣ Current Month Data Logic
+
+  const attendedStudentIds = await Attendance.distinct("records.personId", {
+    classId: new mongoose.Types.ObjectId(classId),
+    sectionId,
+    date: { $gte: startDate, $lte: endDate },
+  });
+
+
+
   const [students, attendanceDocs] = await Promise.all([
     Student.find({
       classId,
@@ -82,14 +62,18 @@ export async function GET(req) {
       $or: [
         { status: "Active" },
         {
-          status: "Withdrawn",
-          withdrawalDate: { $gte: startDate }, // Include if they were withdrawn this month or later
+          status: "Inactive",
+          withdrawalDate: { $gte: startDate },
+        },
+        {
+          _id: { $in: attendedStudentIds },
         },
       ],
     })
       .select("name rollNumber status withdrawalDate withdrawalReason")
       .sort({ rollNumber: 1 })
       .lean(),
+
     Attendance.find({
       type: "Student",
       classId,
@@ -99,6 +83,7 @@ export async function GET(req) {
       .select("date records")
       .lean(),
   ]);
+
 
   // 2️⃣ Calculate Session Range (e.g., April 1st Start)
   const sessionStartYear = month < 3 ? year - 1 : year;
@@ -155,31 +140,31 @@ export async function GET(req) {
   const classObjectId = new mongoose.Types.ObjectId(classId);
 
   // Update your count query
- const totalSessionMarkedDaysAgg = await Attendance.aggregate([
-   {
-     $match: {
-       type: "Student",
-       classId: classObjectId,
-       sectionId,
-       date: { $gte: sessionStartDate, $lte: endDate },
-     },
-   },
-   {
-     $project: {
-       count: { $size: "$records" },
-     },
-   },
-   {
-     $group: {
-       _id: null,
-       totalMarked: { $sum: "$count" },
-     },
-   },
- ]);
+  const totalSessionMarkedDaysAgg = await Attendance.aggregate([
+    {
+      $match: {
+        type: "Student",
+        classId: classObjectId,
+        sectionId,
+        date: { $gte: sessionStartDate, $lte: endDate },
+      },
+    },
+    {
+      $project: {
+        count: { $size: "$records" },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        totalMarked: { $sum: "$count" },
+      },
+    },
+  ]);
 
- const totalSessionMarkedDays = totalSessionMarkedDaysAgg[0]?.totalMarked || 0;
+  const totalSessionMarkedDays = totalSessionMarkedDaysAgg[0]?.totalMarked || 0;
 
-console.log(totalSessionMarkedDays);
+  console.log(totalSessionMarkedDays);
   return NextResponse.json({
     students: studentsWithStats,
     attendanceDocs,

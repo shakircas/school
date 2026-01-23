@@ -145,7 +145,7 @@ export default function AttendanceSummary({
   // 3. Critical Cases Check (Current Month < 75%)
   const criticalCount =
     students?.filter((person) => {
-      const personPresentCount = attendanceDocs.filter((doc) =>
+      const personPresentCount = attendanceDocs?.filter((doc) =>
         doc.records.some(
           (r) =>
             (r.personId === person._id || r.studentId === person._id) &&

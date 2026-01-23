@@ -4,6 +4,9 @@ import { buildAttendanceMap } from "@/lib/attendance-utils";
 import { getMonthName } from "@/lib/constants";
 import { Card } from "../ui/card";
 import { useState } from "react";
+import { Button } from "../ui/button";
+import { WithdrawalDialog } from "./WithdrawalDialog";
+
 
 export default function AttendanceTable({
   students,
@@ -54,28 +57,35 @@ export default function AttendanceTable({
                 ))}
 
                 {/* Summary Headers */}
-                <th className="border border-slate-300 p-1 bg-indigo-50/50 print:bg-transparent text-[8px] w-8 leading-tight">
+                {/* Summary Headers - Optimized for spacing */}
+                <th className="border border-slate-300 p-1 bg-indigo-50/50 print:bg-transparent text-[9px] min-w-[35px] leading-tight">
                   CURR
                   <br />
                   PRES
                 </th>
-                <th className="border border-slate-300 p-1 bg-rose-50/50 print:bg-transparent text-[8px] w-8 leading-tight">
+                <th className="border border-slate-300 p-1 bg-rose-50/50 print:bg-transparent text-[9px] min-w-[35px] leading-tight">
                   CURR
                   <br />
                   ABS
                 </th>
-                <th className="border border-slate-300 p-1 bg-amber-50/50 print:bg-transparent text-[8px] w-8 leading-tight">
+                <th className="border border-slate-300 p-1 bg-amber-50/50 print:bg-transparent text-[9px] min-w-[35px] leading-tight">
                   PREV
                   <br />
                   PRES
                 </th>
-                <th className="border border-slate-300 p-1 bg-emerald-50 print:bg-transparent text-[9px] w-10 font-bold leading-tight">
+                <th className="border border-slate-300 p-1 bg-emerald-50 print:bg-transparent text-[10px] min-w-[45px] font-bold leading-tight">
                   GRAND
                   <br />
                   TOTAL
                 </th>
-                <th className="border border-slate-300 p-2 bg-slate-100 print:bg-transparent font-bold">
+                <th className="border border-slate-300 p-2 bg-slate-100 print:bg-transparent font-bold min-w-[40px]">
                   %
+                </th>
+                {/* <th className="border border-slate-300 p-2 bg-slate-100 print:bg-transparent font-bold">
+                  %
+                </th> */}
+                <th className="border border-slate-300 p-2 bg-slate-50 print:hidden min-w-[80px]">
+                  Action
                 </th>
               </tr>
             </thead>
@@ -93,10 +103,19 @@ export default function AttendanceTable({
 
                 // 2. Derive Cumulative Totals
                 // Ensure the property name "totalPresentTillDate" matches your API response
-                const grandTotal = s.totalPresentTillDate || 0;
-                const prevP = grandTotal - pCount;
+                // const grandTotal = s.totalPresentTillDate || 0;
+                // const prevP = grandTotal - pCount;
 
-                // 3. Percentage calculation (Monthly)
+                // // 3. Percentage calculation (Monthly)
+                // const totalDays = pCount + aCount;
+                // const percentage =
+                //   totalDays > 0 ? Math.round((pCount / totalDays) * 100) : 0;
+                // 2. Derive Cumulative Totals Safely
+                const grandTotal = s.totalPresentTillDate || 0;
+                // Prev Month = Grand Total (including this month) minus what they earned this month
+                const prevP = Math.max(0, grandTotal - pCount);
+
+                // 3. Percentage calculation (Current Month)
                 const totalDays = pCount + aCount;
                 const percentage =
                   totalDays > 0 ? Math.round((pCount / totalDays) * 100) : 0;
@@ -118,7 +137,7 @@ export default function AttendanceTable({
                   return maxConsecutive;
                 };
 
-                const isWithdrawn = s.status === "Withdrawn";
+                const isWithdrawn = s.status === "Inactive";
                 const consecAbs = consecutiveAbsences(s._id);
 
                 // Auto-trigger flag for teacher
@@ -207,6 +226,37 @@ export default function AttendanceTable({
               })}
             </tbody>
           </table>
+          {/* Withdrawal Dialog Logic */}
+          <WithdrawalDialog
+            isOpen={!!withdrawTarget}
+            onClose={() => setWithdrawTarget(null)}
+            student={withdrawTarget}
+            onConfirm={async (data) => {
+              try {
+                // Use the logic from your WithdrawalsContent.jsx
+                const body = {
+                  status: "Inactive", // Backend uses Inactive based on your code
+                  withdrawalDate: data.withdrawalDate,
+                  withdrawalReason: data.reason,
+                  notes: data.notes,
+                };
+
+                const res = await fetch(`/api/students/${withdrawTarget._id}`, {
+                  method: "PUT", // Your reference uses PUT
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(body),
+                });
+
+                if (!res.ok) throw new Error("Failed to withdraw student");
+
+                // Success handling
+                setWithdrawTarget(null);
+                window.location.reload(); // Refresh to update the table
+              } catch (err) {
+                alert(err.message);
+              }
+            }}
+          />
         </div>
 
         {/* SIGNATURE SECTION */}

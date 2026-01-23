@@ -24,7 +24,7 @@ export default function AttendanceRegisterStats({ data }) {
 
   // Calculate specific counts
   const activeCount = students.filter(s => s.status === "Active").length;
-  const withdrawnThisMonth = students.filter(s => s.status === "Withdrawn").length;
+  const withdrawnThisMonth = students.filter(s => s.status === "Inactive").length;
 
   // 2. Monthly Calculations
   const totalStudents = students.length;
@@ -55,6 +55,13 @@ export default function AttendanceRegisterStats({ data }) {
   const sessionAvgNum = (sessionPresent / sessionTotalRecords) * 100;
   const sessionAvg = sessionAvgNum > 0 ? sessionAvgNum.toFixed(1) : monthlyAvg;
 
+
+  const openingEnrollment = students.length; // Everyone who was there at start
+  // const withdrawnThisMonth = students.filter(
+  //   (s) => s.status === "Withdrawn"
+  // ).length;
+  const closingEnrollment = openingEnrollment - withdrawnThisMonth;
+
   return (
     <div className="mt-8 space-y-4 print:mt-4">
       <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
@@ -73,6 +80,14 @@ export default function AttendanceRegisterStats({ data }) {
         /> */}
 
         <StatBox
+          title="Enrollment Movement"
+          mainValue={`${openingEnrollment} → ${closingEnrollment}`}
+          subLeft={`Withdrawn: ${withdrawnThisMonth}`}
+          subRight="Start → End"
+          icon={<Users className="text-blue-500 h-4 w-4" />}
+        />
+
+        <StatBox
           title="Enrollment"
           mainValue={activeCount}
           subLeft={`Withdrawn: ${withdrawnThisMonth}`}
@@ -80,8 +95,8 @@ export default function AttendanceRegisterStats({ data }) {
           icon={<Users className="text-blue-500 h-4 w-4" />}
         />
 
-        <StatBox 
-          title="Total Days Marked"
+        <StatBox
+          title="Total Days Marked in Session"
           mainValue={totalMarked}
           subLeft="Total Days Marked"
           subRight="Current Term"
