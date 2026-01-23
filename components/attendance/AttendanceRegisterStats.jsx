@@ -20,7 +20,7 @@ export default function AttendanceRegisterStats({ data }) {
     );
   }
 
-  const { students, attendanceDocs, sessionStats } = data;
+  const { students, attendanceDocs, sessionStats, totalMarked } = data;
 
   // Calculate specific counts
   const activeCount = students.filter(s => s.status === "Active").length;
@@ -64,13 +64,13 @@ export default function AttendanceRegisterStats({ data }) {
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         {/* Enrollment Stats */}
-        <StatBox
+        {/* <StatBox
           title="Student Enrollment"
           mainValue={totalStudents}
           subLeft={`Active: ${totalStudents}`}
           subRight="Current Term"
           icon={<Users className="text-blue-500 h-4 w-4" />}
-        />
+        /> */}
 
         <StatBox
           title="Enrollment"
@@ -78,6 +78,14 @@ export default function AttendanceRegisterStats({ data }) {
           subLeft={`Withdrawn: ${withdrawnThisMonth}`}
           subRight={`Total: ${students.length}`}
           icon={<Users className="text-blue-500 h-4 w-4" />}
+        />
+
+        <StatBox 
+          title="Total Days Marked"
+          mainValue={totalMarked}
+          subLeft="Total Days Marked"
+          subRight="Current Term"
+          icon={<Target className="text-emerald-500 h-4 w-4" />}
         />
 
         {/* Attendance Volume */}

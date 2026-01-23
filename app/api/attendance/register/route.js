@@ -149,6 +149,37 @@ export async function GET(req) {
     0
   );
 
+  // Total marked days in session
+
+  // Add this near the top where you parse params
+  const classObjectId = new mongoose.Types.ObjectId(classId);
+
+  // Update your count query
+ const totalSessionMarkedDaysAgg = await Attendance.aggregate([
+   {
+     $match: {
+       type: "Student",
+       classId: classObjectId,
+       sectionId,
+       date: { $gte: sessionStartDate, $lte: endDate },
+     },
+   },
+   {
+     $project: {
+       count: { $size: "$records" },
+     },
+   },
+   {
+     $group: {
+       _id: null,
+       totalMarked: { $sum: "$count" },
+     },
+   },
+ ]);
+
+ const totalSessionMarkedDays = totalSessionMarkedDaysAgg[0]?.totalMarked || 0;
+
+console.log(totalSessionMarkedDays);
   return NextResponse.json({
     students: studentsWithStats,
     attendanceDocs,
@@ -156,5 +187,6 @@ export async function GET(req) {
     sessionStats: {
       totalPresent: totalPresentSum,
     },
+    totalMarked: totalSessionMarkedDays,
   });
 }

@@ -104,9 +104,14 @@ export default function AttendanceSummary({
   attendanceDocs,
   daysInMonth,
   label = "Students",
+  totalMarked,
 }) {
   const totalPeople = students?.length || 0;
   const daysMarked = attendanceDocs?.length || 0;
+
+  console.log(daysInMonth);
+  console.log(daysMarked);
+  console.log(totalMarked);
 
   // 1. Monthly Stats Calculation
   let monthlyPresentCount = 0;
@@ -123,7 +128,7 @@ export default function AttendanceSummary({
       : 0;
   const monthlyClassAvg1 =
     totalMonthlyPossible > 0
-      ? (monthlyPresentCount / totalPeople)
+      ? (monthlyPresentCount / totalPeople).toFixed(1)
       : 0;
 
   // 2. Cumulative (Session) Stats Calculation
@@ -152,14 +157,14 @@ export default function AttendanceSummary({
     }).length || 0;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 print:hidden">
+    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 print:hidden">
       {/* Monthly Class Average */}
-      <StatCard
+      {/* <StatCard
         title="Class Monthly Avg"
         value={`${monthlyClassAvg}%`}
-        footer="Current month performance"
+        footer="Current month 5"
         color="text-indigo-600"
-      />
+      /> */}
       {/* Monthly Class Average */}
       <StatCard
         title="Class Monthly Avg"
@@ -172,8 +177,15 @@ export default function AttendanceSummary({
       <StatCard
         title="Monthly Presents"
         value={monthlyPresentCount}
-        footer={`Total across ${daysMarked} days`}
+        footer={`Total across ${daysMarked} / ${daysInMonth} days`}
         color="text-emerald-600"
+      />
+
+      <StatCard
+        title="Session Grand Avg"
+        value={`${avgSessionPresentsPerStudent}`}
+        footer="Cumulative session performance"
+        color="text-indigo-600"
       />
 
       {/* Session Cumulative Stats (Prev + Current) */}
