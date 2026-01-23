@@ -260,10 +260,10 @@ export default function AttendanceRegisterView() {
             attendanceDocs={data.attendanceDocs}
             daysInMonth={data.daysInMonth}
           />
-          <AttendanceTrendChart
+          {/* <AttendanceTrendChart
             data={trendData || []}
             label="Attendance Trend"
-          />
+          /> */}
           <AttendanceTable
             students={data.students}
             attendanceDocs={data.attendanceDocs}
