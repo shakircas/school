@@ -63,7 +63,7 @@
     "jspdf-autotable": "^5.0.2",
     "lucide-react": "^0.454.0",
     "mongoose": "latest",
-    "next": "16.0.7",
+    "next": "16.0.10",
     "next-auth": "^5.0.0-beta.30",
     "next-themes": "latest",
     "papaparse": "^5.5.3",
