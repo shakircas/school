@@ -273,9 +273,9 @@ export default function TeacherAttendanceRegisterView() {
           />
 
           {/* The Trend Chart takes up 1 column */}
-          <div className="lg:col-span-1">
+          {/* <div className="lg:col-span-1">
             <AttendanceTrendChart data={trendData || []} label="Staff" />
-          </div>
+          </div> */}
 
           {/* <div className="print:m-0 print:p-0">
             <AttendanceTable

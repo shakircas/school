@@ -47,7 +47,7 @@ const YEARS = ["2024", "2025", "2026"].map((y) => ({ value: y, label: y }));
 export default function AttendanceRegisterView() {
   const [filters, setFilters] = useState({
     classId: "",
-    sectionId: "",
+    sectionId: "A",
     month: (new Date().getMonth() + 1).toString(),
     year: new Date().getFullYear().toString(),
   });
@@ -55,9 +55,9 @@ export default function AttendanceRegisterView() {
   const { data: classesData } = useSWR("/api/academics/classes", fetcher);
   const classes = classesData?.data || [];
 
-  const queryPath = `/api/attendance/register?classId=${filters.classId}&sectionId=${filters.sectionId}&month=${filters.month}&year=${filters.year}`;
+  const queryPath = `/api/attendance/register?classId=${filters.classId}&sectionId=${filters.sectionId || "A"}&month=${filters.month}&year=${filters.year}`;
   const { data, isLoading } = useSWR(
-    filters.classId && filters.sectionId ? queryPath : null,
+    filters.classId ? queryPath : null,
     fetcher
   );
 
@@ -165,7 +165,8 @@ export default function AttendanceRegisterView() {
               <Select
                 value={filters.sectionId}
                 onValueChange={(v) => setFilters({ ...filters, sectionId: v })}
-                disabled={!filters.classId}
+                // disabled={!filters.classId}
+                defaultValue="A"
               >
                 <SelectTrigger className="bg-white">
                   <SelectValue placeholder="Select" />
@@ -271,7 +272,11 @@ export default function AttendanceRegisterView() {
             month={filters.month}
             year={filters.year}
           />
-          <AttendanceRegisterStats data={data} currentMonth={filters.month} currentYear={filters.year} />
+          <AttendanceRegisterStats
+            data={data}
+            currentMonth={filters.month}
+            currentYear={filters.year}
+          />
         </div>
       )}
     </div>
