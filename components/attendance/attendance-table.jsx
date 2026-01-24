@@ -7,7 +7,6 @@ import { useState } from "react";
 import { Button } from "../ui/button";
 import { WithdrawalDialog } from "./WithdrawalDialog";
 
-
 export default function AttendanceTable({
   students,
   attendanceDocs,
@@ -142,6 +141,13 @@ export default function AttendanceTable({
 
                 // Auto-trigger flag for teacher
                 const needsAction = consecAbs >= 6 && !isWithdrawn;
+                const withdrawalDate = s.withdrawalDate
+                  ? new Date(s.withdrawalDate)
+                  : null;
+                // Inside the daysArray.map((day) => { ... })
+                // const currentDate = new Date(year, month - 1, day);
+                // const isPostWithdrawal =
+                //   isWithdrawn && withdrawalDate && currentDate > withdrawalDate;
 
                 return (
                   <tr
@@ -217,8 +223,11 @@ export default function AttendanceTable({
                           WITHDRAW
                         </Button>
                       )}
+
                       {isWithdrawn && (
-                        <span className="text-rose-500 font-bold">[W]</span>
+                        <span className="text-rose-500 font-bold text-[10px]">
+                          [W]
+                        </span>
                       )}
                     </td>
                   </tr>

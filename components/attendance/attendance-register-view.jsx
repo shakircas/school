@@ -271,7 +271,7 @@ export default function AttendanceRegisterView() {
             month={filters.month}
             year={filters.year}
           />
-          <AttendanceRegisterStats data={data} />
+          <AttendanceRegisterStats data={data} currentMonth={filters.month} currentYear={filters.year} />
         </div>
       )}
     </div>
