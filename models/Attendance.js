@@ -18,7 +18,7 @@ const attendanceSchema = new mongoose.Schema(
     },
     sectionId: {
       type: String,
-      required: true,
+      required: false,
     },
 
     records: [
@@ -51,7 +51,7 @@ const attendanceSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 attendanceSchema.index({

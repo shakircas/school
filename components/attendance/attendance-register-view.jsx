@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -58,15 +58,38 @@ export default function AttendanceRegisterView() {
   const queryPath = `/api/attendance/register?classId=${filters.classId}&sectionId=${filters.sectionId || "A"}&month=${filters.month}&year=${filters.year}`;
   const { data, isLoading } = useSWR(
     filters.classId ? queryPath : null,
-    fetcher
+    fetcher,
   );
 
   console.log(data);
 
   const { data: trendData } = useSWR(
     "/api/attendance/stats?type=Student",
-    fetcher
+    fetcher,
   );
+
+  useEffect(() => {
+    if (classes.length > 0 && !filters.classId) {
+      setFilters((prev) => ({
+        ...prev,
+        classId: classes[0]._id,
+        sectionId: classes[0].sections?.[0]?.name || "A",
+      }));
+    }
+  }, [classes]);
+
+  // Add this useEffect to load from localStorage on mount
+  useEffect(() => {
+    const savedFilters = localStorage.getItem("attendance_filters");
+    if (savedFilters) {
+      const parsed = JSON.parse(savedFilters);
+      setFilters((prev) => ({
+        ...prev,
+        classId: parsed.classId || prev.classId,
+        sectionId: parsed.sectionId || prev.sectionId,
+      }));
+    }
+  }, []);
 
   const handleExportCSV = () => {
     if (!data) return;
@@ -141,7 +164,7 @@ export default function AttendanceRegisterView() {
               <Select
                 value={filters.classId}
                 onValueChange={(v) =>
-                  setFilters({ ...filters, classId: v, sectionId: "" })
+                  setFilters({ ...filters, classId: v, sectionId: "A" })
                 }
               >
                 <SelectTrigger className="bg-white">
