@@ -18,7 +18,7 @@ export function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="relative bg-[#09090b] border-t border-zinc-800 pt-16 pb-8 overflow-hidden">
+    <footer className="relative border-t border-zinc-800 pt-16 pb-8 overflow-hidden">
       {/* Decorative Background Glows */}
       <div className="absolute top-0 left-1/4 w-64 h-64 bg-blue-600/5 blur-[120px] rounded-full pointer-events-none" />
       <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-indigo-600/5 blur-[120px] rounded-full pointer-events-none" />
@@ -31,7 +31,7 @@ export function Footer() {
               <div className="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-900/20">
                 <School className="h-6 w-6 text-white" />
               </div>
-              <h2 className="text-2xl font-black text-white tracking-tight uppercase italic">
+              <h2 className="text-2xl font-black text-black tracking-tight uppercase italic">
                 Edu<span className="text-blue-500">Manage</span>
               </h2>
             </div>
@@ -44,7 +44,7 @@ export function Footer() {
                 <Link
                   key={i}
                   href="#"
-                  className="p-2 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-blue-500 hover:border-blue-500/50 transition-all"
+                  className="p-2 rounded-lg border border-zinc-800 text-zinc-400 hover:text-blue-900 hover:border-blue-900 transition-all"
                 >
                   <Icon size={18} />
                 </Link>
@@ -54,7 +54,7 @@ export function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h3 className="text-white font-bold mb-6 uppercase text-xs tracking-[0.2em]">
+            <h3 className="text-black font-bold mb-6 uppercase text-xs tracking-[0.2em]">
               Academics
             </h3>
             <ul className="space-y-4">
@@ -68,7 +68,7 @@ export function Footer() {
                 <li key={item}>
                   <Link
                     href="#"
-                    className="text-zinc-500 hover:text-white text-sm transition-colors flex items-center group"
+                    className="text-zinc-500 hover:text-primary text-sm transition-colors flex items-center group"
                   >
                     <ArrowUpRight className="h-3 w-3 mr-2 opacity-0 -ml-5 group-hover:opacity-100 group-hover:ml-0 transition-all text-blue-500" />
                     {item}
@@ -80,7 +80,7 @@ export function Footer() {
 
           {/* Support / Legal */}
           <div>
-            <h3 className="text-white font-bold mb-6 uppercase text-xs tracking-[0.2em]">
+            <h3 className="text-black font-bold mb-6 uppercase text-xs tracking-[0.2em]">
               Information
             </h3>
             <ul className="space-y-4">
@@ -94,7 +94,7 @@ export function Footer() {
                 <li key={item}>
                   <Link
                     href="#"
-                    className="text-zinc-500 hover:text-white text-sm transition-colors"
+                    className="text-zinc-500 hover:text-primary text-sm transition-colors"
                   >
                     {item}
                   </Link>
@@ -105,7 +105,7 @@ export function Footer() {
 
           {/* Contact & AI Status */}
           <div className="space-y-6">
-            <h3 className="text-white font-bold mb-2 uppercase text-xs tracking-[0.2em]">
+            <h3 className="text-black font-bold mb-2 uppercase text-xs tracking-[0.2em]">
               Get In Touch
             </h3>
             <div className="space-y-4">
@@ -127,10 +127,10 @@ export function Footer() {
             </div>
 
             {/* AI Status Card */}
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-zinc-900 to-zinc-950 border border-zinc-800 relative overflow-hidden group">
+            <div className="p-4 rounded-2xl from-zinc-900 to-zinc-950 border border-zinc-800 relative overflow-hidden group">
               <div className="flex items-center gap-2 mb-2">
                 <Sparkles className="h-4 w-4 text-blue-500 animate-pulse" />
-                <span className="text-[11px] font-bold text-white uppercase tracking-tighter">
+                <span className="text-[11px] font-bold text-black uppercase tracking-tighter">
                   AI Core Status
                 </span>
               </div>

@@ -489,7 +489,7 @@ export default function AttendanceTable({
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-[10px] sm:text-xs print:text-[8px]">
             <thead>
-              <tr className="bg-slate-800 text-white print:bg-slate-200 print:text-black">
+              <tr className="bg-primary text-white print:bg-slate-200 print:text-black">
                 <th className="border border-slate-300 p-2 text-left">
                   {idLabel}
                 </th>
@@ -505,16 +505,16 @@ export default function AttendanceTable({
                   </th>
                 ))}
                 <th className="border border-slate-300 p-1 bg-emerald-600 text-white print:bg-emerald-50 print:text-black">
-                  CURR P
+                   P
                 </th>
                 <th className="border border-slate-300 p-1 bg-rose-600 text-white print:bg-rose-50 print:text-black">
-                  CURR A
+                   A
                 </th>
                 <th className="border border-slate-300 p-1 bg-slate-700 text-white print:bg-slate-50 print:text-black">
-                  PREV P
+                  PR P
                 </th>
                 <th className="border border-slate-300 p-1 bg-slate-700 text-white print:bg-slate-50 print:text-black">
-                  PREV A
+                  PR A
                 </th>
                 <th className="border border-slate-300 p-1 bg-emerald-800 text-white font-bold">
                   GT-P

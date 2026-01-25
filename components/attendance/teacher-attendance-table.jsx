@@ -102,7 +102,7 @@ export default function TeacherAttendanceTable({
         <div className="overflow-x-auto print:overflow-visible">
           <table className="w-full border-collapse text-[10px] sm:text-xs print:text-[8px]">
             <thead>
-              <tr className="bg-slate-800 text-white print:bg-slate-200 print:text-black">
+              <tr className="bg-primary text-white print:bg-slate-200 print:text-black">
                 <th className="border border-slate-300 p-2 text-left">PN</th>
                 <th className="border border-slate-300 p-2 text-left min-w-[120px]">
                   Teacher Name
@@ -128,13 +128,13 @@ export default function TeacherAttendanceTable({
                   GT-A
                 </th>
                 
-                <th className="border border-slate-300 p-2 bg-slate-900 text-white font-bold print:bg-slate-200 print:text-black">
+                <th className="border border-slate-300 p-2 bg-primary text-white font-bold print:bg-slate-200 print:text-black">
                 Status
                 </th>
-                <th className="border border-slate-300 p-2 bg-slate-900 text-white font-bold print:bg-slate-200 print:text-black">
+                <th className="border border-slate-300 p-2 bg-primary text-white font-bold print:bg-slate-200 print:text-black">
                   %
                 </th>
-                <th className="border border-slate-300 p-2 bg-slate-900 text-white font-bold print:bg-slate-200 print:text-black">
+                <th className="border border-slate-300 p-2 bg-primary text-white font-bold print:bg-slate-200 print:text-black">
                   Balance
                 </th>
 
@@ -291,7 +291,7 @@ export default function TeacherAttendanceTable({
                 ))}
                 <td
                   colSpan={8}
-                  className="bg-slate-800 text-white text-center p-1 text-[9px] print:bg-slate-200 print:text-black"
+                  className="bg-primary text-white text-center p-1 text-[9px] print:bg-slate-200 print:text-black"
                 >
                   Daily Strength
                 </td>
@@ -301,7 +301,7 @@ export default function TeacherAttendanceTable({
         </div>
 
         {/* HR REMARKS SECTION */}
-        <div className="mt-4 p-4 bg-slate-900 text-white rounded-lg flex justify-between items-center print:bg-white print:text-black print:border-2">
+        <div className="mt-4 p-4 bg-primary text-white rounded-lg flex justify-between items-center print:bg-white print:text-black print:border-2">
           <div className="flex gap-8">
             <div className="text-center">
               <p className="text-[10px] uppercase opacity-60">Session Limit</p>
@@ -322,7 +322,7 @@ export default function TeacherAttendanceTable({
      
 
         {/* SUMMARY FOOTER */}
-        <div className="mt-4 p-4 bg-slate-900 text-white rounded-lg flex justify-between items-center print:bg-white print:text-black print:border-2 print:border-slate-900 print:rounded-none">
+        <div className="mt-4 p-4 bg-primary text-white rounded-lg flex justify-between items-center print:bg-white print:text-black print:border-2 print:border-slate-900 print:rounded-none">
           <div className="flex gap-6">
             <div className="text-center">
               <p className="text-[10px] uppercase opacity-60">Total Staff</p>

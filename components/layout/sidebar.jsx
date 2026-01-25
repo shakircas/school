@@ -265,7 +265,7 @@ function NavItem({ item, pathname, searchActive }) {
           "group flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-all",
           isActive
             ? "bg-zinc-800/80 text-white"
-            : "text-zinc-400 hover:bg-zinc-800/40 hover:text-zinc-100"
+            : "text-zinc-400 hover:bg-zinc-800/40 hover:text-zinc-100",
         )}
       >
         <div className="flex items-center gap-3">
@@ -274,7 +274,7 @@ function NavItem({ item, pathname, searchActive }) {
               "h-4 w-4 shrink-0 transition-colors",
               isActive
                 ? "text-blue-500"
-                : "text-zinc-500 group-hover:text-zinc-300"
+                : "text-zinc-500 group-hover:text-zinc-300",
             )}
           />
           <span>{item.name}</span>
@@ -283,7 +283,7 @@ function NavItem({ item, pathname, searchActive }) {
           <ChevronDown
             className={cn(
               "h-3 w-3 transition-transform duration-200 opacity-40",
-              !open && "-rotate-90"
+              !open && "-rotate-90",
             )}
           />
         )}
@@ -299,7 +299,7 @@ function NavItem({ item, pathname, searchActive }) {
                 "block rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                 pathname === c.href
                   ? "text-blue-400 bg-blue-500/10"
-                  : "text-zinc-500 hover:text-zinc-200 hover:bg-white/5"
+                  : "text-zinc-500 hover:text-zinc-200 hover:bg-white/5",
               )}
             >
               {c.name}
@@ -326,7 +326,7 @@ export function Sidebar() {
         const filteredChildren = n.children?.filter(
           (c) =>
             (!c.roles || c.roles.includes(role)) &&
-            c.name?.toLowerCase().includes(searchQuery?.toLowerCase())
+            c.name?.toLowerCase().includes(searchQuery?.toLowerCase()),
         );
 
         // If parent name matches or has matching children, keep it
@@ -344,7 +344,12 @@ export function Sidebar() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex fixed left-0 top-0 h-screen w-64 flex-col bg-[#0c0c0e] border-r border-zinc-800/50 z-40">
+      {/* <aside className="hidden lg:flex fixed left-0 top-0 h-screen w-64 flex-col bg-[#0c0c0e] border-r border-zinc-800/50 z-40"> */}
+      <aside
+        className="hidden lg:flex fixed left-0 top-0 h-screen w-64 flex-col 
+  bg-[#0c0c0e] bg-[radial-gradient(circle_at_20%_30%,_rgba(40,40,45,0.3)_0%,_transparent_50%)] 
+  border-r border-zinc-800/50 z-40"
+      >
         <SidebarContent
           pathname={pathname}
           items={filteredItems}
