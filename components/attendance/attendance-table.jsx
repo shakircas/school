@@ -6,6 +6,7 @@ import { Card } from "../ui/card";
 import { useState } from "react";
 import { Button } from "../ui/button";
 import { WithdrawalDialog } from "./WithdrawalDialog";
+import Link from "next/link";
 
 export default function AttendanceTable({
   students,
@@ -157,9 +158,14 @@ export default function AttendanceTable({
                     <td className="border border-slate-200 p-2 font-medium">
                       {showRoll ? s.rollNumber : s.personalNo || "—"}
                     </td>
-                    <td className="border border-slate-200 p-2 font-semibold uppercase whitespace-nowrap">
-                      {s.name}
-                    </td>
+                    <Link
+                      href={`/students/${s._id}/report`}
+                      className="hover:underline cursor-pointer"
+                    >
+                      <td className="border border-slate-200 p-2 font-semibold uppercase whitespace-nowrap">
+                        {s.name}
+                      </td>
+                    </Link>
 
                     {/* Daily Presence Grid */}
                     {[...Array(daysInMonth)].map((_, d) => {
