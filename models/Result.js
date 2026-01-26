@@ -125,7 +125,7 @@ const resultSchema = new mongoose.Schema(
     published: { type: Boolean, default: false },
     publishedAt: Date,
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // --- INDEXES ---
@@ -155,7 +155,7 @@ resultSchema.pre("save", function (next) {
 
     if (totalMax > 0) {
       this.percentage = parseFloat(
-        ((totalObtained / totalMax) * 100).toFixed(2)
+        ((totalObtained / totalMax) * 100).toFixed(2),
       );
     }
 
@@ -164,7 +164,6 @@ resultSchema.pre("save", function (next) {
       this.status = hasFailedAnySubject ? "Fail" : "Pass";
     }
   }
-  next();
 });
 
 export default mongoose.models.Result || mongoose.model("Result", resultSchema);

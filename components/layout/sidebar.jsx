@@ -121,6 +121,7 @@ const navigation = [
       { name: "Date Sheet", href: "/exams/datesheet" },
       { name: "Award Lists", href: "/exams/award-list" },
       { name: "Roll Number Slips", href: "/exams/roll-slips" },
+      { name: "Bulk Marks Entry", href:"/exams/bulk-mark-entry"}
     ],
   },
 

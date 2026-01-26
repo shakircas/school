@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { connectToDatabase } from "@/lib/mongodb"; // Adjust based on your DB helper
-import Result from "@/models/Result"; // Adjust based on your Model path
+import Result from "@/models/Result";
+import connectDB from "@/lib/db";
 
 export async function POST(req) {
   try {
-    await connectToDatabase();
-    const { examId, classId, sectionId, subject, academicYear, results } =
+    await connectDB();
+    const { examId, classId, sectionId, subjectName, academicYear, results } =
       await req.json();
 
     if (!results || !Array.isArray(results)) {
@@ -15,52 +15,74 @@ export async function POST(req) {
       );
     }
 
-    // Helper to calculate Grade
-    const calculateGrade = (percentage) => {
-      if (percentage >= 90) return "A+";
-      if (percentage >= 80) return "A";
-      if (percentage >= 70) return "B";
-      if (percentage >= 60) return "C";
-      if (percentage >= 50) return "D";
+    const currentYear = academicYear || "2025-2026";
+
+    // Grade logic (aligned with your 80/70/60/50/40 scale)
+    const calculateGrade = (p) => {
+      if (p >= 80) return "A+";
+      if (p >= 70) return "A";
+      if (p >= 60) return "B";
+      if (p >= 50) return "C";
+      if (p >= 40) return "D";
       return "F";
     };
 
-    const bulkOps = results.map((item) => {
+    // Use a Promise.all to process all students in parallel for speed
+    const processResults = results.map(async (item) => {
       const percentage = (item.obtainedMarks / item.totalMarks) * 100;
+      const passing = Math.ceil(item.totalMarks * 0.33);
 
-      const updateData = {
-        examId,
-        classId,
-        sectionId,
-        academicYear: academicYear || "2025-2026",
-        student: item.studentId,
-        // We push to a subjects array or update a specific subject entry
-        // This logic assumes a structure where each subject result is a document
-        subject: subject,
-        totalMarks: item.totalMarks,
-        obtainedMarks: item.obtainedMarks,
-        percentage: percentage.toFixed(2),
+      const subjectData = {
+        subject: subjectName,
+        totalMarks: Number(item.totalMarks),
+        obtainedMarks: Number(item.obtainedMarks),
+        passingMarks: passing,
         grade: calculateGrade(percentage),
-        status: item.obtainedMarks >= item.totalMarks * 0.33 ? "Pass" : "Fail",
+        isAbsent: item.isAbsent || false,
       };
 
-      return {
-        updateOne: {
-          filter: {
-            examId,
-            student: item.studentId,
-            subject: subject,
-          },
-          update: { $set: updateData },
-          upsert: true, // Create if doesn't exist
-        },
-      };
+      // 1. Find existing document or create a new instance
+      let resultDoc = await Result.findOne({
+        exam: examId,
+        student: item.studentId,
+        academicYear: currentYear,
+      });
+
+      if (!resultDoc) {
+        resultDoc = new Result({
+          exam: examId,
+          student: item.studentId,
+          classId: classId,
+          sectionId: sectionId,
+          academicYear: currentYear,
+          subjects: [],
+        });
+      }
+
+      // 2. Update the subjects array
+      // Remove the subject if it already exists to prevent duplicates
+      resultDoc.subjects = resultDoc.subjects.filter(
+        (sub) => sub.subject !== subjectName,
+      );
+
+      // Add the new marks
+      resultDoc.subjects.push(subjectData);
+
+      // 3. Update top-level fields (in case they changed)
+      resultDoc.sectionId = sectionId;
+      resultDoc.classId = classId;
+
+      // 4. IMPORTANT: .save() triggers your Schema pre-save middleware
+      // which calculates percentage, totalMarks, and Pass/Fail status correctly.
+      return resultDoc.save();
     });
 
-    await Result.bulkWrite(bulkOps);
+    await Promise.all(processResults);
 
     return NextResponse.json(
-      { message: "Marks updated successfully" },
+      {
+        message: "Marks synchronized and totals calculated successfully",
+      },
       { status: 200 },
     );
   } catch (error) {
