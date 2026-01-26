@@ -119,8 +119,7 @@ const navigation = [
     children: [
       { name: "Exams", href: "/exams" },
       { name: "Date Sheet", href: "/exams/datesheet" },
-      { name: "Results", href: "/exams/results" },
-      { name: "DMC", href: "/exams/dmc" },
+      { name: "Award Lists", href: "/exams/award-list" },
       { name: "Roll Number Slips", href: "/exams/roll-slips" },
     ],
   },
@@ -133,6 +132,8 @@ const navigation = [
     children: [
       { name: "All Results", href: "/results" },
       { name: "Result Cards", href: "/results/result-cards" },
+      { name: "Results", href: "/exams/results" },
+      { name: "DMC", href: "/exams/dmc" },
     ],
   },
   {

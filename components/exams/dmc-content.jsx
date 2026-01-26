@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import useSWR from "swr";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,17 +31,18 @@ export function DMCContent() {
   const [examId, setExamId] = useState("");
   const [classId, setClassId] = useState("");
   const [sectionId, setSectionId] = useState("");
-  const [studentId, setStudentId] = useState("");
+  const [studentId, setStudentId] = useState("A");
 
   /* ---------------- API ---------------- */
   const { data: examsRes } = useSWR("/api/exams", fetcher);
   const { data: classesRes } = useSWR("/api/academics/classes", fetcher);
 
-  const studentsUrl =
-    classId && sectionId
-      ? `/api/students?classId=${classId}&sectionId=${sectionId}`
-      : null;
+  const studentsUrl = classId
+    ? `/api/students?classId=${classId}&sectionId=${sectionId}`
+    : null;
   const { data: studentsRes } = useSWR(studentsUrl, fetcher);
+
+ 
 
   const resultsUrl = useMemo(() => {
     if (!examId || !classId) return null;
@@ -129,7 +130,8 @@ export function DMCContent() {
           <Select
             value={sectionId}
             onValueChange={setSectionId}
-            disabled={!classId}
+            // disabled={!classId}
+            defaultValue="A"
           >
             <SelectTrigger className="bg-white">
               <SelectValue placeholder="Select Section" />
@@ -397,24 +399,29 @@ export function DMCContent() {
       {/* ---------------- PRINT ONLY STYLES ---------------- */}
       <style jsx global>{`
         @media print {
+          /* Hide everything else */
           body * {
             visibility: hidden;
           }
+          /* Show only the DMC area */
           .dmc-print-area,
           .dmc-print-area * {
             visibility: visible;
           }
           .dmc-print-area {
-            position: absolute;
+            position: fixed; /* Use fixed for absolute positioning on the page */
             left: 0;
             top: 0;
             width: 210mm;
             height: 297mm;
-            margin: 0;
-            padding: 10mm;
+            margin: 0 !important;
+            padding: 15mm !important; /* Keep internal padding for design */
             box-shadow: none !important;
             border: none !important;
+            -webkit-print-color-adjust: exact; /* Ensure background colors/borders print */
+            print-color-adjust: exact;
           }
+          /* Critical: Remove browser default margins */
           @page {
             size: A4;
             margin: 0;

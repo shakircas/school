@@ -489,7 +489,7 @@ export default function AttendanceTable({
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-[10px] sm:text-xs print:text-[8px]">
             <thead>
-              <tr className="bg-primary text-white print:bg-slate-200 print:text-black">
+              <tr className="bg-emerald-500 text-white print:bg-slate-200 print:text-black">
                 <th className="border border-slate-300 p-2 text-left">
                   {idLabel}
                 </th>
@@ -504,23 +504,23 @@ export default function AttendanceTable({
                     {i + 1}
                   </th>
                 ))}
-                <th className="border border-slate-300 p-1 bg-emerald-600 text-white print:bg-emerald-50 print:text-black">
-                   P
+                <th className="border border-slate-300 p-1 bg-emerald-500 text-white print:bg-emerald-50 print:text-black">
+                  P
                 </th>
                 <th className="border border-slate-300 p-1 bg-rose-600 text-white print:bg-rose-50 print:text-black">
-                   A
+                  A
                 </th>
-                <th className="border border-slate-300 p-1 bg-slate-700 text-white print:bg-slate-50 print:text-black">
-                  PR P
+                <th className="border border-slate-300 p-1 bg-emerald-700 text-white print:bg-slate-50 print:text-black">
+                  <span className="text-[8px]">prev</span> P
                 </th>
-                <th className="border border-slate-300 p-1 bg-slate-700 text-white print:bg-slate-50 print:text-black">
-                  PR A
+                <th className="border border-slate-300 p-1 bg-rose-600 text-white print:bg-slate-50 print:text-black">
+                  <span className="text-[8px]">prev</span> A
                 </th>
                 <th className="border border-slate-300 p-1 bg-emerald-800 text-white font-bold">
-                  GT-P
+                  <span className="text-[8px]">GT</span>-P
                 </th>
                 <th className="border border-slate-300 p-1 bg-rose-800 text-white font-bold">
-                  GT-A
+                  <span className="text-[8px]">GT</span>-A
                 </th>
                 <th className="border border-slate-300 p-2 bg-slate-900 text-white font-bold">
                   % (M)

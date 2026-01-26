@@ -227,22 +227,23 @@ export default function TeacherAttendanceRegisterView() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 cursor-pointer">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleExportCSV}
                 disabled={isLoading || !data}
-                className="bg-white border-slate-200"
+                className="bg-emerald-700 0 text-white border-slate-200 cursor-pointer"
               >
                 <Download className="h-4 w-4 mr-2" /> Export CSV
               </Button>
 
               <Button
+                variant="outline"
                 size="sm"
                 onClick={() => window.print()}
                 disabled={isLoading || !data}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                className="bg-primary text-white cursor-pointer"
               >
                 <Printer className="h-4 w-4 mr-2" /> Print Register
               </Button>
