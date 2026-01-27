@@ -36,9 +36,10 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Download, Plus, Trophy } from "lucide-react";
+import { Download, Eye, Plus, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { StudentResultCard } from "./StudentResultCard";
+import { ClassAnalytics } from "./ClassAnalytics";
 
 const fetcher = (url) => fetch(url).then((r) => r.json());
 
@@ -47,6 +48,8 @@ export function ResultsContent() {
   const [examId, setExamId] = useState("");
   const [classId, setClassId] = useState("");
   const [sectionId, setSectionId] = useState("");
+  const [openDmc, setOpenDmc] = useState(false);
+  const [activeResult, setActiveResult] = useState(null);
 
   const [filters, setFilters] = useState({
     examId: "",
@@ -90,8 +93,10 @@ export function ResultsContent() {
   /* ---------------- EXAM ---------------- */
   const exam = useMemo(
     () => exams.find((e) => e._id === examId),
-    [examId, exams]
+    [examId, exams],
   );
+
+  console.log(results);
 
   /* Sync class & section from exam */
   useEffect(() => {
@@ -151,7 +156,7 @@ export function ResultsContent() {
   const exportResults = async () => {
     try {
       const response = await fetch(
-        `/api/results?export=csv&class=${selectedClass}&exam=${selectedExam}`
+        `/api/results?export=csv&class=${selectedClass}&exam=${selectedExam}`,
       );
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -166,11 +171,18 @@ export function ResultsContent() {
   };
 
   const getGradeBadge = (percentage) => {
-    if (percentage >= 90) return <Badge className="bg-green-500">A+</Badge>;
-    if (percentage >= 80) return <Badge className="bg-green-400">A</Badge>;
-    if (percentage >= 70) return <Badge className="bg-blue-500">B</Badge>;
-    if (percentage >= 60) return <Badge className="bg-yellow-500">C</Badge>;
-    if (percentage >= 50) return <Badge className="bg-orange-500">D</Badge>;
+    // Top tier: 80% and above
+    if (percentage >= 80) return <Badge className="bg-green-600">A+</Badge>;
+
+    // Standard tiers shifted down
+    if (percentage >= 70) return <Badge className="bg-green-500">A</Badge>;
+    if (percentage >= 60) return <Badge className="bg-blue-500">B</Badge>;
+    if (percentage >= 50)
+      return <Badge className="bg-yellow-500 text-white">C</Badge>;
+    if (percentage >= 40)
+      return <Badge className="bg-orange-500 text-white">D</Badge>;
+
+    // Failing tier
     return <Badge variant="destructive">F</Badge>;
   };
 
@@ -362,6 +374,18 @@ export function ResultsContent() {
         </DialogContent>
       </Dialog>
 
+      <div className="p-6 max-w-7xl mx-auto space-y-12">
+        {/* Dashboard first */}
+        <ClassAnalytics results={results} />
+
+        {/* Then the printable cards */}
+        {/* <div className="grid grid-cols-1 gap-8">
+          {results.map((r) => (
+            <StudentResultCard key={r._id} result={r} />
+          ))}
+        </div> */}
+      </div>
+
       {/* Filter result */}
       <Card>
         <CardContent className="grid md:grid-cols-5 gap-3">
@@ -460,12 +484,12 @@ export function ResultsContent() {
                       <Badge> {r.classId?.name}</Badge>{" "}
                     </TableCell>
                     <TableCell>{r.exam?.name}</TableCell>
-                    <TableCell>{r.totalMarks}</TableCell>
-                    <TableCell>{r.obtainedMarks}</TableCell>
+                    <TableCell>{r.totalMaxMarks}</TableCell>
+                    <TableCell>{r.totalObtainedMarks}</TableCell>
                     <TableCell>{r.percentage?.toFixed(1)}%</TableCell>
                     <TableCell>
                       <Badge variant="outline" className="font-bold">
-                        {r.grade}
+                        {getGradeBadge(r?.percentage)}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -483,6 +507,16 @@ export function ResultsContent() {
                       {getGradeBadge(Number.parseFloat(r.percentage))}
                     </TableCell> */}
                     <TableCell className="space-x-2">
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() => {
+                          setActiveResult(r);
+                          setOpen(true);
+                        }}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
                       <Button
                         size="icon"
                         variant="outline"
@@ -518,12 +552,17 @@ export function ResultsContent() {
             </Table>
           )}
         </CardContent>
+        <ResultSubjectsDialog
+          open={openDmc}
+          onOpenChange={setOpenDmc}
+          result={activeResult}
+        />
       </Card>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 print:grid-cols-2">
+      {/* <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 print:grid-cols-2">
         {results.map((r) => (
           <StudentResultCard key={r._id} result={r} />
         ))}
-      </div>
+      </div> */}
     </div>
   );
 }

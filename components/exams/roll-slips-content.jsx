@@ -12,11 +12,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PageHeader } from "@/components/ui/page-header";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Printer, School } from "lucide-react";
+import {
+  Printer,
+  CalendarDays,
+  Clock,
+  MapPin,
+  CheckCircle2,
+} from "lucide-react";
 import { useClasses } from "../hooks/useClasses";
-import { useExams } from "../hooks/useExams";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -26,218 +30,255 @@ export function RollSlipsContent() {
   const [selectedExam, setSelectedExam] = useState("");
   const slipRef = useRef(null);
 
-  const { data: students, isLoading } = useSWR(
+  const { data: studentsRes } = useSWR(
     selectedClass && selectedSection
       ? `/api/students?classId=${selectedClass}&sectionId=${selectedSection}`
       : null,
-    fetcher
+    fetcher,
   );
-  console.log(selectedExam);
+
   const { classes } = useClasses();
-  const {
-    data: examsRes,
-    isLoading: isLoadingExams,
-    mutate,
-  } = useSWR("/api/exams", fetcher);
+  const { data: examsRes } = useSWR("/api/exams", fetcher);
   const exams = examsRes?.data || [];
-
   const exam = exams?.find((e) => e._id === selectedExam);
-  console.log(exams, exam);
 
-  const handlePrint = () => {
-    window.print();
-  };
-
-  const getClassName = (student) =>
-    classes?.find((c) => c._id === student.classId)?.name ||
-    student.classId.name ||
-    "-";
-
-  const getSectionName = (student) =>
-    classes
-      ?.find((c) => c._id === student.classId)
-      ?.sections.find((s) => s._id === student.sectionId)?.name || student.sectionId || "-";
+  const handlePrint = () => window.print();
 
   return (
     <div className="space-y-6">
+      <div className="print:hidden">
       <PageHeader
-        title="Roll Number Slips"
-        description="Generate roll number slips for examinations"
+        title="Examination Slips"
+        description="Clean, ink-efficient official hall tickets"
       >
         <Button
-          variant="outline"
           onClick={handlePrint}
           disabled={!selectedClass || !selectedSection || !selectedExam}
+          className="bg-slate-900 hover:bg-black text-white px-6"
         >
           <Printer className="h-4 w-4 mr-2" />
-          Print All
+          Generate & Print
         </Button>
       </PageHeader>
+      </div>
 
-      {/* Selection */}
-      <Card>
+      {/* Selection Filter */}
+      <Card className="print:hidden border border-slate-200 shadow-none bg-white">
         <CardContent className="pt-6">
-          <div className="flex flex-wrap gap-4">
-            <div className="w-48">
-              <Select value={selectedClass} onValueChange={setSelectedClass}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Class" />
-                </SelectTrigger>
-                <SelectContent>
-                  {classes?.map((cls) => (
-                    <SelectItem key={cls._id} value={cls._id}>
-                      {cls.name}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Select value={selectedClass} onValueChange={setSelectedClass}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select Class" />
+              </SelectTrigger>
+              <SelectContent>
+                {classes?.map((cls) => (
+                  <SelectItem key={cls._id} value={cls._id}>
+                    {cls.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={selectedSection} onValueChange={setSelectedSection}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select Section" />
+              </SelectTrigger>
+              <SelectContent>
+                {classes
+                  ?.find((c) => c._id === selectedClass)
+                  ?.sections.map((sec) => (
+                    <SelectItem key={sec._id} value={sec.name}>
+                      {sec.name}
                     </SelectItem>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
+              </SelectContent>
+            </Select>
 
-            <div className="w-48">
-              {selectedClass && (
-                <Select
-                  value={selectedSection}
-                  onValueChange={setSelectedSection}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Section" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {classes
-                      ?.find((c) => c._id === selectedClass)
-                      ?.sections.map((sec) => (
-                        <SelectItem key={sec._id} value={sec.name}>
-                          {sec.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-
-            <div className="w-64">
-              <Select value={selectedExam} onValueChange={setSelectedExam}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Examination" />
-                </SelectTrigger>
-                <SelectContent>
-                  {exams?.map((exam) => (
-                    <SelectItem key={exam._id} value={exam._id}>
-                      {exam.name} - {exam.examType} - {exam.academicYear} -{" "}
-                      {exam.classId.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={selectedExam} onValueChange={setSelectedExam}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select Exam" />
+              </SelectTrigger>
+              <SelectContent>
+                {exams?.map((e) => (
+                  <SelectItem key={e._id} value={e._id}>
+                    {e.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
 
-      {/* Roll Slips Grid */}
-      <div
-        ref={slipRef}
-        className="grid grid-cols-1 sm:grid-cols-2 gap-4 print:grid-cols-2 print:gap-3"
-      >
-        {students?.students.map((student) => (
-          <Card
-            key={student._id}
-            className="border border-black rounded-md p-3 text-[11px] leading-tight print:break-inside-avoid"
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-black pb-2 mb-2">
-              <div>
-                <h3 className="text-sm font-bold uppercase">
-                  EduManage School
-                </h3>
-                <p className="text-[10px]">Examination Roll Number Slip</p>
+      {/* Roll Slips Container */}
+      <div ref={slipRef} className="space-y-6 print:space-y-0 print:block">
+        {studentsRes?.students.map((student, idx) => (
+          <div key={student._id}>
+            <Card className="border-2 border-slate-300 rounded-none shadow-none mb-6 print:mb-0 print:h-[31.5vh] overflow-hidden break-inside-avoid">
+              {/* SLIP TOP: School Branding */}
+              <div className="px-6 py-3 border-b-2 border-slate-300 flex justify-between items-center bg-slate-50/50">
+                <div className="flex items-center gap-3">
+                  <div className="p-1 border-2 border-slate-900 rounded-full">
+                    <CheckCircle2 className="w-4 h-4 text-slate-900" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-black uppercase tracking-tight">
+                      EduManage Academy
+                    </h2>
+                    <p className="text-[9px] font-bold text-slate-500 uppercase leading-none">
+                      Hall Entry Ticket • {exam?.academicYear}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] font-black bg-slate-900 text-white px-2 py-1 uppercase tracking-widest">
+                    Roll No: {student.rollNumber}
+                  </span>
+                </div>
               </div>
 
-              <Avatar className="h-10 w-10 border border-black">
-                <AvatarImage src={student.photo} />
-                <AvatarFallback>{student.name?.charAt(0)}</AvatarFallback>
-              </Avatar>
-            </div>
+              {/* SLIP MIDDLE: Candidate & Exam Info */}
+              <div className="p-5 flex gap-6">
+                {/* PHOTO SLOT */}
+                <div className="flex-shrink-0">
+                  <Avatar className="h-24 w-24 rounded-md border border-slate-200">
+                    <AvatarImage src={student.photo} className="object-cover" />
+                    <AvatarFallback className="bg-slate-50 text-slate-400">
+                      {student.name?.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
 
-            {/* Exam Info */}
-            <div className="text-center mb-2">
-              <p className="font-semibold uppercase">{exam?.name}</p>
-              <p className="text-[10px]">
-                {exam?.examType} • {exam?.academicYear}
-              </p>
-            </div>
+                {/* CANDIDATE DETAILS */}
+                <div className="flex-grow grid grid-cols-2 gap-x-4 gap-y-2 text-[11px]">
+                  <div className="border-b border-slate-100 pb-1">
+                    <span className="text-[8px] text-slate-400 font-bold uppercase block">
+                      Candidate Name
+                    </span>
+                    <span className="font-bold uppercase text-slate-800">
+                      {student.name}
+                    </span>
+                  </div>
+                  <div className="border-b border-slate-100 pb-1">
+                    <span className="text-[8px] text-slate-400 font-bold uppercase block">
+                      Father's Name
+                    </span>
+                    <span className="font-bold uppercase text-slate-800">
+                      {student.fatherName}
+                    </span>
+                  </div>
+                  <div className="border-b border-slate-100 pb-1">
+                    <span className="text-[8px] text-slate-400 font-bold uppercase block">
+                      Class / Section
+                    </span>
+                    <span className="font-bold uppercase text-slate-800">
+                      {selectedClass &&
+                        classes?.find((c) => c._id === selectedClass)
+                          ?.name}{" "}
+                      ({selectedSection})
+                    </span>
+                  </div>
+                  <div className="border-b border-slate-100 pb-1">
+                    <span className="text-[8px] text-slate-400 font-bold uppercase block">
+                      Examination
+                    </span>
+                    <span className="font-bold uppercase text-slate-800 truncate">
+                      {exam?.name}
+                    </span>
+                  </div>
+                </div>
+              </div>
 
-            {/* Student Info */}
-            <div className="grid grid-cols-2 gap-x-2 gap-y-1">
-              <p>
-                <b>Name:</b> {student.name}
-              </p>
-              <p>
-                <b>Roll No:</b> {student.rollNumber}
-              </p>
-
-              <p>
-                <b>Class:</b> {getClassName(student)} -{" "}
-                {getSectionName(student)}
-              </p>
-
-              <p>
-                <b>Father:</b> {student.fatherName}
-              </p>
-            </div>
-
-            {/* Subjects Table */}
-            {/* Subjects Table */}
-            <div className="mt-2 border-t border-black pt-2">
-              <table className="w-full border border-black text-[10px]">
-                <thead>
-                  <tr className="border-b border-black">
-                    <th className="p-1 w-6 text-center">#</th>
-                    <th className="p-1 text-left">Subject</th>
-                    <th className="p-1 text-left">Day</th>
-                    <th className="p-1 text-left">Date</th>
-                    <th className="p-1 text-left">Time</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {exam?.schedule?.map((s, idx) => (
-                    <tr
-                      key={idx}
-                      className="border-b last:border-b-0 border-black"
-                    >
-                      <td className="p-1 text-center">{idx + 1}</td>
-                      <td className="p-1">{s.subject}</td>
-                      <td className="p-1">
-                        {s.date
-                          ? new Date(s.date).toLocaleDateString("en-US", {
-                              weekday: "short",
-                            })
-                          : "-"}
-                      </td>
-                      <td className="p-1">
-                        {s.date ? new Date(s.date).toLocaleDateString() : "-"}
-                      </td>
-                      <td className="p-1">
-                        {s.startTime} – {s.endTime}
-                      </td>
+              {/* SLIP BOTTOM: Schedule Table */}
+              <div className="px-5 pb-5">
+                <table className="w-full text-[10px] border border-slate-200">
+                  <thead>
+                    <tr className="bg-slate-50 text-slate-600 uppercase text-[8px] font-black border-b border-slate-200">
+                      <th className="py-2 px-3 text-left border-r">Date</th>
+                      <th className="py-2 px-3 text-left border-r">Day</th>
+                      <th className="py-2 px-3 text-left border-r">Subject</th>
+                      <th className="py-2 px-3 text-center">Timing</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {exam?.schedule?.map((s, sIdx) => (
+                      <tr
+                        key={sIdx}
+                        className="border-b border-slate-100 last:border-0 italic font-medium"
+                      >
+                        <td className="py-1.5 px-3 border-r font-bold text-slate-700">
+                          {new Date(s.date).toLocaleDateString("en-GB", {
+                            day: "2-digit",
+                            month: "short",
+                          })}
+                        </td>
+                        <td className="py-1.5 px-3 border-r uppercase text-slate-400 text-[8px]">
+                          {new Date(s.date).toLocaleDateString("en-US", {
+                            weekday: "long",
+                          })}
+                        </td>
+                        <td className="py-1.5 px-3 border-r font-black text-slate-900 uppercase tracking-tight">
+                          {s.subject}
+                        </td>
+                        <td className="py-1.5 px-3 text-center">
+                          <span className="inline-flex items-center gap-1 font-bold">
+                            <Clock className="w-2.5 h-2.5" /> {s.startTime}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
 
-            {/* Footer */}
-            <div className="mt-3 flex justify-between items-end text-[10px]">
-              <p>Issued: {new Date().toLocaleDateString()}</p>
-              <div className="text-right">
-                <div className="border-t border-black w-20 mb-1"></div>
-                <p>Principal</p>
+                {/* Footer Notes */}
+                <div className="mt-4 flex justify-between items-end border-t border-slate-100 pt-3">
+                  <div className="text-[8px] text-slate-400 space-y-0.5">
+                    <p>
+                      • Admit card is mandatory for entry into the examination
+                      hall.
+                    </p>
+                    <p>
+                      • Mobile phones and electronic gadgets are strictly
+                      prohibited.
+                    </p>
+                  </div>
+                  <div className="text-center flex flex-col items-center">
+                    <div className="h-6 w-24 border-b border-slate-900 mb-1"></div>
+                    <p className="text-[8px] font-black uppercase text-slate-900">
+                      Principal Signature
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
-          </Card>
+            </Card>
+
+            {/* Print separation logic */}
+            {(idx + 1) % 3 === 0 && (
+              <div className="hidden print:block print:page-break-after-always" />
+            )}
+          </div>
         ))}
       </div>
+
+      <style jsx global>{`
+        @media print {
+          @page {
+            size: A4;
+            margin: 0;
+          }
+          body {
+            -webkit-print-color-adjust: exact;
+            background: white !important;
+          }
+          .print\:h-\[31\.5vh\] {
+            height: 31.5vh;
+            margin-bottom: 0.5vh;
+          }
+          .print\:page-break-after-always {
+            page-break-after: always;
+          }
+        }
+      `}</style>
     </div>
   );
 }

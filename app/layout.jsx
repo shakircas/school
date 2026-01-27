@@ -4,11 +4,43 @@ import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import "./globals.css";
 import { SchoolDataProvider } from "@/components/context/SchoolDataContext";
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
-const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
+// const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
+// const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import { AppDataProvider } from "./providers/AppDataProvider";
 import { SessionProvider } from "next-auth/react";
+
+// app/layout.jsx
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  // Standard system fonts that look similar to Inter
+  fallback: [
+    "ui-sans-serif",
+    "system-ui",
+    "-apple-system",
+    "BlinkMacSystemFont",
+    "Segoe UI",
+    "Roboto",
+    "Arial",
+  ],
+});
+
+const geistMono = Geist_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  // Standard monospaced fallbacks
+  fallback: [
+    "ui-monospace",
+    "SFMono-Regular",
+    "Menlo",
+    "Monaco",
+    "Consolas",
+    "Liberation Mono",
+    "Courier New",
+  ],
+});
 
 export const metadata = {
   title: "SmartSchool – School Management System",
@@ -45,7 +77,6 @@ export const metadata = {
   },
 };
 
-
 export const viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#f8fafc" },
@@ -58,13 +89,12 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <SessionProvider>
-        <SchoolDataProvider>
-          {/* <AppDataProvider> */}
-          <body
-            className={`${inter.variable} ${geistMono.variable} font-sans antialiased`}
-            suppressHydrationWarning
-          >
+      <body
+        className={`${inter.variable} ${geistMono.variable} font-sans antialiased`}
+        suppressHydrationWarning
+      >
+        <SessionProvider>
+          <SchoolDataProvider>
             <ThemeProvider
               attribute="class"
               defaultTheme="light"
@@ -75,11 +105,10 @@ export default function RootLayout({ children }) {
               {children}
               <Toaster />
             </ThemeProvider>
-            <Analytics />
-          </body>
-          {/* </AppDataProvider> */}
-        </SchoolDataProvider>
-      </SessionProvider>
+          </SchoolDataProvider>
+        </SessionProvider>
+        <Analytics />
+      </body>
     </html>
   );
 }

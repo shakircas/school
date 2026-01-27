@@ -767,13 +767,13 @@ export default function BulkMarksEntry() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-2 space-y-3">
       <div className="print:hidden">
         <PageHeader
           title="Bulk Marks Entry"
-          description="2026 Academic Session - Award List"
+          description="Award List"
         >
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1">
             <div className="flex bg-slate-100 p-1 rounded-lg mr-2">
               <Button
                 variant={viewMode === "list" ? "white" : "ghost"}
