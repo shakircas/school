@@ -121,8 +121,8 @@ const navigation = [
       { name: "Date Sheet", href: "/exams/datesheet" },
       { name: "Award Lists", href: "/exams/award-list" },
       { name: "Roll Number Slips", href: "/exams/roll-slips" },
-      { name: "Bulk Marks Entry", href:"/exams/bulk-mark-entry"},
-      { name: "Bulk Subjects Entry", href:"/exams/bulk-subject-entry"},
+      { name: "Bulk Marks Entry", href: "/exams/bulk-mark-entry" },
+      { name: "Bulk Subjects Entry", href: "/exams/bulk-subject-entry" },
     ],
   },
 
@@ -137,6 +137,7 @@ const navigation = [
       { name: "Results", href: "/exams/results" },
       { name: "DMC", href: "/exams/dmc" },
       { name: "Print Result Cards", href: "/results/print" },
+      { name: "Sudents Sujects Result", href: "/results/result-ledger" },
     ],
   },
   {

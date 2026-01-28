@@ -40,6 +40,9 @@ import { Download, Eye, Plus, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { StudentResultCard } from "./StudentResultCard";
 import { ClassAnalytics } from "./ClassAnalytics";
+import { ResultSubjectsDialog } from "../results/result-subjects-dialog";
+import { ArrowUpDown, ChevronUp, ChevronDown } from "lucide-react";
+import { SubjectPerformanceOverview } from "./SubjectPerformanceOverview";
 
 const fetcher = (url) => fetch(url).then((r) => r.json());
 
@@ -51,12 +54,43 @@ export function ResultsContent() {
   const [openDmc, setOpenDmc] = useState(false);
   const [activeResult, setActiveResult] = useState(null);
 
-  const [filters, setFilters] = useState({
-    examId: "",
-    classId: "",
-    sectionId: "",
-    student: "",
+  // const [filters, setFilters] = useState({
+  //   examId: "",
+  //   classId: "",
+  //   sectionId: "",
+  //   student: "",
+  // });
+
+  // 1. PERSISTENT FILTERS INITIALIZATION
+  const [filters, setFilters] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("results-filters");
+      return saved
+        ? JSON.parse(saved)
+        : { examId: "", classId: "", sectionId: "", student: "" };
+    }
+    return { examId: "", classId: "", sectionId: "", student: "" };
   });
+
+  // 2. PERSISTENT SORTING INITIALIZATION
+  const [sortConfig, setSortConfig] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("results-sort");
+      return saved
+        ? JSON.parse(saved)
+        : { key: "percentage", direction: "desc" };
+    }
+    return { key: "percentage", direction: "desc" };
+  });
+
+  // Sync to localStorage
+  useEffect(() => {
+    localStorage.setItem("results-filters", JSON.stringify(filters));
+  }, [filters]);
+
+  useEffect(() => {
+    localStorage.setItem("results-sort", JSON.stringify(sortConfig));
+  }, [sortConfig]);
 
   const resultsUrl = useMemo(() => {
     const params = new URLSearchParams();
@@ -184,6 +218,68 @@ export function ResultsContent() {
 
     // Failing tier
     return <Badge variant="destructive">F</Badge>;
+  };
+
+  /* ---------------- SORTING & RANKING LOGIC ---------------- */
+  const sortedResults = useMemo(() => {
+    let items = [...results].map((r) => {
+      // Pre-calculate totals for accurate sorting
+      const totalMax =
+        r.subjects?.reduce((acc, s) => acc + (s.totalMarks || 0), 0) || 0;
+      const totalObtained =
+        r.subjects?.reduce((acc, s) => acc + (s.obtainedMarks || 0), 0) || 0;
+      const percentage = totalMax > 0 ? (totalObtained / totalMax) * 100 : 0;
+      return {
+        ...r,
+        calculatedPerc: percentage,
+        calculatedObtained: totalObtained,
+      };
+    });
+
+    if (sortConfig.key) {
+      items.sort((a, b) => {
+        let aVal, bVal;
+        if (sortConfig.key === "student") {
+          aVal = a.student?.name;
+          bVal = b.student?.name;
+        } else if (sortConfig.key === "percentage") {
+          aVal = a.calculatedPerc;
+          bVal = b.calculatedPerc;
+        } else if (sortConfig.key === "obtained") {
+          aVal = a.calculatedObtained;
+          bVal = b.calculatedObtained;
+        } else if (sortConfig.key === "rollNumber") {
+          aVal = Number(a.student?.rollNumber) || 0;
+          bVal = Number(b.student?.rollNumber) || 0;
+        } else {
+          aVal = a[sortConfig.key];
+          bVal = b[sortConfig.key];
+        }
+
+        if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
+        return 0;
+      });
+    }
+    return items;
+  }, [results, sortConfig]);
+
+  const requestSort = (key) => {
+    let direction = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const SortIcon = ({ column }) => {
+    if (sortConfig.key !== column)
+      return <ArrowUpDown className="ml-2 h-3 w-3" />;
+    return sortConfig.direction === "asc" ? (
+      <ChevronUp className="bg-rose ml-2 h-3 w-3" />
+    ) : (
+      <ChevronDown className="ml-2 h-3 w-3" />
+    );
   };
 
   /* ---------------- UI ---------------- */
@@ -384,6 +480,12 @@ export function ResultsContent() {
             <StudentResultCard key={r._id} result={r} />
           ))}
         </div> */}
+        <section>
+          <h3 className="text-xl font-bold mb-4">
+            Subject-Wise Mastery (Principal's View)
+          </h3>
+          <SubjectPerformanceOverview results={results} />
+        </section>
       </div>
 
       {/* Filter result */}
@@ -459,60 +561,238 @@ export function ResultsContent() {
               No results found
             </div>
           ) : (
+            // <Table>
+            //   <TableHeader>
+            //     <TableRow>
+            //       <TableHead>#</TableHead>
+            //       <TableHead>Student</TableHead>
+            //       <TableHead>Class</TableHead>
+            //       <TableHead>Exam</TableHead>
+            //       <TableHead>Total</TableHead>
+            //       <TableHead>Obtained</TableHead>
+            //       <TableHead>%</TableHead>
+            //       <TableHead>Grade</TableHead>
+            //       <TableHead>Status</TableHead>
+            //       <TableHead>Actions</TableHead>
+            //     </TableRow>
+            //   </TableHeader>
+            //   <TableBody>
+            //     {results.map((r, index) => (
+            //       <TableRow key={r._id}>
+            //         <TableCell>{index + 1}</TableCell>
+            //         <TableCell>{r.student?.name}</TableCell>
+            //         <TableCell>
+            //           {" "}
+            //           <Badge> {r.classId?.name}</Badge>{" "}
+            //         </TableCell>
+            //         <TableCell>{r.exam?.name}</TableCell>
+            //         {/* 1. Total Maximum Marks */}
+            //         <TableCell>
+            //           {r?.subjects?.reduce(
+            //             (acc, s) => acc + (s.totalMarks || 0),
+            //             0,
+            //           )}
+            //         </TableCell>
+
+            //         {/* 2. Total Obtained Marks */}
+            //         <TableCell>
+            //           {r?.subjects?.reduce(
+            //             (acc, s) => acc + (s.obtainedMarks || 0),
+            //             0,
+            //           )}
+            //         </TableCell>
+
+            //         {/* 3. Percentage calculated from the two sums above */}
+            //         <TableCell>
+            //           {(() => {
+            //             const obtained = r?.subjects?.reduce(
+            //               (acc, s) => acc + (s.obtainedMarks || 0),
+            //               0,
+            //             );
+            //             const max = r?.subjects?.reduce(
+            //               (acc, s) => acc + (s.totalMarks || 0),
+            //               0,
+            //             );
+            //             return max > 0
+            //               ? ((obtained / max) * 100).toFixed(1)
+            //               : "0.0";
+            //           })()}
+            //           %
+            //         </TableCell>
+
+            //         {/* 4. Grade based on calculated percentage */}
+            //         <TableCell>
+            //           <Badge variant="outline" className="font-bold">
+            //             {getGradeBadge(
+            //               (() => {
+            //                 const obtained = r?.subjects?.reduce(
+            //                   (acc, s) => acc + (s.obtainedMarks || 0),
+            //                   0,
+            //                 );
+            //                 const max = r?.subjects?.reduce(
+            //                   (acc, s) => acc + (s.totalMarks || 0),
+            //                   0,
+            //                 );
+            //                 return max > 0 ? (obtained / max) * 100 : 0;
+            //               })(),
+            //             )}
+            //           </Badge>
+            //         </TableCell>
+
+            //         <TableCell>
+            //           <Badge
+            //             className={
+            //               r.status === "Pass"
+            //                 ? "bg-green-600 text-white"
+            //                 : "bg-red-600 text-white"
+            //             }
+            //           >
+            //             {r.status}
+            //           </Badge>
+            //         </TableCell>
+            //         {/* <TableCell>
+            //           {getGradeBadge(Number.parseFloat(r.percentage))}
+            //         </TableCell> */}
+            //         <TableCell className="space-x-2">
+            //           <Button
+            //             size="icon"
+            //             variant="outline"
+            //             onClick={() => {
+            //               setActiveResult(r);
+            //               setOpenDmc(true);
+            //             }}
+            //           >
+            //             <Eye className="h-4 w-4" />
+            //           </Button>
+            //           <Button
+            //             size="icon"
+            //             variant="outline"
+            //             onClick={() => {
+            //               setOpen(true);
+            //               setExamId(r.exam._id);
+            //               setValue("student", r.student._id);
+            //               reset({ subjects: r.subjects });
+            //             }}
+            //           >
+            //             ✏️
+            //           </Button>
+
+            //           <Button
+            //             size="icon"
+            //             variant="outline"
+            //             onClick={async () => {
+            //               if (!confirm("Delete this result?")) return;
+            //               await fetch("/api/results", {
+            //                 method: "DELETE",
+            //                 body: JSON.stringify({ id: r._id }),
+            //               });
+            //               toast.success("Result deleted");
+            //               mutate();
+            //             }}
+            //           >
+            //             🗑️
+            //           </Button>
+            //         </TableCell>
+            //       </TableRow>
+            //     ))}
+            //   </TableBody>
+            // </Table>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>#</TableHead>
-                  <TableHead>Student</TableHead>
+                  <TableHead
+                    className="cursor-pointer"
+                    onClick={() => requestSort("percentage")}
+                  >
+                    Rank <SortIcon column="percentage" />
+                  </TableHead>
+
+                  <TableHead
+                    className="cursor-pointer"
+                    onClick={() => requestSort("rollNumber")}
+                  >
+                    Roll No. <SortIcon column="rollNumber" />
+                  </TableHead>
+
+                  <TableHead
+                    className="cursor-pointer"
+                    onClick={() => requestSort("student")}
+                  >
+                    Student <SortIcon column="student" />
+                  </TableHead>
                   <TableHead>Class</TableHead>
                   <TableHead>Exam</TableHead>
-                  <TableHead>Total</TableHead>
-                  <TableHead>Obtained</TableHead>
-                  <TableHead>%</TableHead>
+                  <TableHead className="text-center">Subjects</TableHead>
+                  <TableHead
+                    className="cursor-pointer text-center"
+                    onClick={() => requestSort("obtained")}
+                  >
+                    Obtained <SortIcon column="obtained" />
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer text-center"
+                    onClick={() => requestSort("percentage")}
+                  >
+                    Score % <SortIcon column="percentage" />
+                  </TableHead>
                   <TableHead>Grade</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {results.map((r, index) => (
+                {sortedResults.map((r, index) => (
                   <TableRow key={r._id}>
-                    <TableCell>{index + 1}</TableCell>
-                    <TableCell>{r.student?.name}</TableCell>
-                    <TableCell>
-                      {" "}
-                      <Badge> {r.classId?.name}</Badge>{" "}
+                    {/* Local Rank calculation based on sorting */}
+                    <TableCell className="font-bold">
+                      {sortConfig.key === "percentage" &&
+                      sortConfig.direction === "desc"
+                        ? `#${index + 1}`
+                        : "-"}
                     </TableCell>
-                    <TableCell>{r.exam?.name}</TableCell>
-                    <TableCell>{r.totalMaxMarks}</TableCell>
-                    <TableCell>{r.totalObtainedMarks}</TableCell>
-                    <TableCell>{r.percentage?.toFixed(1)}%</TableCell>
+                    <TableCell>{r.student?.rollNumber}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="font-bold">
-                        {getGradeBadge(r?.percentage)}
+                      <div className="font-medium">{r.student?.name}</div>
+                      {/* <div className="text-xs text-muted-foreground">
+                        {r.student?.rollNumber}
+                      </div> */}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">
+                        <Badge> {r.classId?.name}</Badge>{" "}
                       </Badge>
                     </TableCell>
+                    <TableCell className="text-xs">{r.exam?.name}</TableCell>
+                    <TableCell className="text-center">
+                      {r.subjects?.length}
+                    </TableCell>
+                    <TableCell className="text-center font-mono">
+                      {r.calculatedObtained} /{" "}
+                      {r.subjects?.reduce(
+                        (acc, s) => acc + (s.totalMarks || 0),
+                        0,
+                      )}
+                    </TableCell>
+                    <TableCell className="text-center font-bold">
+                      {r.calculatedPerc.toFixed(1)}%
+                    </TableCell>
+                    <TableCell>{getGradeBadge(r.calculatedPerc)}</TableCell>
                     <TableCell>
                       <Badge
                         className={
-                          r.status === "Pass"
-                            ? "bg-green-600 text-white"
-                            : "bg-red-600 text-white"
+                          r.status === "Pass" ? "bg-green-600" : "bg-red-600"
                         }
                       >
                         {r.status}
                       </Badge>
                     </TableCell>
-                    {/* <TableCell>
-                      {getGradeBadge(Number.parseFloat(r.percentage))}
-                    </TableCell> */}
-                    <TableCell className="space-x-2">
+                    <TableCell className="text-right space-x-1">
                       <Button
                         size="icon"
-                        variant="outline"
+                        variant="ghost"
                         onClick={() => {
                           setActiveResult(r);
-                          setOpen(true);
+                          setOpenDmc(true);
                         }}
                       >
                         <Eye className="h-4 w-4" />
