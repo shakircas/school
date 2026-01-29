@@ -1,15 +1,26 @@
 import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 
-const client = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
+
 
 export async function POST(req) {
-  try {
-    const { image, answerKey, type } = await req.json();
 
-    const bubblePrompt = `
+
+
+   try {
+     // ✅ ENV SAFETY CHECK
+     if (!process.env.GEMINI_API_KEY) {
+       throw new Error("GEMINI_API_KEY is missing");
+     }
+
+     // ✅ INITIALIZE CLIENT AT RUNTIME
+     const client = new GoogleGenAI({
+       apiKey: process.env.GEMINI_API_KEY,
+     });
+
+     const { image, answerKey, type } = await req.json();
+
+     const bubblePrompt = `
 TASK: OMR SCANNING (KPK BOARD STYLE)
 
 1. Parse this Solution Manual:
@@ -31,7 +42,7 @@ RETURN JSON ONLY:
 }
 `;
 
-    const subjectivePrompt = `
+     const subjectivePrompt = `
 TASK: HANDWRITTEN PAPER GRADING
 
 Grade based on this Marking Scheme:
@@ -50,40 +61,40 @@ RETURN JSON ONLY:
 }
 `;
 
-    const prompt = type === "bubble" ? bubblePrompt : subjectivePrompt;
+     const prompt = type === "bubble" ? bubblePrompt : subjectivePrompt;
 
-    const response = await client.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [
-        {
-          role: "user",
-          parts: [
-            { text: prompt },
-            {
-              inlineData: {
-                data: image, // base64 WITHOUT data:image/jpeg;base64,
-                mimeType: "image/jpeg",
-              },
-            },
-          ],
-        },
-      ],
-    });
+     const response = await client.models.generateContent({
+       model: "gemini-2.5-flash",
+       contents: [
+         {
+           role: "user",
+           parts: [
+             { text: prompt },
+             {
+               inlineData: {
+                 data: image, // base64 WITHOUT data:image/jpeg;base64,
+                 mimeType: "image/jpeg",
+               },
+             },
+           ],
+         },
+       ],
+     });
 
-    const text = response.candidates[0].content.parts[0].text;
+     const text = response.candidates[0].content.parts[0].text;
 
-    // Extract JSON safely
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error("No JSON returned by Gemini");
-    }
+     // Extract JSON safely
+     const jsonMatch = text.match(/\{[\s\S]*\}/);
+     if (!jsonMatch) {
+       throw new Error("No JSON returned by Gemini");
+     }
 
-    return NextResponse.json(JSON.parse(jsonMatch[0]));
-  } catch (error) {
-    console.error("Grading Error:", error);
-    return NextResponse.json(
-      { error: "Grading failed", details: error.message },
-      { status: 500 }
-    );
-  }
+     return NextResponse.json(JSON.parse(jsonMatch[0]));
+   } catch (error) {
+     console.error("Grading Error:", error);
+     return NextResponse.json(
+       { error: "Grading failed", details: error.message },
+       { status: 500 },
+     );
+   }
 }

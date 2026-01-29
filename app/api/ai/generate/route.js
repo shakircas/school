@@ -425,72 +425,81 @@ function getPaperScheme(subject, classLevel) {
 }
 
 // Initializing with your preferred client
-const client = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
 
 export async function POST(req) {
-  try {
-    const body = await req.json();
-    const {
-      type,
-      subject,
-      class: classLevel,
-      topic,
-      details,
-      notesType,
-      count = 10,
-      difficulty = "Medium",
-      language = "English",
-    } = body;
 
-    let prompt = "";
 
-    console.log("type", type);
-    console.log("REQUEST BODY:", body);
+   try {
+     // ✅ ENV SAFETY CHECK
+     if (!process.env.GEMINI_API_KEY) {
+       throw new Error("GEMINI_API_KEY is missing");
+     }
 
-    // 2. Optimized Prompt Matrix
-    switch (type) {
-      case "mcqs":
-        prompt = `Act as a senior BISE examiner. Generate ${count} MCQs for Class ${classLevel} ${subject} on Topic: ${topic}. 
+     // ✅ INITIALIZE CLIENT AT RUNTIME
+     const client = new GoogleGenAI({
+       apiKey: process.env.GEMINI_API_KEY,
+     });
+
+     const body = await req.json();
+     const {
+       type,
+       subject,
+       class: classLevel,
+       topic,
+       details,
+       notesType,
+       count = 10,
+       difficulty = "Medium",
+       language = "English",
+     } = body;
+
+     let prompt = "";
+
+     console.log("type", type);
+     console.log("REQUEST BODY:", body);
+
+     // 2. Optimized Prompt Matrix
+     switch (type) {
+       case "mcqs":
+         prompt = `Act as a senior BISE examiner. Generate ${count} MCQs for Class ${classLevel} ${subject} on Topic: ${topic}. 
         Difficulty Level: ${difficulty}. 
         Language: ${language}.
         STRICT RULE: Return ONLY a raw JSON array. No markdown blocks. 
         Format: [{"question": "...", "options": ["", "", "", ""], "correctAnswer": 0, "explanation": "..."}]`;
-        break;
+         break;
 
-      case "notes":
-        prompt = `As a subject expert, write ${
-          notesType || "comprehensive"
-        } notes for Class ${classLevel} ${subject}. 
+       case "notes":
+         prompt = `As a subject expert, write ${
+           notesType || "comprehensive"
+         } notes for Class ${classLevel} ${subject}. 
         Topic: ${topic}. 
         Include: Definitions, Key Points, and Examples. 
         Format: Professional Markdown. Language: ${language}.`;
-        break;
+         break;
 
-      case "exam-paper":
-      case "paper":
-        const scheme = getPaperScheme(subject, classLevel);
-        prompt = `Generate a formal BISE Exam Paper for Class ${classLevel} ${subject}. 
+       case "exam-paper":
+       case "paper":
+         const scheme = getPaperScheme(subject, classLevel);
+         prompt = `Generate a formal BISE Exam Paper for Class ${classLevel} ${subject}. 
         Total Marks: ${scheme.totalMarks}. Syllabus: ${topic}.
         Structure:
         - Section A: ${scheme.mcqs} MCQs (1 Mark each).
         - Section B: Short Qs (Attempt ${scheme.short.attempt} out of ${scheme.short.questions}, ${scheme.short.marksEach} Marks each).
         - Section C: Long Qs (Attempt ${scheme.long.attempt} out of ${scheme.long.questions}, Parts a & b).
         Format: Pure Markdown. Language: ${language}.`;
-        break;
+         break;
 
-      case "worksheet":
-        prompt = `Create a classroom worksheet for Class ${classLevel} ${subject} on ${topic}. 
+       case "worksheet":
+         prompt = `Create a classroom worksheet for Class ${classLevel} ${subject} on ${topic}. 
         Include: Matching Columns, Fill in the blanks, and 2 Concept diagrams descriptions. 
         Format: Markdown.`;
-        break;
+         break;
 
-      // Add this case inside your switch(type) in the POST function
-      // Below is an exam paper for Class ${classLevel} ${subject}.
+       // Add this case inside your switch(type) in the POST function
+       // Below is an exam paper for Class ${classLevel} ${subject}.
 
-      case "solution-manual":
-        prompt = `
+       case "solution-manual":
+         prompt = `
     You are the Head Examiner for the BISE Mardan Board.
     
     
@@ -507,131 +516,131 @@ export async function POST(req) {
     
     FORMAT: Pure Markdown. Use high contrast headings.
   `;
-        break;
+         break;
 
-      default:
-        return NextResponse.json({ error: "Invalid type" }, { status: 400 });
-    }
+       default:
+         return NextResponse.json({ error: "Invalid type" }, { status: 400 });
+     }
 
-    // List your models in order of preference
-    // 1. Preferred Model, 2. Backup Model
-    // const modelsToTry = ["gemini-2.5-flash", "gemini-2.5-flash-lite"];
+     // List your models in order of preference
+     // 1. Preferred Model, 2. Backup Model
+     // const modelsToTry = ["gemini-2.5-flash", "gemini-2.5-flash-lite"];
 
-    // let response;
-    // let lastError;
+     // let response;
+     // let lastError;
 
-    // for (const modelName of modelsToTry) {
-    //   try {
-    //     console.log(`Attempting generation with: ${modelName}`);
+     // for (const modelName of modelsToTry) {
+     //   try {
+     //     console.log(`Attempting generation with: ${modelName}`);
 
-    //     response = await client.models.generateContent({
-    //       model: modelName,
-    //       contents: [{ role: "user", parts: [{ text: prompt }] }],
-    //     });
+     //     response = await client.models.generateContent({
+     //       model: modelName,
+     //       contents: [{ role: "user", parts: [{ text: prompt }] }],
+     //     });
 
-    //     // If successful, break the loop
-    //     if (response) break;
-    //   } catch (err) {
-    //     lastError = err;
-    //     // Check if the error is a Rate Limit (429)
-    //     // Adjust this check based on how @google/genai surfaces the status
-    //     if (
-    //       err.status === 429 ||
-    //       err.message?.includes("429") ||
-    //       err.message?.includes("quota")
-    //     ) {
-    //       console.warn(`${modelName} quota full, switching to next model...`);
-    //       continue; // Move to the next model in the array
-    //     } else {
-    //       // If it's a different error (like a syntax error), throw it immediately
-    //       throw err;
-    //     }
-    //   }
-    // }
+     //     // If successful, break the loop
+     //     if (response) break;
+     //   } catch (err) {
+     //     lastError = err;
+     //     // Check if the error is a Rate Limit (429)
+     //     // Adjust this check based on how @google/genai surfaces the status
+     //     if (
+     //       err.status === 429 ||
+     //       err.message?.includes("429") ||
+     //       err.message?.includes("quota")
+     //     ) {
+     //       console.warn(`${modelName} quota full, switching to next model...`);
+     //       continue; // Move to the next model in the array
+     //     } else {
+     //       // If it's a different error (like a syntax error), throw it immediately
+     //       throw err;
+     //     }
+     //   }
+     // }
 
-    // if (!response) {
-    //   throw lastError || new Error("All models failed to respond.");
-    // }
+     // if (!response) {
+     //   throw lastError || new Error("All models failed to respond.");
+     // }
 
-    // const text = response?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+     // const text = response?.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
-    // 3. Using your requested client.models.generateContent structure
-    const response = await client.models.generateContent({
-      model: "gemini-2.5-flash",
-      // model: "gemini-2.5-flash-lite",
-      // model: "gemini-3-flash-preview",
+     // 3. Using your requested client.models.generateContent structure
+     const response = await client.models.generateContent({
+       model: "gemini-2.5-flash",
+       // model: "gemini-2.5-flash-lite",
+       // model: "gemini-3-flash-preview",
 
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: prompt }],
-        },
-      ],
-    });
+       contents: [
+         {
+           role: "user",
+           parts: [{ text: prompt }],
+         },
+       ],
+     });
 
-    const text = response?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+     const text = response?.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
-    if (!text) {
-      return NextResponse.json(
-        { error: "Empty response from AI" },
-        { status: 500 }
-      );
-    }
+     if (!text) {
+       return NextResponse.json(
+         { error: "Empty response from AI" },
+         { status: 500 },
+       );
+     }
 
-    // 4. Clean Parsing & Response Formatting
-    if (type === "mcqs") {
-      const jsonMatch = text.match(/\[[\s\S]*\]/);
-      const questions = JSON.parse(jsonMatch ? jsonMatch[0] : text);
-      return NextResponse.json({ questions });
-    }
+     // 4. Clean Parsing & Response Formatting
+     if (type === "mcqs") {
+       const jsonMatch = text.match(/\[[\s\S]*\]/);
+       const questions = JSON.parse(jsonMatch ? jsonMatch[0] : text);
+       return NextResponse.json({ questions });
+     }
 
-    if (type === "notes") {
-      return NextResponse.json({
-        notes: { topic, content: text, subject, class: classLevel },
-      });
-    }
+     if (type === "notes") {
+       return NextResponse.json({
+         notes: { topic, content: text, subject, class: classLevel },
+       });
+     }
 
-    if (type === "worksheet") {
-      return NextResponse.json({
-        worksheet: {
-          topic,
-          content: text,
-          subject,
-          class: classLevel,
-        },
-      });
-    }
+     if (type === "worksheet") {
+       return NextResponse.json({
+         worksheet: {
+           topic,
+           content: text,
+           subject,
+           class: classLevel,
+         },
+       });
+     }
 
-    if (type === "exam-paper" || type === "paper") {
-      return NextResponse.json({
-        paper: {
-          title: `${subject} - Class ${classLevel} Assessment`,
-          totalMarks: getPaperScheme(subject, classLevel).totalMarks,
-          content: text,
-        },
-      });
-    }
+     if (type === "exam-paper" || type === "paper") {
+       return NextResponse.json({
+         paper: {
+           title: `${subject} - Class ${classLevel} Assessment`,
+           totalMarks: getPaperScheme(subject, classLevel).totalMarks,
+           content: text,
+         },
+       });
+     }
 
-    if (type === "solution-manual") {
-      return NextResponse.json({
-        paper: {
-          title: `${subject} - Class ${classLevel} Assessment`,
-          totalMarks: getPaperScheme(subject, classLevel).totalMarks,
-          content: text,
-        },
-      });
-    }
+     if (type === "solution-manual") {
+       return NextResponse.json({
+         paper: {
+           title: `${subject} - Class ${classLevel} Assessment`,
+           totalMarks: getPaperScheme(subject, classLevel).totalMarks,
+           content: text,
+         },
+       });
+     }
 
-    // Combined Paper and Exam-Paper logic
-    return NextResponse.json({
-      paper: {
-        title: `${subject} - Class ${classLevel} Assessment`,
-        totalMarks: getPaperScheme(subject, classLevel).totalMarks,
-        content: text,
-      },
-    });
-  } catch (error) {
-    console.error("AI Route Error:", error);
-    return NextResponse.json({ error: "Generation failed" }, { status: 500 });
-  }
+     // Combined Paper and Exam-Paper logic
+     return NextResponse.json({
+       paper: {
+         title: `${subject} - Class ${classLevel} Assessment`,
+         totalMarks: getPaperScheme(subject, classLevel).totalMarks,
+         content: text,
+       },
+     });
+   } catch (error) {
+     console.error("AI Route Error:", error);
+     return NextResponse.json({ error: "Generation failed" }, { status: 500 });
+   }
 }
