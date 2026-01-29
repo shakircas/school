@@ -22,16 +22,14 @@ export const {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
+        console.log("RECEIVED CREDENTIALS:", credentials); // CHECK YOUR TERMINAL
         await connectDB();
 
         const user = await User.findOne({ email: credentials.email });
 
-        if (!user || !user.isActive) return null;
+        if (!user) return null;
 
-        const isValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
+        const isValid = bcrypt.compare(credentials.password, user.password);
 
         if (!isValid) return null;
 
