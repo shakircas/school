@@ -1,5 +1,6 @@
 // app/verify/[id]/page.jsx
-import { StudentResultCard } from "@/components/results/student-result-card";
+// import { StudentResultCard } from "@/components/results/student-result-card";
+import { StudentResultCard } from "@/components/exams/StudentResultCard";
 import { ShieldCheck, AlertCircle } from "lucide-react";
 
 async function getResult(id) {

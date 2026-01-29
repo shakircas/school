@@ -2,8 +2,9 @@
 
 import { Printer, ArrowLeft, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { StudentResultCard } from "./student-result-card";
+// import { StudentResultCard } from "./student-result-card";
 import { useRouter } from "next/navigation";
+import { StudentResultCard } from "./StudentResultCard";
 
 export default function BulkPrintView({ results = [] }) {
   const router = useRouter();
