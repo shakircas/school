@@ -24,17 +24,44 @@ export default function LoginPage() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+
     try {
-      await signIn("credentials", {
+      // 1. Set redirect to false so we can handle the response manually
+      const result = await signIn("credentials", {
         email,
         password,
+        redirect: false,
         callbackUrl: "/",
       });
+
+      // 2. Handle Errors
+      if (result?.error) {
+        if (result.error === "CredentialsSignin") {
+          toast.error("Invalid email or password. Please try again.");
+        } else if (result.error === "AccessDenied") {
+          toast.error("Your account is currently inactive. Contact admin.");
+        } else {
+          toast.error("Something went wrong. Please try again later.");
+        }
+        return; // Stop execution
+      }
+
+      // 3. Handle Success
+      if (result?.ok) {
+        toast.success("Welcome back! Redirecting...");
+
+        // Delay slightly so user sees the success toast
+        setTimeout(() => {
+          router.push(result.url || "/");
+        }, 1000);
+      }
+    } catch (error) {
+      toast.error("An unexpected error occurred.");
+      console.error("Login catch block:", error);
     } finally {
       setIsLoading(false);
     }
   };
-
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-[#f8fafc] dark:bg-[#0f172a] p-4">
       {/* Background Decorative Elements */}
