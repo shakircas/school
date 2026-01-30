@@ -3,9 +3,8 @@ import { hash } from "bcryptjs";
 import mongoose from "mongoose";
 import User from "../models/User.js";
 
-const MONGODB_URI =
-  "mongodb+srv://shakirbiotechnologist:aamirkhan@school.bamzfpm.mongodb.net/school-management?retryWrites=true&w=majority&appName=school";
-
+const MONGODB_URI = process.env.MONGODB_URI;
+  
 async function seedAdmin() {
   await mongoose.connect(MONGODB_URI);
 
