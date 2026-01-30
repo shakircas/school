@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Download, ArrowRight, Bell } from "lucide-react";
 import { format } from "date-fns"; // Recommended for clean date formatting
 import Link from "next/link";
+import AcademicCalendarModal from "./AcademicCalendarModal";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -73,8 +74,25 @@ export default function NoticeBoard() {
             <Download className="text-emerald-500" /> Resources
           </h3>
           <div className="space-y-3">
+           
+            <div className="space-y-3">
+              <AcademicCalendarModal
+                trigger={
+                  <div className="flex items-center justify-between p-4 border rounded-xl hover:border-emerald-500 group cursor-pointer transition-all bg-slate-50/50 dark:bg-slate-900/50">
+                    <span className="text-sm font-semibold">
+                      Academic Calendar 2026
+                    </span>
+                    <ArrowRight
+                      size={16}
+                      className="text-slate-400 group-hover:text-emerald-500 group-hover:translate-x-1 transition-all"
+                    />
+                  </div>
+                }
+              />
+              {/* Other static resources */}
+            </div>
             {[
-              "Academic Calendar 2026",
+              // "Academic Calendar 2026",
               "Syllabus Grade 6-10",
               "Scholarship Form",
             ].map((f) => (
