@@ -1,6 +1,6 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import bcrypt from "bcryptjs";
+import { compare } from "bcryptjs";
 import User from "@/models/User";
 import { connectDB } from "@/lib/db";
 
@@ -23,22 +23,28 @@ export const {
       },
       async authorize(credentials) {
         console.log("RECEIVED CREDENTIALS:", credentials); // CHECK YOUR TERMINAL
-        await connectDB();
 
-        const user = await User.findOne({ email: credentials.email });
+        try {
+          await connectDB();
 
-        if (!user) return null;
+          const user = await User.findOne({ email: credentials.email });
 
-        const isValid = bcrypt.compare(credentials.password, user.password);
+          if (!user) return null;
 
-        if (!isValid) return null;
+          const isValid = await compare(credentials.password, user.password);
 
-        return {
-          id: user._id.toString(),
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        };
+          if (!isValid) return null;
+
+          return {
+            id: user._id.toString(),
+            name: user.name,
+            email: user.email,
+            role: user.role,
+          };
+        } catch (error) {
+          console.error("Credentials auth error:", err);
+          return null;
+        }
       },
     }),
   ],
