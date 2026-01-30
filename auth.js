@@ -36,7 +36,7 @@ export const {
           console.log("DB HASH:", user.password);
           console.log("INPUT PASS:", credentials.password);
 
-          const isValid = await compare(credentials.password, user.password);
+          const isValid = compare(credentials.password, user.password);
           console.log("PASSWORD MATCH:", isValid);
 
           if (!isValid) return null;
