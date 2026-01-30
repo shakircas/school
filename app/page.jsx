@@ -147,17 +147,17 @@ export default function HomePage() {
               <p className="text-lg md:text-xl text-slate-200 max-w-xl">
                 {slides[currentSlide].subtitle}
               </p>
-              <div className="flex flex-wrap gap-4 pt-4">
+              <div className="flex flex-col sm:flex-row flex-wrap gap-4 pt-4">
                 <Button
                   size="xl"
-                  className="bg-emerald-600 hover:bg-emerald-700 rounded-full px-10 h-14 md:h-16"
+                  className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 rounded-full px-10 h-14 md:h-16"
                 >
                   Enrollment 2026
                 </Button>
                 <Button
                   variant="outline"
                   size="xl"
-                  className="bg-white/10 text-white border-white/20 hover:bg-white/20 rounded-full px-10 h-14 md:h-16 backdrop-blur-md"
+                  className="w-full sm:w-auto bg-white/10 text-white border-white/20 hover:bg-white/20 rounded-full px-10 h-14 md:h-16 backdrop-blur-md"
                 >
                   Contact Us
                 </Button>
@@ -169,18 +169,18 @@ export default function HomePage() {
 
       {/* 3. STATS BAR - Centered and Aligned */}
       <section className="container mx-auto px-6 -mt-16 relative z-30">
-        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] p-8 md:p-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 shadow-2xl">
+        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2rem] p-4 md:p-8 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6 shadow-2xl">
           <StatBox
             icon={<Users />}
             label="Students"
-            value={stats?.students?.total || "900+"}
+            value={stats?.students?.total || "250+"}
           />
           <StatBox
             icon={<GraduationCap />}
             label="Experts"
-            value={stats?.teachers?.total || "42"}
+            value={stats?.teachers?.total || "12"}
           />
-          <StatBox icon={<Trophy />} label="Years" value="25+" />
+          <StatBox icon={<Trophy />} label="Years" value="5+" />
           <StatBox icon={<MapPin />} label="Nowshera" value="KPK" />
         </div>
       </section>
@@ -188,7 +188,7 @@ export default function HomePage() {
       {/* 9. HEADMASTER'S MESSAGE SECTION */}
       <section
         id="headmaster"
-        className="py-24 bg-white dark:bg-[#050505] overflow-hidden"
+        className="py-10 bg-white dark:bg-[#050505] overflow-hidden"
       >
         <div className="container mx-auto px-6">
           <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
@@ -271,12 +271,12 @@ export default function HomePage() {
       </section>
 
       {/* 13. RESULTS SEARCH */}
-      <section id="results" className="py-12">
+      <section id="results" className="py-8">
         <ResultSearch />
       </section>
 
       {/* 4. MISSION & VISION */}
-      <section id="mission" className="py-24 container mx-auto px-6">
+      <section id="mission" className="py-10 container mx-auto px-4">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           <div className="space-y-8">
             <h2 className="text-4xl md:text-5xl font-black leading-tight">
@@ -304,11 +304,11 @@ export default function HomePage() {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-6">
-            <div className="bg-emerald-100 dark:bg-emerald-900/20 p-10 rounded-[3rem] text-center space-y-4 hover:translate-y-[-10px] transition-transform">
+            <div className="bg-emerald-100 dark:bg-emerald-900/20 p-8 rounded-[3rem] text-center space-y-4 hover:translate-y-[-10px] transition-transform">
               <Heart className="mx-auto text-emerald-600" size={48} />
               <h3 className="font-bold text-xl">Character Building</h3>
             </div>
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-10 rounded-[3rem] text-center space-y-4 mt-12 hover:translate-y-[-10px] transition-transform">
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-8 rounded-[3rem] text-center space-y-4  hover:translate-y-[-10px] transition-transform">
               <Microscope className="mx-auto text-blue-600" size={48} />
               <h3 className="font-bold text-xl">Practical Learning</h3>
             </div>
@@ -322,7 +322,7 @@ export default function HomePage() {
       {/* 7. TEACHERS SECTION */}
       <section
         id="faculty"
-        className="py-24 bg-[#0a0a0a] text-white overflow-hidden"
+        className="py-10 bg-[#0a0a0a] text-white overflow-hidden"
       >
         <div className="container mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 gap-4">
@@ -341,13 +341,13 @@ export default function HomePage() {
               View All Faculty <ArrowRight className="ml-2" size={20} />
             </Button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {teachers.length > 0
               ? teachers.map((t) => <TeacherCard key={t._id} teacher={t} />)
               : [1, 2, 3, 4].map((i) => (
                   <Skeleton
                     key={i}
-                    className="h-[450px] bg-slate-800 rounded-3xl"
+                    className="h-[300px] bg-slate-800 rounded-2xl"
                   />
                 ))}
           </div>
@@ -724,7 +724,7 @@ function Step({ num, text }) {
 
 function TeacherCard({ teacher }) {
   return (
-    <div className="group space-y-5">
+    <div className="group space-y-4">
       <div className="relative aspect-[3/4] overflow-hidden rounded-[2.5rem] bg-slate-800 shadow-2xl">
         <img
           src={
@@ -744,7 +744,7 @@ function TeacherCard({ teacher }) {
         <h4 className="text-2xl font-bold group-hover:text-emerald-500 transition-colors">
           {teacher.name}
         </h4>
-        <p className="text-emerald-500 font-medium tracking-wide uppercase text-xs mt-1">
+        <p className="text-emerald-500 font-medium tracking-wide uppercase text-md mt-1">
           {teacher.designation || "Senior Faculty"}
         </p>
       </div>
