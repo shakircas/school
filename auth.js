@@ -71,6 +71,18 @@ export const {
     },
   },
 
+  cookies: {
+    sessionToken: {
+      name: "__Secure-next-auth.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: true, // REQUIRED on https (Vercel)
+      },
+    },
+  },
+
   pages: {
     signIn: "/login",
     signUp: "/signup",
