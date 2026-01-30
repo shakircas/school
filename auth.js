@@ -27,11 +27,19 @@ export const {
         try {
           await connectDB();
 
-          const user = await User.findOne({ email: credentials.email });
+         const email = credentials.email.toLowerCase().trim();
+
+         const user = await User.findOne({ email });
+
 
           if (!user) return null;
 
+          console.log("DB HASH:", user.password);
+          console.log("INPUT PASS:", credentials.password);
+
+
           const isValid = await compare(credentials.password, user.password);
+          console.log("PASSWORD MATCH:", isValid);
 
           if (!isValid) return null;
 
@@ -42,9 +50,10 @@ export const {
             role: user.role,
           };
         } catch (error) {
-          console.error("Credentials auth error:", err);
-          return null;
+          console.error("Credentials auth error:", error);
+          throw error; // IMPORTANT for debugging
         }
+
       },
     }),
   ],
