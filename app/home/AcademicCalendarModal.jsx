@@ -12,9 +12,14 @@ import {
   Calendar as CalendarIcon,
   Download,
   Printer,
-  Info,
   ChevronRight,
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -33,14 +38,67 @@ const months = [
   "December",
 ];
 
+// 1. Centralized Event Data (Add your specific dates here)
+const HOLIDAYS = [
+  {
+    date: "2026-02-05",
+    title: "Kashmir Day",
+    type: "Holiday",
+    color: "bg-rose-500",
+  },
+  {
+    date: "2026-03-23",
+    title: "Pakistan Day",
+    type: "Holiday",
+    color: "bg-rose-500",
+  },
+  {
+    date: "2026-04-10",
+    title: "Eid-ul-Fitr",
+    type: "Holiday",
+    color: "bg-emerald-500",
+  },
+  {
+    date: "2026-05-15",
+    title: "Annual Exams",
+    type: "Academic",
+    color: "bg-amber-500",
+  },
+  {
+    date: "2026-06-01",
+    title: "Summer Break",
+    type: "Break",
+    color: "bg-blue-500",
+  },
+];
+
 export default function AcademicCalendarModal({ trigger }) {
   return (
     <Dialog>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      {/* Increased max-width to 7xl to prevent squeezing */}
       <DialogContent className="max-w-[95vw] w-full lg:max-w-7xl h-[80vh] p-0 overflow-hidden bg-white border-none shadow-2xl flex flex-col">
-        {/* Header Section */}
-        <div className="p-6 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50/50">
+        {/* 2. Print Styles Injection */}
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
+          @media print {
+            body * { visibility: hidden; }
+            .print-area, .print-area * { visibility: visible; }
+            .print-area { 
+              position: absolute; 
+              left: 0; 
+              top: 0; 
+              width: 100%; 
+              padding: 20px;
+            }
+            .no-print { display: none !important; }
+            .grid { grid-template-columns: repeat(3, 1fr) !important; gap: 20px !important; }
+          }
+        `,
+          }}
+        />
+
+        <div className="p-6 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50/50 no-print">
           <div className="flex items-center gap-4">
             <div className="h-12 w-12 bg-emerald-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-200">
               <CalendarIcon size={24} />
@@ -69,46 +127,37 @@ export default function AcademicCalendarModal({ trigger }) {
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-          {/* Calendar View Area */}
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden print-area">
           <ScrollArea className="flex-1 bg-white p-4 lg:p-8">
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 pb-10">
               {months.map((month, idx) => (
-                <MonthCard key={month} name={month} index={idx} />
+                <MonthCard
+                  key={month}
+                  name={month}
+                  index={idx}
+                  holidays={HOLIDAYS}
+                />
               ))}
             </div>
           </ScrollArea>
 
-          {/* Key Events Sidebar */}
-          <div className="w-full md:w-80 border-t md:border-t-0 md:border-l bg-slate-50/30 p-6 overflow-y-auto">
+          <div className="w-full md:w-80 border-t md:border-t-0 md:border-l bg-slate-50/30 p-6 overflow-y-auto no-print">
             <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-6">
               Upcoming Events
             </h3>
             <div className="space-y-6">
-              <EventItem
-                date="Mar 23"
-                title="Pakistan Day"
-                type="Holiday"
-                color="bg-rose-500"
-              />
-              <EventItem
-                date="Apr 10"
-                title="Eid-ul-Fitr"
-                type="Holiday"
-                color="bg-emerald-500"
-              />
-              <EventItem
-                date="May 15"
-                title="Annual Exams"
-                type="Academic"
-                color="bg-amber-500"
-              />
-              <EventItem
-                date="Jun 01"
-                title="Summer Break"
-                type="Break"
-                color="bg-blue-500"
-              />
+              {HOLIDAYS.map((event, i) => (
+                <EventItem
+                  key={i}
+                  date={new Date(event.date).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "2-digit",
+                  })}
+                  title={event.title}
+                  type={event.type}
+                  color={event.color}
+                />
+              ))}
             </div>
           </div>
         </div>
@@ -117,54 +166,78 @@ export default function AcademicCalendarModal({ trigger }) {
   );
 }
 
-function MonthCard({ name, index }) {
+function MonthCard({ name, index, holidays }) {
   const days = new Date(2026, index + 1, 0).getDate();
   const startDay = new Date(2026, index, 1).getDay();
 
   return (
-    <div className="border border-slate-100 rounded-3xl p-5 shadow-sm hover:shadow-md transition-shadow bg-white">
-      <h4 className="text-lg font-bold text-slate-800 mb-4 px-1 flex justify-between">
-        {name}
-        <span className="text-slate-300 font-normal">2026</span>
-      </h4>
+    <TooltipProvider>
+      <div className="border border-slate-100 rounded-3xl p-5 shadow-sm bg-white">
+        <h4 className="text-lg font-bold text-slate-800 mb-4 px-1 flex justify-between">
+          {name}
+          <span className="text-slate-300 font-normal">2026</span>
+        </h4>
 
-      {/* Grid for days of the week */}
-      <div className="grid grid-cols-7 gap-1 mb-2">
-        {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
-          <div
-            key={d}
-            className="text-center text-[10px] font-bold text-slate-400 uppercase tracking-tighter"
-          >
-            {d}
-          </div>
-        ))}
-      </div>
-
-      {/* Grid for actual dates */}
-      <div className="grid grid-cols-7 gap-1">
-        {Array.from({ length: startDay }).map((_, i) => (
-          <div key={i} />
-        ))}
-        {Array.from({ length: days }).map((_, i) => {
-          const d = i + 1;
-          const isWeekend =
-            (d + startDay - 1) % 7 === 0 || (d + startDay - 1) % 7 === 6;
-          return (
+        <div className="grid grid-cols-7 gap-1 mb-2">
+          {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
             <div
               key={d}
-              className={`aspect-square flex items-center justify-center text-xs font-semibold rounded-xl cursor-default
-                ${isWeekend ? "text-rose-500 bg-rose-50/30" : "text-slate-600 hover:bg-slate-50"}
-              `}
+              className="text-center text-[10px] font-bold text-slate-400 uppercase"
             >
               {d}
             </div>
-          );
-        })}
+          ))}
+        </div>
+
+        <div className="grid grid-cols-7 gap-1">
+          {Array.from({ length: startDay }).map((_, i) => (
+            <div key={i} />
+          ))}
+          {Array.from({ length: days }).map((_, i) => {
+            const d = i + 1;
+            const dateString = `2026-${String(index + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+            const holidayMatch = holidays.find((h) => h.date === dateString);
+            const isWeekend =
+              (d + startDay - 1) % 7 === 0 || (d + startDay - 1) % 7 === 6;
+
+            return (
+              <Tooltip key={d} delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <div
+                    className={`aspect-square flex items-center justify-center text-xs font-semibold rounded-xl cursor-default relative transition-all
+                      ${
+                        holidayMatch
+                          ? "text-white shadow-md " + holidayMatch.color
+                          : isWeekend
+                            ? "text-rose-500 bg-rose-50/30"
+                            : "text-slate-600 hover:bg-slate-100"
+                      }
+                    `}
+                  >
+                    {d}
+                  </div>
+                </TooltipTrigger>
+                {holidayMatch && (
+                  <TooltipContent
+                    side="top"
+                    className="bg-slate-900 text-white border-none px-3 py-1.5 shadow-xl"
+                  >
+                    <div className="flex flex-col gap-0.5">
+                      <p className="text-xs font-bold">{holidayMatch.title}</p>
+                      <p className="text-[10px] opacity-80">
+                        {holidayMatch.type}
+                      </p>
+                    </div>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            );
+          })}
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
-
 function EventItem({ date, title, type, color }) {
   return (
     <div className="flex gap-4 group cursor-pointer">
@@ -176,7 +249,7 @@ function EventItem({ date, title, type, color }) {
           {date.split(" ")[1]}
         </p>
       </div>
-      <div className="flex-1">
+      <div className="flex-1 text-left">
         <div className="flex items-center gap-2 mb-0.5">
           <div className={`h-1.5 w-1.5 rounded-full ${color}`} />
           <span className="text-[10px] font-bold uppercase tracking-tight text-slate-400">
@@ -189,7 +262,7 @@ function EventItem({ date, title, type, color }) {
       </div>
       <ChevronRight
         size={14}
-        className="text-slate-300 self-center group-hover:translate-x-1 transition-transform"
+        className="text-slate-300 self-center group-hover:translate-x-1 transition-transform no-print"
       />
     </div>
   );
