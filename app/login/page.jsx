@@ -139,7 +139,8 @@ export default function LoginPage() {
                 <Label htmlFor="password">Password</Label>
                 <button
                   type="button"
-                  className="text-xs text-indigo-600 hover:underline font-medium"
+                  className="text-xs text-indigo-600 hover:underline font-medium cursor-pointer"
+                  onClick={() => router.push("/forgot-password")}
                 >
                   Forgot password?
                 </button>
