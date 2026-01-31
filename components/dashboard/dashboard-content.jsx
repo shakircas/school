@@ -739,37 +739,6 @@
 "use client";
 
 import useSWR from "swr";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { PageHeader } from "@/components/ui/page-header";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import {
-  Users,
-  GraduationCap,
-  UserCheck,
-  TrendingUp,
-  TrendingDown,
-  ArrowRight,
-  Plus,
-  FileText,
-  Activity,
-  BarChart3,
-  Brain,
-  Award,
-  ShieldCheck,
-  ClipboardList,
-  Zap,
-  Newspaper,
-  UserPlus,
-} from "lucide-react";
 import Link from "next/link";
 import {
   AreaChart,
@@ -785,17 +754,46 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import {
+  Users,
+  GraduationCap,
+  UserCheck,
+  TrendingUp,
+  ArrowRight,
+  Plus,
+  FileText,
+  Activity,
+  BarChart3,
+  Brain,
+  Award,
+  ShieldCheck,
+  ClipboardList,
+  Zap,
+  Newspaper,
+  UserPlus,
+} from "lucide-react";
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/ui/page-header";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
-// Dynamic Colors for Grades
 const GRADE_COLORS = {
-  "A+": "#10b981", // Emerald
-  A: "#3b82f6", // Blue
-  B: "#8b5cf6", // Purple
-  C: "#f59e0b", // Amber
-  D: "#ef4444", // Red
-  F: "#475569", // Slate
+  "A+": "#10b981",
+  A: "#3b82f6",
+  B: "#8b5cf6",
+  C: "#f59e0b",
+  D: "#ef4444",
+  F: "#475569",
 };
 
 function StatCard({
@@ -814,7 +812,7 @@ function StatCard({
 
   return (
     <Card className="relative overflow-hidden group hover:shadow-xl transition-all duration-300 border-none bg-white shadow-sm">
-      <CardContent className="p-6">
+      <CardContent className="p-4">
         <div className="flex items-start justify-between">
           <div className="space-y-2">
             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
@@ -823,7 +821,7 @@ function StatCard({
             <p className="text-3xl font-black tracking-tight text-slate-900">
               {value}
             </p>
-            <p className="text-[10px] text-slate-500 font-bold">
+            <p className="text-[10px] text-slate-500 font-bold uppercase">
               {description}
             </p>
           </div>
@@ -843,21 +841,27 @@ export function DashboardContent() {
     refreshInterval: 30000,
   });
 
-  console.log(stats)
+  const { data: weeklyAttendance } = useSWR(
+    "/api/dashboard/weekly-attendance",
+    fetcher,
+  );
 
-  // Map Grade Distribution for Pie Chart
   const gradeData = stats?.academicPerformance?.gradeDistribution
     ? Object.entries(stats.academicPerformance.gradeDistribution).map(
-        ([name, value]) => ({ name, value }),
+        ([name, value]) => ({
+          name,
+          value,
+        }),
       )
     : [];
 
-  if (isLoading)
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <LoadingSpinner size="lg" />
       </div>
     );
+  }
 
   return (
     <div className="space-y-8 pb-10">
@@ -886,7 +890,7 @@ export function DashboardContent() {
         </div>
       </PageHeader>
 
-      {/* Main Stats */}
+      {/* Main Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Student Body"
@@ -935,7 +939,7 @@ export function DashboardContent() {
           <CardContent>
             <div className="h-[350px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={stats?.classWiseStudents}>
+                <BarChart data={stats?.classWiseStudents ?? []}>
                   <CartesianGrid
                     strokeDasharray="3 3"
                     vertical={false}
@@ -968,7 +972,7 @@ export function DashboardContent() {
           </CardContent>
         </Card>
 
-        {/* Grade Breakdown (Dynamic from Results) */}
+        {/* Grade Breakdown */}
         <Card className="border-none shadow-sm bg-white">
           <CardHeader>
             <CardTitle className="text-xl font-black">
@@ -1021,7 +1025,7 @@ export function DashboardContent() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Recent Live Activities */}
+        {/* Live Pulse Activities */}
         <Card className="lg:col-span-1 border-none shadow-sm bg-white">
           <CardHeader>
             <CardTitle className="text-xl font-black">Live Pulse</CardTitle>
@@ -1066,72 +1070,143 @@ export function DashboardContent() {
           </CardContent>
         </Card>
 
-        {/* Dynamic Quick Actions */}
-        <Card className="lg:col-span-2 border-none shadow-lg bg-slate-900 text-white">
+        {/* Attendance Analytics */}
+        <Card className="lg:col-span-2 border-none shadow-sm bg-white/50">
           <CardHeader>
-            <CardTitle className="text-xl font-black text-white">
-              Management Shortcuts
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-xl font-black">
+                  Attendance Analytics
+                </CardTitle>
+                <CardDescription>
+                  Visualizing student stability this week
+                </CardDescription>
+              </div>
+              <Badge className="bg-emerald-100 text-emerald-700 border-none font-bold px-3 py-1">
+                LIVE FEED
+              </Badge>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {[
-                {
-                  label: "Mark Attendance",
-                  icon: UserCheck,
-                  color: "bg-emerald-500",
-                  href: "/attendance",
-                },
-                {
-                  label: "Enter Results",
-                  icon: ClipboardList,
-                  color: "bg-blue-500",
-                  href: "/results/entry",
-                },
-                {
-                  label: "AI Paper Gen",
-                  icon: Brain,
-                  color: "bg-indigo-500",
-                  href: "/ai/papers",
-                },
-                {
-                  label: "Fee Portal",
-                  icon: Activity,
-                  color: "bg-amber-500",
-                  href: "/fees",
-                },
-                {
-                  label: "Staff Registry",
-                  icon: Users,
-                  color: "bg-rose-500",
-                  href: "/teachers",
-                },
-                {
-                  label: "Date Sheet",
-                  icon: FileText,
-                  color: "bg-purple-500",
-                  href: "/exams/schedule",
-                },
-              ].map((action, i) => (
-                <Link
-                  key={i}
-                  href={action.href}
-                  className="group p-4 bg-slate-800/50 hover:bg-slate-800 rounded-2xl transition-all border border-slate-700/50 flex flex-col items-center text-center gap-3"
-                >
-                  <div
-                    className={`p-3 rounded-xl ${action.color} shadow-lg shadow-black/20 group-hover:scale-110 transition-transform`}
-                  >
-                    <action.icon size={20} />
-                  </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest">
-                    {action.label}
-                  </span>
-                </Link>
-              ))}
+            <div className="h-[320px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={weeklyAttendance ?? []}>
+                  <defs>
+                    <linearGradient
+                      id="attGradient"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1} />
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke="#f1f5f9"
+                  />
+                  <XAxis
+                    dataKey="day"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "#94a3b8", fontSize: 12 }}
+                    dy={10}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "#94a3b8", fontSize: 12 }}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: "16px",
+                      border: "none",
+                      boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="present"
+                    stroke="#3b82f6"
+                    strokeWidth={3}
+                    fillOpacity={1}
+                    fill="url(#attGradient)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Management Shortcuts */}
+      <Card className="border-none shadow-sm bg-white">
+        <CardHeader>
+          <CardTitle className="text-xl font-black text-slate-900">
+            Management Shortcuts
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            {[
+              {
+                label: "Mark Attendance",
+                icon: UserCheck,
+                color: "bg-emerald-500",
+                href: "/attendance",
+              },
+              {
+                label: "Enter Results",
+                icon: ClipboardList,
+                color: "bg-blue-500",
+                href: "/results/entry",
+              },
+              {
+                label: "AI Paper Gen",
+                icon: Brain,
+                color: "bg-indigo-500",
+                href: "/ai/papers",
+              },
+              {
+                label: "Fee Portal",
+                icon: Activity,
+                color: "bg-amber-500",
+                href: "/fees",
+              },
+              {
+                label: "Staff Registry",
+                icon: Users,
+                color: "bg-rose-500",
+                href: "/teachers",
+              },
+              {
+                label: "Date Sheet",
+                icon: FileText,
+                color: "bg-purple-500",
+                href: "/exams/schedule",
+              },
+            ].map((action, i) => (
+              <Link
+                key={i}
+                href={action.href}
+                className="group p-4 bg-slate-50/50 hover:bg-slate-50 rounded-2xl transition-all border border-slate-100 flex flex-col items-center text-center gap-3"
+              >
+                <div
+                  className={`p-3 rounded-xl ${action.color} text-white shadow-lg shadow-black/10 group-hover:scale-110 transition-transform`}
+                >
+                  <action.icon size={20} />
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-widest leading-tight text-slate-600">
+                  {action.label}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
