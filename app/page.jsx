@@ -371,7 +371,7 @@ export default function HomePage() {
       </section>
 
       {/* 10. CONTACT & LOCATION SECTION */}
-      <section className="py-24 bg-slate-50 dark:bg-slate-900/10">
+      <section className="py-12 bg-slate-50 dark:bg-slate-900/10">
         <div className="container mx-auto px-6">
           <div className="text-center max-w-3xl mx-auto mb-20 space-y-4">
             <h2 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">
@@ -446,7 +446,7 @@ export default function HomePage() {
       </section>
 
       {/* 11. QUICK CONTACT FORM */}
-      <section className="pb-24 container mx-auto px-6">
+      <section className="pb-10 container mx-auto px-6">
         <div className="bg-white dark:bg-slate-900 rounded-[3.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden">
           <div className="grid lg:grid-cols-2">
             <div className="bg-emerald-600 p-12 md:p-20 text-white space-y-8 flex flex-col justify-center relative overflow-hidden">
@@ -528,7 +528,7 @@ export default function HomePage() {
       </section>
 
       {/* 12. ADMISSIONS DETAIL SECTION */}
-      <section id="admissions" className="py-24 bg-white dark:bg-[#080808]">
+      <section id="admissions" className="py-12 bg-white dark:bg-[#080808]">
         <div className="container mx-auto px-6">
           <div className="flex flex-col lg:flex-row gap-16">
             <div className="flex-1 space-y-8">
