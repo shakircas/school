@@ -52,12 +52,6 @@ const navigation = [
     ],
   },
 
-  {
-    name: "Dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-    roles: ["admin", "teacher", "student", "parent"],
-  },
 
   {
     name: "Students",
@@ -240,7 +234,7 @@ const navigation = [
     href: "/settings",
     roles: ["admin", "teacher", "student", "parent"],
     children: [
-      // { name: "Profile", href: "/settings/profile" },
+      { name: "Profile", href: "/settings/profile" },
       // { name: "Change Password", href: "/settings/password" },
       { name: "Settings", href: "/settings" },
     ],

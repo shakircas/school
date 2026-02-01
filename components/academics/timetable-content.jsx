@@ -1,637 +1,3 @@
-// "use client";
-
-// import { useState, useMemo } from "react";
-// import useSWR from "swr";
-// import { motion, AnimatePresence } from "framer-motion";
-// import {
-//   Plus,
-//   Clock,
-//   User,
-//   Trash2,
-//   Edit3,
-//   AlertTriangle,
-//   LayoutGrid,
-//   Calendar,
-//   Users,
-//   BarChart3,
-//   ShieldAlert,
-//   Search,
-//   CheckCircle2,
-//   Info,
-//   Printer,
-// } from "lucide-react";
-// import { toast } from "sonner";
-// import { Button } from "@/components/ui/button";
-// import { Badge } from "@/components/ui/badge";
-// import {
-//   Dialog,
-//   DialogContent,
-//   DialogTitle,
-//   DialogFooter,
-// } from "@/components/ui/dialog";
-// import {
-//   Select,
-//   SelectTrigger,
-//   SelectValue,
-//   SelectContent,
-//   SelectItem,
-// } from "@/components/ui/select";
-// import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-
-// const fetcher = (url) => fetch(url).then((res) => res.json());
-
-// const WEEKDAYS = [
-//   "Monday",
-//   "Tuesday",
-//   "Wednesday",
-//   "Thursday",
-//   "Friday",
-//   "Saturday",
-// ];
-// const TIME_SLOTS = [
-//   "08:00 - 08:40",
-//   "08:40 - 09:20",
-//   "09:20 - 10:00",
-//   "10:00 - 10:40",
-//   "11:00 - 11:40",
-//   "11:40 - 12:20",
-//   "12:20 - 01:00",
-// ];
-
-// export function TimetableContent() {
-//   const { data, mutate } = useSWR("/api/academics/timetable", fetcher);
-//   const { data: teachersRes } = useSWR("/api/teachers", fetcher);
-//   const { data: subjectsRes } = useSWR("/api/academics/subjects", fetcher);
-
-//   const [isOpen, setIsOpen] = useState(false);
-//   const [selectedClass, setSelectedClass] = useState(null);
-//   const [formData, setFormData] = useState({
-//     day: "",
-//     time: "",
-//     subjectId: "",
-//     teacherId: "",
-//   });
-//   const [editMode, setEditMode] = useState(false);
-//   const [editMeta, setEditMeta] = useState({ index: null, day: "" });
-
-//   const teachers = teachersRes?.teachers || [];
-//   const subjects = subjectsRes?.data || [];
-//   const classes = data?.data || [];
-
-//   /* --- PRINT HANDLER --- */
-//   const handlePrint = () => {
-//     window.print();
-//   };
-
-//   /* --- DELETE LOGIC --- */
-//   const deletePeriod = async (cls, day, index) => {
-//     if (!confirm("Are you sure you want to delete this period?")) return;
-//     try {
-//       const sch = structuredClone(cls.schedule || []);
-//       const dayData = sch.find((x) => x.day === day);
-//       if (dayData) {
-//         dayData.periods.splice(index, 1);
-//         const res = await fetch(`/api/academics/timetable/${cls._id}`, {
-//           method: "PATCH",
-//           headers: { "Content-Type": "application/json" },
-//           body: JSON.stringify({ schedule: sch }),
-//         });
-//         if (res.ok) {
-//           toast.success("Period removed");
-//           mutate();
-//         }
-//       }
-//     } catch (e) {
-//       toast.error("Delete failed");
-//     }
-//   };
-
-//   /* --- WORKLOAD LOGIC --- */
-//   const teacherWorkload = useMemo(() => {
-//     const stats = {};
-//     classes.forEach((cls) => {
-//       cls.schedule?.forEach((day) => {
-//         day.periods.forEach((p) => {
-//           const tId = p.teacher?._id || p.teacher;
-//           if (tId) stats[tId] = (stats[tId] || 0) + 1;
-//         });
-//       });
-//     });
-//     return stats;
-//   }, [classes]);
-
-//   /* --- GLOBAL CONFLICT SCANNER --- */
-//   const globalConflicts = useMemo(() => {
-//     const conflicts = [];
-//     const scheduleMap = {};
-//     classes.forEach((cls) => {
-//       cls.schedule?.forEach((day) => {
-//         day.periods.forEach((p) => {
-//           const tId = p.teacher?._id || p.teacher;
-//           if (!tId) return;
-//           const key = `${day.day}-${p.time}-${tId}`;
-//           if (scheduleMap[key]) {
-//             conflicts.push({
-//               teacher: teachers.find((t) => t._id === tId)?.name || "Unknown",
-//               day: day.day,
-//               time: p.time,
-//               classA: scheduleMap[key].className,
-//               classB: cls.name,
-//             });
-//           } else {
-//             scheduleMap[key] = { className: cls.name };
-//           }
-//         });
-//       });
-//     });
-//     return conflicts;
-//   }, [classes, teachers]);
-
-//   /* --- IN-EDITOR CONFLICT CHECK --- */
-//   const currentConflict = useMemo(() => {
-//     if (
-//       !formData.day ||
-//       !formData.time ||
-//       !formData.teacherId ||
-//       !classes.length
-//     )
-//       return null;
-//     for (const cls of classes) {
-//       const daySchedule = cls.schedule?.find((s) => s.day === formData.day);
-//       if (daySchedule) {
-//         const periodIdx = daySchedule.periods.findIndex(
-//           (p) =>
-//             p.time === formData.time &&
-//             (p.teacher?._id === formData.teacherId ||
-//               p.teacher === formData.teacherId)
-//         );
-//         if (periodIdx !== -1) {
-//           const isSelf =
-//             editMode &&
-//             cls._id === selectedClass?._id &&
-//             formData.day === editMeta.day &&
-//             periodIdx === editMeta.index;
-//           if (!isSelf) return cls.name;
-//         }
-//       }
-//     }
-//     return null;
-//   }, [formData, classes, editMode, editMeta, selectedClass]);
-
-//   const handleOpenEditor = (cls, p = null, day = "", idx = null) => {
-//     setSelectedClass(cls);
-//     if (p) {
-//       setEditMode(true);
-//       setEditMeta({ index: idx, day });
-//       setFormData({
-//         day,
-//         time: p.time,
-//         subjectId: p.subjectId,
-//         teacherId: p.teacher?._id || p.teacher,
-//       });
-//     } else {
-//       setEditMode(false);
-//       setFormData({ day: "", time: "", subjectId: "", teacherId: "" });
-//     }
-//     setIsOpen(true);
-//   };
-
-//   const savePeriod = async () => {
-//     if (currentConflict)
-//       return toast.error(`Conflict! Teacher is busy in ${currentConflict}`);
-//     const subjectName = subjects.find(
-//       (s) => s._id === formData.subjectId
-//     )?.name;
-//     try {
-//       const url = editMode
-//         ? `/api/academics/timetable/${selectedClass._id}`
-//         : "/api/academics/timetable";
-//       const method = editMode ? "PATCH" : "POST";
-//       let payload;
-//       if (editMode) {
-//         payload = {
-//           ...formData,
-//           subjectName,
-//           teacher: formData.teacherId,
-//           index: editMeta.index,
-//           day: editMeta.day,
-//         };
-//       } else {
-//         const sch = structuredClone(selectedClass.schedule || []);
-//         let d = sch.find((x) => x.day === formData.day);
-//         if (!d) {
-//           d = { day: formData.day, periods: [] };
-//           sch.push(d);
-//         }
-//         d.periods.push({
-//           ...formData,
-//           subjectName,
-//           teacher: formData.teacherId,
-//         });
-//         payload = { classId: selectedClass._id, schedule: sch };
-//       }
-//       await fetch(url, {
-//         method,
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify(payload),
-//       });
-//       toast.success("Schedule Updated");
-//       setIsOpen(false);
-//       mutate();
-//     } catch (e) {
-//       toast.error("Update failed");
-//     }
-//   };
-
-//   return (
-//     <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
-//       <div className="flex justify-between items-center print:hidden">
-//         <div>
-//           <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-//             Academic Control Center
-//           </h1>
-//           <p className="text-sm text-indigo-600 font-bold">
-//             2026 Academic Session
-//           </p>
-//         </div>
-//         <Button
-//           onClick={handlePrint}
-//           variant="outline"
-//           className="rounded-2xl font-black gap-2 border-2 hover:bg-slate-50 shadow-sm"
-//         >
-//           <Printer className="w-4 h-4" /> Print Reports
-//         </Button>
-//         {globalConflicts.length > 0 && (
-//           <Badge className="bg-rose-600 text-white animate-pulse px-4 py-2 rounded-full border-none font-bold">
-//             <ShieldAlert className="w-4 h-4 mr-2" /> {globalConflicts.length}{" "}
-//             Conflicts
-//           </Badge>
-//         )}
-//       </div>
-
-//       <Tabs defaultValue="grid" className="w-full">
-//         <TabsList className="bg-slate-100 border p-1 rounded-2xl mb-8 shadow-inner flex-wrap h-auto">
-//           <TabsTrigger
-//             value="grid"
-//             className="rounded-xl px-5 py-2.5 gap-2 font-bold"
-//           >
-//             <LayoutGrid className="w-4 h-4" /> Weekly Grid
-//           </TabsTrigger>
-//           <TabsTrigger
-//             value="daily"
-//             className="rounded-xl px-5 py-2.5 gap-2 font-bold"
-//           >
-//             <Calendar className="w-4 h-4" /> Daily Glance
-//           </TabsTrigger>
-//           <TabsTrigger
-//             value="workload"
-//             className="rounded-xl px-5 py-2.5 gap-2 font-bold"
-//           >
-//             <BarChart3 className="w-4 h-4" /> Workload
-//           </TabsTrigger>
-//           <TabsTrigger
-//             value="conflicts"
-//             className="rounded-xl px-5 py-2.5 gap-2 font-bold text-rose-600 active:bg-rose-100"
-//           >
-//             <ShieldAlert className="w-4 h-4" /> Conflicts
-//           </TabsTrigger>
-//         </TabsList>
-
-//         {/* --- GRID VIEW --- */}
-//         <TabsContent value="grid" className="space-y-10">
-//           {classes.map((cls) => (
-//             <div
-//               key={cls._id}
-//               className="bg-white rounded-[2rem] border-2 border-slate-50 shadow-xl shadow-slate-200/50 overflow-hidden"
-//             >
-//               <div className="bg-blue-900 px-8 py-5 flex justify-between items-center">
-//                 <h2 className="text-lg font-black text-white tracking-widest uppercase">
-//                   {cls.name}
-//                 </h2>
-//                 <Button
-//                   onClick={() => handleOpenEditor(cls)}
-//                   size="sm"
-//                   className="rounded-full bg-slate-900 hover:bg-indigo-400 font-bold px-6 border-none"
-//                 >
-//                   <Plus className="w-4 h-4 mr-2" /> New Entry
-//                 </Button>
-//               </div>
-//               <div className="grid grid-cols-1 md:grid-cols-6 divide-x-2 divide-slate-50">
-//                 {WEEKDAYS.map((day) => {
-//                   const dayData = cls.schedule?.find((s) => s.day === day);
-//                   return (
-//                     <div key={day} className="p-4 bg-white">
-//                       <p className="text-[14px] font-black text-slate-900 uppercase mb-4 text-center tracking-tighter">
-//                         {day}
-//                       </p>
-//                       <div className="space-y-3">
-//                         {dayData?.periods.map((p, idx) => (
-//                           <div
-//                             key={idx}
-//                             className="group p-3 bg-slate-50 hover:bg-white border-2 border-transparent hover:border-indigo-500 rounded-2xl transition-all shadow-sm"
-//                           >
-//                             <div className="flex justify-between items-start mb-1">
-//                               <span className="text-[12px] font-black text-indigo-600">
-//                                 {p.time.split(" - ")[0]}
-//                               </span>
-//                               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-//                                 <button
-//                                   onClick={() =>
-//                                     handleOpenEditor(cls, p, day, idx)
-//                                   }
-//                                   className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-indigo-600"
-//                                 >
-//                                   <Edit3 className="w-3 h-3" />
-//                                 </button>
-//                                 <button
-//                                   onClick={() => deletePeriod(cls, day, idx)}
-//                                   className="p-1 hover:bg-rose-50 rounded text-slate-400 hover:text-rose-600"
-//                                 >
-//                                   <Trash2 className="w-3 h-3" />
-//                                 </button>
-//                               </div>
-//                             </div>
-//                             <h4 className="text-[13px] font-black text-slate-800 leading-tight">
-//                               {p.subjectName}
-//                             </h4>
-//                             <p className="text-[11px] font-bold text-slate-500 mt-1">
-//                               {
-//                                 teachers.find(
-//                                   (t) => t._id === (p.teacher?._id || p.teacher)
-//                                 )?.name
-//                               }
-//                             </p>
-//                           </div>
-//                         ))}
-//                       </div>
-//                     </div>
-//                   );
-//                 })}
-//               </div>
-//             </div>
-//           ))}
-//         </TabsContent>
-
-//         {/* --- FIXED DAILY GLANCE --- */}
-//         <TabsContent value="daily">
-//           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-//             {classes.map((cls) => {
-//               const todayName = WEEKDAYS[new Date().getDay() - 1] || "Monday";
-//               const todayPeriods =
-//                 cls.schedule?.find((s) => s.day === todayName)?.periods || [];
-//               return (
-//                 <div
-//                   key={cls._id}
-//                   className="bg-white rounded-3xl border-2 border-slate-100 p-6 shadow-lg shadow-slate-100"
-//                 >
-//                   <div className="flex justify-between items-center mb-6">
-//                     <h3 className="text-lg font-black text-slate-900">
-//                       {cls.name}
-//                     </h3>
-//                     <Badge className="bg-indigo-100 text-indigo-700 font-bold">
-//                       {todayName}
-//                     </Badge>
-//                   </div>
-//                   <div className="space-y-4">
-//                     {todayPeriods.length > 0 ? (
-//                       todayPeriods.map((p, i) => (
-//                         <div
-//                           key={i}
-//                           className="flex gap-4 items-center p-4 bg-slate-50 rounded-2xl border-l-4 border-indigo-600"
-//                         >
-//                           <div className="text-[11px] font-black text-indigo-600 w-12">
-//                             {p.time.split(" - ")[0]}
-//                           </div>
-//                           <div>
-//                             <p className="text-sm font-black text-slate-800 leading-none">
-//                               {p.subjectName}
-//                             </p>
-//                             <p className="text-[11px] font-bold text-slate-500 mt-1 uppercase tracking-tight">
-//                               {
-//                                 teachers.find(
-//                                   (t) => t._id === (p.teacher?._id || p.teacher)
-//                                 )?.name
-//                               }
-//                             </p>
-//                           </div>
-//                         </div>
-//                       ))
-//                     ) : (
-//                       <div className="text-center py-10 text-slate-400 font-bold italic">
-//                         No schedule for {todayName}
-//                       </div>
-//                     )}
-//                   </div>
-//                 </div>
-//               );
-//             })}
-//           </div>
-//         </TabsContent>
-
-//         {/* --- WORKLOAD --- */}
-//         <TabsContent value="workload">
-//           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-//             {teachers.map((t) => {
-//               const count = teacherWorkload[t._id] || 0;
-//               const isOver = count > 15;
-//               return (
-//                 <div
-//                   key={t._id}
-//                   className={`p-5 rounded-3xl border-2 transition-all ${
-//                     isOver
-//                       ? "bg-rose-50 border-rose-200"
-//                       : "bg-white border-slate-100 shadow-sm"
-//                   }`}
-//                 >
-//                   <div className="flex justify-between items-start mb-4">
-//                     <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center font-black text-sm">
-//                       {t.name.charAt(0)}
-//                     </div>
-//                     <Badge className={isOver ? "bg-rose-600" : "bg-indigo-600"}>
-//                       {count} Slots
-//                     </Badge>
-//                   </div>
-//                   <h4 className="text-md font-black text-slate-900">
-//                     {t.name}
-//                   </h4>
-//                   <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
-//                     {t.subject || "Faculty"}
-//                   </p>
-//                 </div>
-//               );
-//             })}
-//           </div>
-//         </TabsContent>
-
-//         {/* --- CONFLICTS LIST --- */}
-//         <TabsContent value="conflicts">
-//           <div className="bg-white rounded-3xl border-2 border-slate-50 shadow-xl p-8">
-//             {globalConflicts.length > 0 ? (
-//               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-//                 {globalConflicts.map((conf, i) => (
-//                   <div
-//                     key={i}
-//                     className="flex items-center justify-between p-5 bg-rose-50 rounded-2xl border-2 border-rose-100"
-//                   >
-//                     <div className="flex gap-4 items-center">
-//                       <div className="w-12 h-12 bg-rose-600 rounded-2xl flex items-center justify-center text-white">
-//                         <ShieldAlert />
-//                       </div>
-//                       <div>
-//                         <p className="text-sm font-black text-rose-900">
-//                           {conf.teacher}
-//                         </p>
-//                         <p className="text-xs font-bold text-rose-700">
-//                           {conf.day} | {conf.time}
-//                         </p>
-//                       </div>
-//                     </div>
-//                     <div className="flex flex-col items-end gap-1">
-//                       <Badge className="bg-rose-600">{conf.classA}</Badge>
-//                       <Badge className="bg-rose-600">{conf.classB}</Badge>
-//                     </div>
-//                   </div>
-//                 ))}
-//               </div>
-//             ) : (
-//               <div className="flex flex-col items-center py-20 text-emerald-500">
-//                 <CheckCircle2 className="w-16 h-16 mb-4" />
-//                 <p className="text-xl font-black">All Clear!</p>
-//               </div>
-//             )}
-//           </div>
-//         </TabsContent>
-//       </Tabs>
-
-//       {/* --- EDITOR DIALOG --- */}
-//       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-//         <DialogContent className="max-w-md rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl">
-//           <div className="bg-slate-900 p-8 text-white">
-//             <DialogTitle className="text-xl font-black">
-//               {editMode ? "Edit Session" : "Assign Session"}
-//             </DialogTitle>
-//             <p className="text-indigo-400 text-xs font-black mt-1 uppercase tracking-widest">
-//               {selectedClass?.name}
-//             </p>
-//           </div>
-//           <div className="p-8 space-y-6 bg-white">
-//             <div className="grid grid-cols-2 gap-4">
-//               <div className="space-y-1">
-//                 <label className="text-[10px] font-black text-slate-400 uppercase ml-1">
-//                   Day
-//                 </label>
-//                 <Select
-//                   value={formData.day}
-//                   onValueChange={(v) => setFormData({ ...formData, day: v })}
-//                 >
-//                   <SelectTrigger className="rounded-2xl bg-slate-100 border-none font-black h-12 text-slate-800">
-//                     <SelectValue />
-//                   </SelectTrigger>
-//                   <SelectContent>
-//                     {WEEKDAYS.map((d) => (
-//                       <SelectItem key={d} value={d} className="font-bold">
-//                         {d}
-//                       </SelectItem>
-//                     ))}
-//                   </SelectContent>
-//                 </Select>
-//               </div>
-//               <div className="space-y-1">
-//                 <label className="text-[10px] font-black text-slate-400 uppercase ml-1">
-//                   Time
-//                 </label>
-//                 <Select
-//                   value={formData.time}
-//                   onValueChange={(v) => setFormData({ ...formData, time: v })}
-//                 >
-//                   <SelectTrigger className="rounded-2xl bg-slate-100 border-none font-black h-12 text-slate-800">
-//                     <SelectValue />
-//                   </SelectTrigger>
-//                   <SelectContent>
-//                     {TIME_SLOTS.map((t) => (
-//                       <SelectItem key={t} value={t} className="font-bold">
-//                         {t}
-//                       </SelectItem>
-//                     ))}
-//                   </SelectContent>
-//                 </Select>
-//               </div>
-//             </div>
-//             <div className="space-y-1">
-//               <label className="text-[10px] font-black text-slate-400 uppercase ml-1">
-//                 Subject
-//               </label>
-//               <Select
-//                 value={formData.subjectId}
-//                 onValueChange={(v) =>
-//                   setFormData({ ...formData, subjectId: v })
-//                 }
-//               >
-//                 <SelectTrigger className="rounded-2xl bg-slate-100 border-none font-black h-12 text-slate-800">
-//                   <SelectValue />
-//                 </SelectTrigger>
-//                 <SelectContent>
-//                   {subjects.map((s) => (
-//                     <SelectItem key={s._id} value={s._id} className="font-bold">
-//                       {s.name}
-//                     </SelectItem>
-//                   ))}
-//                 </SelectContent>
-//               </Select>
-//             </div>
-//             <div className="space-y-1">
-//               <label className="text-[10px] font-black text-slate-400 uppercase ml-1">
-//                 Teacher
-//               </label>
-//               <Select
-//                 value={formData.teacherId}
-//                 onValueChange={(v) =>
-//                   setFormData({ ...formData, teacherId: v })
-//                 }
-//               >
-//                 <SelectTrigger className="rounded-2xl bg-slate-100 border-none font-black h-12 text-slate-800">
-//                   <SelectValue />
-//                 </SelectTrigger>
-//                 <SelectContent>
-//                   {teachers.map((t) => (
-//                     <SelectItem key={t._id} value={t._id} className="font-bold">
-//                       {t.name}
-//                     </SelectItem>
-//                   ))}
-//                 </SelectContent>
-//               </Select>
-//             </div>
-//             {currentConflict && (
-//               <div className="p-4 bg-rose-50 border-2 border-rose-100 rounded-2xl flex items-center gap-3">
-//                 <AlertTriangle className="w-5 h-5 text-rose-600" />
-//                 <p className="text-xs text-rose-700 font-black tracking-tight">
-//                   Teacher Busy in {currentConflict}
-//                 </p>
-//               </div>
-//             )}
-//           </div>
-//           <DialogFooter className="p-8 bg-slate-50">
-//             <Button
-//               variant="ghost"
-//               onClick={() => setIsOpen(false)}
-//               className="font-black text-slate-400"
-//             >
-//               Cancel
-//             </Button>
-//             <Button
-//               disabled={!!currentConflict}
-//               onClick={savePeriod}
-//               className="rounded-2xl px-10 bg-slate-900 font-black h-12 shadow-lg shadow-slate-200"
-//             >
-//               Confirm
-//             </Button>
-//           </DialogFooter>
-//         </DialogContent>
-//       </Dialog>
-//     </div>
-//   );
-// }
-
 "use client";
 
 import { useState, useMemo } from "react";
@@ -921,13 +287,13 @@ export function TimetableContent() {
       {/* HEADER SECTION */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print-hidden">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+          <h1 className="text-2xl sm:text-3xl  font-black text-slate-900 tracking-tight flex items-center gap-3">
             <Calendar className="w-8 h-8 text-indigo-600" />
             Master Schedule Manager
           </h1>
-          <p className="text-slate-500 font-medium flex items-center gap-2">
-            <Clock className="w-4 h-4" /> Academic Session 2026 • Real-time
-            Conflict Monitoring
+          <p className="text-slate-500 text-sm sm:text-base font-medium flex items-center gap-2">
+            <Clock className="w-4 h-4" /> Session 2026 • Real-time Conflict
+            Monitoring
           </p>
         </div>
         <div className="flex gap-3">
@@ -950,41 +316,33 @@ export function TimetableContent() {
       </div>
 
       <Tabs defaultValue="classic" className="w-full">
-        <TabsList className="bg-slate-200/50 border p-1.5 rounded-2xl mb-8 shadow-sm print-hidden inline-flex">
-          <TabsTrigger
-            value="classic"
-            className="rounded-xl px-6 py-2.5 gap-2 font-black data-[state=active]:bg-white data-[state=active]:shadow-md"
-          >
-            <LayoutGrid className="w-4 h-4" /> Classic Grid
-          </TabsTrigger>
-          <TabsTrigger
-            value="grid"
-            className="rounded-xl px-6 py-2.5 gap-2 font-black data-[state=active]:bg-white data-[state=active]:shadow-md"
-          >
-            <LayoutGrid className="w-4 h-4" /> Master Grid
-          </TabsTrigger>
-          <TabsTrigger
-            value="daily"
-            className="rounded-xl px-6 py-2.5 gap-2 font-black data-[state=active]:bg-white data-[state=active]:shadow-md"
-          >
-            <Calendar className="w-4 h-4" /> Daily View
-          </TabsTrigger>
-          <TabsTrigger
-            value="workload"
-            className="rounded-xl px-6 py-2.5 gap-2 font-black data-[state=active]:bg-white data-[state=active]:shadow-md"
-          >
-            <BarChart3 className="w-4 h-4" /> Workload Analytics
-          </TabsTrigger>
-          <TabsTrigger
-            value="conflicts"
-            className="rounded-xl px-6 py-2.5 gap-2 font-black text-rose-600 data-[state=active]:bg-white data-[state=active]:shadow-md"
-          >
-            <ShieldAlert className="w-4 h-4" /> Conflict Tracker
-          </TabsTrigger>
-        </TabsList>
+        {/* Scrollable Tabs for Mobile */}
+        <div className="overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
+          <TabsList className="bg-white border p-1 rounded-2xl mb-6 shadow-sm flex w-max sm:w-inline-flex">
+            {[
+              { value: "classic", icon: LayoutGrid, label: "Classic" },
+              { value: "grid", icon: LayoutGrid, label: "Master" },
+              { value: "daily", icon: Calendar, label: "Daily" },
+              { value: "workload", icon: BarChart3, label: "Workload" },
+              {
+                value: "conflicts",
+                icon: ShieldAlert,
+                label: "Conflicts",
+                color: "text-rose-600",
+              },
+            ].map((tab) => (
+              <TabsTrigger
+                key={tab.value}
+                value={tab.value}
+                className={`rounded-xl px-4 py-2 gap-2 font-black text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-md border border-transparent data-[state=active]:border-slate-100 ${tab.color || ""}`}
+              >
+                <tab.icon className="w-4 h-4" /> {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
 
-        {/* Inside your TabsContent grid */}
-        <TabsContent value="classic">
+        <TabsContent value="classic" className="space-y-6">
           {classes.map((cls) => (
             <PrintableGrid
               key={cls._id}
@@ -992,7 +350,6 @@ export function TimetableContent() {
               teachers={teachers}
               onDownload={downloadClassPDF}
               onAddPeriod={(c, p, d, t) => {
-                // If coming from an empty slot, pre-fill the form
                 if (d && t) setFormData({ ...formData, day: d, time: t });
                 handleOpenEditor(c);
               }}
@@ -1002,57 +359,57 @@ export function TimetableContent() {
           ))}
         </TabsContent>
 
-        <TabsContent value="grid" className="space-y-12">
+        <TabsContent value="grid" className="space-y-8">
           {classes.map((cls) => (
             <div
               key={cls._id}
-              id={`printable-card-${cls._id}`} // ADD THIS LINE
-              className="bg-white rounded-[2.5rem] border-2 border-slate-100 shadow-2xl shadow-slate-200/60 overflow-hidden print-card"
+              id={`printable-card-${cls._id}`}
+              className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden print-card"
             >
-              {/* CLASS HEADER */}
-              <div className="bg-slate-900 px-10 py-6 flex justify-between items-center day-header">
+              {/* HEADER - Switched to White */}
+              <div className="bg-white border-b border-slate-100 px-6 sm:px-10 py-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                    <GraduationCap className="text-white w-7 h-7" />
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-indigo-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-200">
+                    <GraduationCap className="text-white w-6 h-6 sm:w-7 sm:h-7" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-black text-white uppercase tracking-tighter leading-none">
+                    <h2 className="text-xl sm:text-2xl font-black text-slate-900 uppercase tracking-tighter">
                       {cls.name}
                     </h2>
-                    <p className="text-indigo-300 text-xs font-bold mt-1 uppercase tracking-widest">
-                      Weekly Academic Schedule
+                    <p className="text-indigo-600 text-[10px] font-bold uppercase tracking-widest">
+                      Weekly Schedule
                     </p>
                   </div>
                 </div>
-                <Button
-                  onClick={() => downloadClassPDF(cls._id, cls.name)}
-                  variant="outline"
-                  className="rounded-full bg-slate-800 text-white border-none hover:bg-indigo-500"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Save PDF
-                </Button>
-                <Button
-                  onClick={() => handleOpenEditor(cls)}
-                  size="sm"
-                  className="rounded-full bg-white text-slate-900 hover:bg-indigo-500 hover:text-white font-black px-6 transition-all print-hidden"
-                >
-                  <Plus className="w-4 h-4 mr-2" /> Add Period
-                </Button>
+                <div className="flex gap-2 w-full sm:w-auto">
+                  <Button
+                    onClick={() => downloadClassPDF(cls._id, cls.name)}
+                    variant="outline"
+                    className="flex-1 sm:flex-none rounded-full bg-white text-slate-900 border-slate-200 hover:bg-slate-50 text-xs"
+                  >
+                    <Download className="w-3 h-3 mr-2" /> Save
+                  </Button>
+                  <Button
+                    onClick={() => handleOpenEditor(cls)}
+                    className="flex-1 sm:flex-none rounded-full bg-indigo-600 text-white hover:bg-indigo-700 font-bold px-6 text-xs transition-all print-hidden"
+                  >
+                    <Plus className="w-3 h-3 mr-2" /> Add
+                  </Button>
+                </div>
               </div>
 
-              {/* TIMETABLE MATRIX */}
+              {/* MATRIX - Responsive Scroll */}
               <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
+                <table className="w-full border-collapse min-w-[800px]">
                   <thead>
-                    <tr>
-                      <th className="p-4 bg-slate-50 border-b-2 border-r-2 border-slate-100 text-slate-400 font-black text-[10px] uppercase tracking-widest w-40 time-col">
-                        Time Slots
+                    <tr className="bg-white">
+                      <th className="p-4 border-b border-r border-slate-100 text-slate-400 font-black text-[10px] uppercase tracking-widest w-32">
+                        Time
                       </th>
                       {WEEKDAYS.map((day) => (
                         <th
                           key={day}
-                          className="p-5 bg-slate-50 border-b-2 border-r-2 border-slate-100 text-slate-800 font-black text-sm uppercase tracking-tighter"
+                          className="p-4 border-b border-r border-slate-100 text-slate-800 font-black text-xs uppercase"
                         >
                           {day}
                         </th>
@@ -1061,8 +418,11 @@ export function TimetableContent() {
                   </thead>
                   <tbody>
                     {TIME_SLOTS.map((time) => (
-                      <tr key={time} className="group">
-                        <td className="p-4 bg-slate-50/50 border-r-2 border-b-2 border-slate-100 font-black text-indigo-600 text-xs text-center time-col">
+                      <tr
+                        key={time}
+                        className="hover:bg-slate-50/30 transition-colors"
+                      >
+                        <td className="p-4 border-r border-b border-slate-100 font-black text-indigo-600 text-[10px] text-center bg-white">
                           {time}
                         </td>
                         {WEEKDAYS.map((day) => {
@@ -1076,52 +436,39 @@ export function TimetableContent() {
                           return (
                             <td
                               key={day}
-                              className="p-2 border-r-2 border-b-2 border-slate-50 min-w-[180px] h-24 relative hover:bg-slate-50/80 transition-all"
+                              className="p-2 border-r border-b border-slate-50 min-w-[150px] h-20 relative transition-all"
                             >
                               {period ? (
-                                <div className="h-full w-full p-3 bg-white border-2 border-slate-100 rounded-2xl shadow-sm group/period relative overflow-hidden flex flex-col justify-center">
-                                  <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500" />
-                                  <h4 className="text-[13px] font-black text-slate-800 leading-tight mb-1">
+                                <div className="h-full w-full p-2 bg-white border border-slate-200 rounded-xl shadow-sm group/period relative flex flex-col justify-center">
+                                  <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500 rounded-l-xl" />
+                                  <h4 className="text-[12px] font-black text-slate-800 leading-tight truncate">
                                     {period.subjectName}
                                   </h4>
-                                  <div className="flex items-center gap-1.5 text-slate-500">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                                    <p className="text-[11px] font-bold truncate">
-                                      {
-                                        teachers.find(
-                                          (t) =>
-                                            t._id ===
-                                            (period.teacher?._id ||
-                                              period.teacher),
-                                        )?.name
-                                      }
-                                    </p>
-                                  </div>
-
-                                  {/* ACTION BUTTONS */}
-                                  <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover/period:opacity-100 transition-opacity print-hidden">
+                                  <p className="text-[10px] font-bold text-slate-500 truncate mt-1">
+                                    {
+                                      teachers.find(
+                                        (t) =>
+                                          t._id ===
+                                          (period.teacher?._id ||
+                                            period.teacher),
+                                      )?.name
+                                    }
+                                  </p>
+                                  <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover/period:opacity-100 transition-opacity print-hidden">
                                     <button
                                       onClick={() =>
                                         handleOpenEditor(cls, period, day, idx)
                                       }
-                                      className="p-1.5 bg-slate-100 hover:bg-indigo-100 rounded-lg text-slate-500 hover:text-indigo-600 transition-colors"
+                                      className="p-1 bg-white border rounded shadow-sm text-slate-400 hover:text-indigo-600"
                                     >
                                       <Edit3 className="w-3 h-3" />
-                                    </button>
-                                    <button
-                                      onClick={() =>
-                                        deletePeriod(cls, day, idx)
-                                      }
-                                      className="p-1.5 bg-slate-100 hover:bg-rose-100 rounded-lg text-slate-500 hover:text-rose-600 transition-colors"
-                                    >
-                                      <Trash2 className="w-3 h-3" />
                                     </button>
                                   </div>
                                 </div>
                               ) : (
                                 <div className="h-full w-full flex items-center justify-center group/empty">
                                   <Plus
-                                    className="w-5 h-5 text-slate-100 group-hover/empty:text-slate-300 cursor-pointer transition-colors print-hidden"
+                                    className="w-4 h-4 text-slate-200 group-hover/empty:text-indigo-400 cursor-pointer transition-colors print-hidden"
                                     onClick={() => {
                                       setFormData((prev) => ({
                                         ...prev,
@@ -1145,9 +492,9 @@ export function TimetableContent() {
           ))}
         </TabsContent>
 
-        {/* --- DAILY GLANCE --- */}
+        {/* Daily Glance Responsive Cards */}
         <TabsContent value="daily">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {classes.map((cls) => {
               const todayName = WEEKDAYS[new Date().getDay() - 1] || "Monday";
               const todayPeriods =
@@ -1155,38 +502,36 @@ export function TimetableContent() {
               return (
                 <div
                   key={cls._id}
-                  className="bg-white rounded-[2.5rem] border-2 border-slate-100 p-8 shadow-xl shadow-slate-100 group hover:border-indigo-200 transition-all"
+                  className="bg-white rounded-3xl border border-slate-200 p-6 shadow-lg shadow-slate-100"
                 >
-                  <div className="flex justify-between items-center mb-8">
+                  <div className="flex justify-between items-center mb-6">
                     <div>
-                      <h3 className="text-2xl font-black text-slate-900 tracking-tighter">
+                      <h3 className="text-xl font-black text-slate-900">
                         {cls.name}
                       </h3>
-                      <p className="text-indigo-600 font-black text-xs uppercase tracking-widest">
-                        {todayName}'s Agenda
+                      <p className="text-indigo-600 font-bold text-[10px] uppercase tracking-widest">
+                        {todayName}
                       </p>
                     </div>
-                    <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center group-hover:bg-indigo-50 transition-colors">
-                      <BookOpen className="text-slate-400 group-hover:text-indigo-600 w-6 h-6" />
-                    </div>
+                    <BookOpen className="text-slate-300 w-5 h-5" />
                   </div>
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {todayPeriods.length > 0 ? (
                       todayPeriods
                         .sort((a, b) => a.time.localeCompare(b.time))
                         .map((p, i) => (
                           <div
                             key={i}
-                            className="flex gap-4 items-center p-5 bg-slate-50 rounded-[1.5rem] border-2 border-transparent hover:border-white hover:bg-white hover:shadow-lg transition-all"
+                            className="flex gap-3 items-center p-4 bg-white border border-slate-100 rounded-2xl hover:border-indigo-200 transition-all"
                           >
-                            <div className="text-[11px] font-black text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg whitespace-nowrap">
+                            <div className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md">
                               {p.time.split(" - ")[0]}
                             </div>
                             <div className="min-w-0">
-                              <p className="text-sm font-black text-slate-800 leading-none truncate">
+                              <p className="text-xs font-black text-slate-800 truncate">
                                 {p.subjectName}
                               </p>
-                              <p className="text-[11px] font-bold text-slate-500 mt-1 uppercase truncate tracking-tight">
+                              <p className="text-[10px] font-bold text-slate-400 truncate uppercase">
                                 {
                                   teachers.find(
                                     (t) =>
@@ -1198,8 +543,8 @@ export function TimetableContent() {
                           </div>
                         ))
                     ) : (
-                      <div className="text-center py-12 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 text-slate-400 font-bold italic">
-                        No scheduled classes today
+                      <div className="text-center py-8 bg-white border border-dashed border-slate-200 rounded-2xl text-slate-400 text-xs font-bold">
+                        No classes today
                       </div>
                     )}
                   </div>
@@ -1209,42 +554,33 @@ export function TimetableContent() {
           </div>
         </TabsContent>
 
-        {/* --- WORKLOAD --- */}
         <TabsContent value="workload">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {teachers.map((t) => {
               const count = teacherWorkload[t._id] || 0;
               const isOver = count > 15;
               return (
                 <div
                   key={t._id}
-                  className={`p-6 rounded-[2rem] border-2 transition-all group ${
-                    isOver
-                      ? "bg-rose-50 border-rose-200"
-                      : "bg-white border-slate-100 shadow-sm hover:border-indigo-100"
-                  }`}
+                  className={`p-5 rounded-3xl border transition-all ${isOver ? "bg-white border-rose-200" : "bg-white border-slate-200"}`}
                 >
-                  <div className="flex justify-between items-start mb-6">
-                    <div className="w-14 h-14 bg-slate-900 text-white rounded-2xl flex items-center justify-center font-black text-xl shadow-lg group-hover:scale-110 transition-transform">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center font-black text-lg">
                       {t.name.charAt(0)}
                     </div>
                     <Badge
-                      className={`px-4 py-1.5 rounded-xl font-black ${isOver ? "bg-rose-600 shadow-lg shadow-rose-200" : "bg-indigo-600 shadow-lg shadow-indigo-100"}`}
+                      className={`px-3 py-1 rounded-lg font-black text-[10px] ${isOver ? "bg-rose-600 text-white" : "bg-indigo-600 text-white"}`}
                     >
                       {count} Periods
                     </Badge>
                   </div>
-                  <h4 className="text-lg font-black text-slate-900 leading-tight">
+                  <h4 className="text-sm font-black text-slate-900 leading-tight">
                     {t.name}
                   </h4>
-                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-1">
-                    {t.subject || "General Faculty"}
-                  </p>
-
-                  <div className="mt-6 w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                  <div className="mt-4 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                     <div
-                      className={`h-full rounded-full transition-all duration-1000 ${isOver ? "bg-rose-500" : "bg-indigo-500"}`}
-                      style={{ width: `${(count / 25) * 100}%` }}
+                      className={`h-full transition-all duration-1000 ${isOver ? "bg-rose-500" : "bg-indigo-500"}`}
+                      style={{ width: `${Math.min((count / 25) * 100, 100)}%` }}
                     />
                   </div>
                 </div>
@@ -1253,36 +589,32 @@ export function TimetableContent() {
           </div>
         </TabsContent>
 
-        {/* --- CONFLICTS LIST --- */}
         <TabsContent value="conflicts">
-          <div className="bg-white rounded-[3rem] border-2 border-slate-50 shadow-2xl p-10">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-xl p-6 sm:p-10">
             {globalConflicts.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                 {globalConflicts.map((conf, i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-between p-6 bg-rose-50 rounded-[2rem] border-2 border-rose-100 relative overflow-hidden group hover:bg-rose-100/50 transition-colors"
+                    className="flex items-center justify-between p-4 sm:p-6 bg-white border border-rose-100 rounded-2xl relative overflow-hidden"
                   >
-                    <div className="absolute top-0 left-0 w-2 h-full bg-rose-500" />
-                    <div className="flex gap-5 items-center">
-                      <div className="w-14 h-14 bg-rose-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-rose-200">
-                        <ShieldAlert className="w-8 h-8" />
-                      </div>
-                      <div>
-                        <p className="text-lg font-black text-rose-900 leading-tight">
+                    <div className="absolute top-0 left-0 w-1.5 h-full bg-rose-500" />
+                    <div className="flex gap-4 items-center min-w-0">
+                      <ShieldAlert className="w-6 h-6 text-rose-600 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm sm:text-base font-black text-slate-900 truncate">
                           {conf.teacher}
                         </p>
-                        <p className="text-sm font-bold text-rose-700/70 mt-1 uppercase tracking-tighter">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">
                           {conf.day} • {conf.time}
                         </p>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <Badge className="bg-rose-600 font-black px-4">
+                    <div className="flex flex-col gap-1 items-end">
+                      <Badge className="bg-rose-100 text-rose-700 hover:bg-rose-100 border-none text-[10px] px-2">
                         {conf.classA}
                       </Badge>
-                      <div className="h-4 w-px bg-rose-200 mr-4" />
-                      <Badge className="bg-rose-600 font-black px-4">
+                      <Badge className="bg-rose-100 text-rose-700 hover:bg-rose-100 border-none text-[10px] px-2">
                         {conf.classB}
                       </Badge>
                     </div>
@@ -1290,15 +622,13 @@ export function TimetableContent() {
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center py-24 text-emerald-500">
-                <div className="w-24 h-24 bg-emerald-50 rounded-[2.5rem] flex items-center justify-center mb-6">
-                  <CheckCircle2 className="w-12 h-12" />
-                </div>
-                <h3 className="text-3xl font-black tracking-tight text-slate-900">
+              <div className="flex flex-col items-center py-16 text-emerald-500">
+                <CheckCircle2 className="w-12 h-12 mb-4" />
+                <h3 className="text-xl font-black text-slate-900">
                   Conflict-Free Zone
                 </h3>
-                <p className="text-slate-500 font-bold mt-2">
-                  All teacher assignments are perfectly synchronized.
+                <p className="text-slate-400 font-bold text-xs mt-1 text-center">
+                  Assignments are perfectly synchronized.
                 </p>
               </div>
             )}
