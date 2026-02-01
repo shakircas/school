@@ -57,6 +57,7 @@ import {
   Filter,
   X,
   FileDown,
+  CalendarDays,
 } from "lucide-react";
 import { useClasses } from "../hooks/useClasses";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -284,7 +285,7 @@ export function StudentsContent() {
             key={idx}
             className={cn(
               "relative overflow-hidden rounded-2xl p-5 text-white shadow-lg shadow-indigo-100/20 bg-gradient-to-br",
-              card.color
+              card.color,
             )}
           >
             <div className="relative z-10 flex items-center justify-between">
@@ -387,7 +388,7 @@ export function StudentsContent() {
                 "grid grid-cols-1 gap-3 md:grid-cols-12 transition-all duration-300",
                 showFilters
                   ? "opacity-100 h-auto"
-                  : "opacity-0 h-0 overflow-hidden pointer-events-none"
+                  : "opacity-0 h-0 overflow-hidden pointer-events-none",
               )}
             >
               <div className="relative md:col-span-4">
@@ -514,83 +515,134 @@ export function StudentsContent() {
             ) : (
               <>
                 {/* Mobile View */}
+                {/* Mobile View */}
                 <div className="grid gap-4 p-4 sm:hidden">
                   {students.map((student) => (
                     <div
                       key={student._id}
                       className="rounded-xl border border-slate-200 p-4 space-y-4 bg-white shadow-sm"
                     >
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-12 w-12 border-2 border-slate-100">
-                          <AvatarImage src={student.photo?.url} />
-                          <AvatarFallback className="bg-indigo-50 text-indigo-700">
-                            {student.name?.[0]}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-slate-900 truncate">
-                            {student.name}
-                          </p>
-                          <p className="text-xs text-slate-500 font-mono">
-                            Roll #{student.rollNumber}
-                          </p>
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-12 w-12 border-2 border-slate-100">
+                            <AvatarImage src={student.photo?.url} />
+                            <AvatarFallback className="bg-indigo-50 text-indigo-700">
+                              {student.name?.[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-slate-900 truncate">
+                              {student.name}
+                            </p>
+                            <p className="text-xs text-slate-500 font-mono">
+                              Roll #{student.rollNumber}
+                            </p>
+                          </div>
                         </div>
-                        <Badge
-                          className={cn(
-                            student.status === "Active"
-                              ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-50 border-emerald-100"
-                              : "bg-slate-100 text-slate-600 border-slate-200"
-                          )}
-                        >
-                          {student.status}
-                        </Badge>
+
+                        {/* Unified Mobile Actions Dropdown */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="rounded-full -mt-1 -mr-1"
+                            >
+                              <MoreHorizontal className="h-5 w-5 text-slate-400" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-56">
+                            <DropdownMenuItem
+                              onClick={() =>
+                                router.push(`/students/${student._id}`)
+                              }
+                            >
+                              <Eye className="h-4 w-4 mr-2" /> View Full Profile
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                router.push(`/students/${student._id}/report`)
+                              }
+                            >
+                              <CalendarDays className="h-4 w-4 mr-2" />{" "}
+                              Attendance Record
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                router.push(`/students/${student._id}/edit`)
+                              }
+                            >
+                              <Edit className="h-4 w-4 mr-2" /> Edit Records
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() =>
+                                router.push(
+                                  `/students/${student._id}/admission-form`,
+                                )
+                              }
+                            >
+                              <Printer className="h-4 w-4 mr-2" /> Admission
+                              Form
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                router.push(`/students/${student._id}/print`)
+                              }
+                            >
+                              <Printer className="h-4 w-4 mr-2" /> Student ID
+                              Card
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => handleDelete(student._id)}
+                              className="text-rose-600 focus:text-rose-600 focus:bg-rose-50"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" /> Delete Student
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
+
                       <div className="grid grid-cols-2 gap-3 text-sm border-t border-slate-50 pt-3">
                         <div>
                           <p className="text-slate-400 text-[11px] uppercase font-bold tracking-wider">
                             Academic
                           </p>
-                          <p className="font-medium">
-                            {student.classId?.name} - {student.sectionId}
+                          <p className="font-medium text-slate-700">
+                            {student.classId?.name} -{" "}
+                            {student.sectionId || "N/A"}
                           </p>
                         </div>
                         <div>
                           <p className="text-slate-400 text-[11px] uppercase font-bold tracking-wider">
-                            Contact
+                            Guardian
                           </p>
-                          <p className="font-medium truncate">
-                            {student.phone || student.fatherPhone}
+                          <p className="font-medium text-slate-700 truncate">
+                            {student.fatherName}
                           </p>
                         </div>
                       </div>
-                      <div className="flex gap-2 pt-1">
-                        <Button
-                          className="flex-1"
-                          variant="outline"
-                          size="sm"
-                          asChild
-                        >
-                          <Link href={`/students/${student._id}`}>View</Link>
-                        </Button>
-                        <Button
-                          className="flex-1"
-                          variant="outline"
-                          size="sm"
-                          asChild
-                        >
-                          <Link href={`/students/${student._id}/edit`}>
-                            Edit
-                          </Link>
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() =>
-                            router.push(`/students/${student._id}/print`)
-                          }
-                        >
-                          <Printer className="h-4 w-4" />
-                        </Button>
+
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-50">
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            className={cn(
+                              "rounded-full font-bold text-[10px] uppercase px-2.5",
+                              student.status === "Active"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                                : "bg-slate-100 text-slate-600 border-slate-200",
+                            )}
+                          >
+                            {student.status}
+                          </Badge>
+                          <span className="text-xs text-slate-400 font-mono">
+                            {student.registrationNumber}
+                          </span>
+                        </div>
+                        <p className="text-xs font-semibold text-indigo-600">
+                          {student.phone || student.fatherPhone}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -624,7 +676,6 @@ export function StudentsContent() {
                     </TableHeader>
                     <TableBody>
                       {students.map((student) => (
-                        
                         <TableRow
                           key={student._id}
                           className="group transition-colors hover:bg-indigo-50/30"
@@ -678,7 +729,7 @@ export function StudentsContent() {
                                 "rounded-full font-bold text-[10px] uppercase tracking-tighter px-2.5",
                                 student.status === "Active"
                                   ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-                                  : "bg-slate-100 text-red-600 border-slate-200"
+                                  : "bg-slate-100 text-red-600 border-slate-200",
                               )}
                             >
                               {student.status}
@@ -706,7 +757,9 @@ export function StudentsContent() {
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() =>
-                                    router.push(`/students/${student._id}/report`)
+                                    router.push(
+                                      `/students/${student._id}/report`,
+                                    )
                                   }
                                 >
                                   <Eye className="h-4 w-4 mr-2" />
@@ -724,7 +777,7 @@ export function StudentsContent() {
                                 <DropdownMenuItem
                                   onClick={() =>
                                     router.push(
-                                      `/students/${student._id}/admission-form`
+                                      `/students/${student._id}/admission-form`,
                                     )
                                   }
                                 >
@@ -734,7 +787,7 @@ export function StudentsContent() {
                                 <DropdownMenuItem
                                   onClick={() =>
                                     router.push(
-                                      `/students/${student._id}/print`
+                                      `/students/${student._id}/print`,
                                     )
                                   }
                                 >
@@ -795,13 +848,13 @@ export function StudentsContent() {
                         "h-8 w-8 p-0 rounded-none first:rounded-l-md last:rounded-r-md",
                         page === i + 1
                           ? "bg-indigo-600 border-indigo-600"
-                          : "bg-white"
+                          : "bg-white",
                       )}
                       onClick={() => setPage(i + 1)}
                     >
                       {i + 1}
                     </Button>
-                  )
+                  ),
                 )}
               </div>
 
