@@ -20,7 +20,7 @@ export function Footer() {
 
   return (
     <Card>
-      <footer className="bg-white relative border-t border-zinc-800 pt-16 pb-8 overflow-hidden">
+      <footer className="print:hidden bg-white relative border-t border-zinc-800 pt-16 pb-8 overflow-hidden">
         {/* Decorative Background Glows */}
         <div className="absolute top-0 left-1/4 w-64 h-64 bg-blue-600/5 blur-[120px] rounded-full pointer-events-none" />
         <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-indigo-600/5 blur-[120px] rounded-full pointer-events-none" />
