@@ -71,7 +71,7 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-20 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800">
+    <header className="print:hidden sticky top-0 z-20 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800">
       <div className="flex items-center justify-between h-16 px-4 lg:px-8">
         {/* LEFT: Branding/Search Placeholder */}
         <div className="flex items-center gap-4">

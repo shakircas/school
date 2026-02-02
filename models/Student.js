@@ -122,7 +122,7 @@ const studentSchema = new mongoose.Schema(
         "Withdrawn",
         "all",
       ],
-      default: "all",
+      default: "Active",
       index: true,
     },
     withdrawalDate: Date,

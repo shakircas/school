@@ -14,7 +14,7 @@
   --card-foreground: oklch(0.15 0.02 250);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.15 0.02 250);
- /* Primary: Modern Blue (education/trust) */
+  /* Primary: Modern Blue (education/trust) */
   --primary: oklch(0.42 0.22 258);
   --primary-foreground: oklch(0.99 0 0);
   /* Secondary: Modern Slate */

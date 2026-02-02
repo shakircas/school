@@ -149,6 +149,27 @@ export default function AttendanceRegisterView() {
 
   return (
     <div className="space-y-6">
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+        @media print {
+          @page { 
+            size: landscape; 
+            margin: 12mm; 
+          }
+          body { 
+            -webkit-print-color-adjust: exact; 
+          }
+          .print-full-width {
+            width: 100% !important;
+            max-width: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+        }
+      `,
+        }}
+      />
       <Card className="print:hidden border-none shadow-sm bg-slate-50/50">
         <CardContent className="p-4">
           <div className="flex items-center gap-2 mb-4 text-slate-700 font-semibold">

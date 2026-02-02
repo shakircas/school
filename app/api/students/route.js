@@ -52,7 +52,7 @@ export async function GET(request) {
     if (status && status !== "all") {
       query.status = status;
     } else {
-      query.status = { $in: ["Admitted", "Active", "Inactive"] };
+      query.status = { $in: ["Admitted", "Active", "Inactive", "all"] };
     }
 
     const students = await Student.find(query)
@@ -63,7 +63,6 @@ export async function GET(request) {
       .populate("classId", "name academicYear");
 
     const total = await Student.countDocuments(query);
-
     return NextResponse.json({
       students,
       total,
@@ -74,7 +73,7 @@ export async function GET(request) {
     console.error("Error fetching students:", error);
     return NextResponse.json(
       { error: "Failed to fetch students" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -91,7 +90,6 @@ export async function GET(request) {
 //      if (!["admin", "teacher"].includes(session.user.role)) {
 //        return Response.json({ error: "Forbidden" }, { status: 403 });
 //      }
-
 
 //     const data = await request.json();
 
@@ -174,7 +172,7 @@ export async function POST(request) {
 
     return NextResponse.json(
       { error: error.message || "Failed to create student" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }
