@@ -24,7 +24,7 @@ export function ResultDMCDialog({ open, onOpenChange, result }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {/* Max width set to 7xl for a much wider preview */}
-      <DialogContent className="max-w-7xl w-[95vw] h-[95vh] p-0 flex flex-col border-none shadow-2xl">
+      <DialogContent className="max-w-6xl w-[80vw] h-[95vh] p-0 flex flex-col border-none shadow-2xl">
         {/* INLINE CSS FOR PRINTING AND ORIENTATION */}
         <style
           dangerouslySetInnerHTML={{
