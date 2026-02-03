@@ -314,6 +314,11 @@ export default function AttendanceRegisterStats({
   const sessionAvgNum = (sessionPresent / sessionTotalRecords) * 100;
   const sessionAvg = sessionAvgNum > 0 ? sessionAvgNum.toFixed(1) : monthlyAvg;
 
+  // Assuming you pass the sessionStats object from the parent component
+  const totalPresents = sessionStats?.totalPresent || 0;
+  const totalAbsents = sessionStats?.totalAbsent || 0;
+  const totalLeaves = sessionStats?.totalLeave || 0;
+
   return (
     <div className="mt-8 space-y-4 print:mt-2">
       <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2 print:text-xs">

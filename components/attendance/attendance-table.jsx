@@ -25,6 +25,7 @@ export default function AttendanceTable({
   personKey = "studentId",
   showRoll = true,
   idLabel = "Roll",
+  sessionStats,
 }) {
   const attendanceMap = buildAttendanceMap(attendanceDocs);
   const [withdrawTarget, setWithdrawTarget] = useState(null);
@@ -65,7 +66,10 @@ export default function AttendanceTable({
     0,
   );
 
-  console.log(totalAbsents)
+  // Assuming you pass the sessionStats object from the parent component
+  const totalPresentsSession = sessionStats?.totalPresent || 0;
+  const totalAbsentsSession = sessionStats?.totalAbsent || 0;
+  const totalLeaves = sessionStats?.totalLeave || 0;
 
   return (
     <Card className="border-none shadow-lg print:shadow-none print:border-none space-y-6">
@@ -79,13 +83,15 @@ export default function AttendanceTable({
         />
         <SummaryCard
           title="Session Presents"
-          value={totalPresents}
+          // value={totalPresents}
+          value={totalPresentsSession}
           icon={<CheckCircle className="w-4 h-4 text-emerald-600" />}
           bgColor="bg-emerald-50"
         />
         <SummaryCard
           title="Session Absents"
-          value={totalAbsents}
+          // value={totalAbsents}
+          value={totalAbsentsSession}
           icon={<XCircle className="w-4 h-4 text-rose-600" />}
           bgColor="bg-rose-50"
         />

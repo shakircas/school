@@ -326,11 +326,11 @@ export async function GET(req) {
         leave: stat.sessionLeave || 0,
       };
 
-      if (visibleStudentIds.has(idStr)) {
-        totalPresentSum += stat.sessionPresent;
-        totalAbsentSum += stat.sessionAbsent;
-        totalLeaveSum += stat.sessionLeave;
-      }
+      // if (visibleStudentIds.has(idStr)) {
+      totalPresentSum += stat.sessionPresent;
+      totalAbsentSum += stat.sessionAbsent;
+      totalLeaveSum += stat.sessionLeave;
+      // }
     });
 
     // 6️⃣ Merge stats into student objects
@@ -350,6 +350,43 @@ export async function GET(req) {
     });
 
     // 7️⃣ Calculate Total Session Marked Days (Capacity)
+    // const totalSessionMarkedDaysAgg = await Attendance.aggregate([
+    //   {
+    //     $match: {
+    //       type: "Student",
+    //       classId: classObjectId,
+    //       sectionId,
+    //       date: { $gte: sessionStartDate, $lte: endDate },
+    //     },
+    //   },
+    //   {
+    //     $project: {
+    //       count: {
+    //         $size: {
+    //           $filter: {
+    //             input: "$records",
+    //             as: "rec",
+    //             cond: {
+    //               $in: [
+    //                 "$$rec.personId",
+    //                 Array.from(visibleStudentIds).map(
+    //                   (id) => new mongoose.Types.ObjectId(id),
+    //                 ),
+    //               ],
+    //             },
+    //           },
+    //         },
+    //       },
+    //     },
+    //   },
+    //   {
+    //     $group: {
+    //       _id: null,
+    //       totalMarked: { $sum: "$count" },
+    //     },
+    //   },
+    // ]);
+
     const totalSessionMarkedDaysAgg = await Attendance.aggregate([
       {
         $match: {
@@ -361,22 +398,7 @@ export async function GET(req) {
       },
       {
         $project: {
-          count: {
-            $size: {
-              $filter: {
-                input: "$records",
-                as: "rec",
-                cond: {
-                  $in: [
-                    "$$rec.personId",
-                    Array.from(visibleStudentIds).map(
-                      (id) => new mongoose.Types.ObjectId(id),
-                    ),
-                  ],
-                },
-              },
-            },
-          },
+          count: { $size: "$records" },
         },
       },
       {
@@ -389,6 +411,9 @@ export async function GET(req) {
 
     const totalSessionMarkedDays =
       totalSessionMarkedDaysAgg[0]?.totalMarked || 0;
+
+    console.log(totalAbsentSum);
+    console.log(totalSessionMarkedDays);
 
     return NextResponse.json({
       students: studentsWithStats,

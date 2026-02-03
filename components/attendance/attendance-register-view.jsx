@@ -321,6 +321,7 @@ export default function AttendanceRegisterView() {
             data={data}
             currentMonth={filters.month}
             currentYear={filters.year}
+            
           />
         </div>
       )}
