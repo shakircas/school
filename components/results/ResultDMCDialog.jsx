@@ -1,6 +1,7 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Printer, X, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getGradeBadge } from "@/lib/constants";
 
 export function ResultDMCDialog({ open, onOpenChange, result }) {
   if (!result) return null;
@@ -214,7 +215,7 @@ export function ResultDMCDialog({ open, onOpenChange, result }) {
                   Final Grade
                 </span>
                 <span className="text-3xl font-black text-slate-800">
-                  {result.grade}
+                  {getGradeBadge(percentage)}
                 </span>
               </div>
               <div className="bg-slate-50 border border-slate-200 p-4 rounded text-center">

@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Eye, Pencil, Trash2 } from "lucide-react";
 import { ResultDMCDialog } from "./ResultDMCDialog";
+import { getGradeBadge, getGradeColor } from "@/lib/constants";
 
 export function ResultsTable({ results, onEdit, onDelete }) {
   const [activeResult, setActiveResult] = useState(null);
@@ -29,19 +30,11 @@ export function ResultsTable({ results, onEdit, onDelete }) {
     return { totalObtained, totalMax, percentage };
   };
 
-  const getGradeColor = (grade) => {
-    const colors = {
-      "A+": "bg-emerald-100 text-emerald-700 border-emerald-200",
-      A: "bg-green-100 text-green-700 border-green-200",
-      B: "bg-blue-100 text-blue-700 border-blue-200",
-      C: "bg-yellow-100 text-yellow-700 border-yellow-200",
-      F: "bg-red-100 text-red-700 border-red-200",
-    };
-    return colors[grade] || "bg-slate-100 border-slate-200";
-  };
+  
 
   return (
     <div className="relative overflow-x-auto rounded-md border">
+      <h1 className="md:hidden print:block">Resut</h1>
       <Table>
         <TableHeader className="bg-slate-50/50">
           <TableRow>
@@ -115,7 +108,7 @@ export function ResultsTable({ results, onEdit, onDelete }) {
                     variant="outline"
                     className={`${getGradeColor(stats.percentage)} font-bold shadow-sm`}
                   >
-                    {stats.grade || "N/A"}
+                    {getGradeBadge(stats.percentage) || "N/A"}
                   </Badge>
                 </TableCell>
                 <TableCell>

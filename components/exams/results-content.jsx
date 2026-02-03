@@ -43,6 +43,7 @@ import { ClassAnalytics } from "./ClassAnalytics";
 import { ResultSubjectsDialog } from "../results/result-subjects-dialog";
 import { ArrowUpDown, ChevronUp, ChevronDown } from "lucide-react";
 import { SubjectPerformanceOverview } from "./SubjectPerformanceOverview";
+import { getGradeBadge } from "@/lib/constants";
 
 const fetcher = (url) => fetch(url).then((r) => r.json());
 
@@ -204,22 +205,7 @@ export function ResultsContent() {
     }
   };
 
-  const getGradeBadge = (percentage) => {
-    // Top tier: 80% and above
-    if (percentage >= 80) return <Badge className="bg-green-600">A+</Badge>;
-
-    // Standard tiers shifted down
-    if (percentage >= 70) return <Badge className="bg-green-500">A</Badge>;
-    if (percentage >= 60) return <Badge className="bg-blue-500">B</Badge>;
-    if (percentage >= 50)
-      return <Badge className="bg-yellow-500 text-white">C</Badge>;
-    if (percentage >= 40)
-      return <Badge className="bg-orange-500 text-white">D</Badge>;
-
-    // Failing tier
-    return <Badge variant="destructive">F</Badge>;
-  };
-
+  
   /* ---------------- SORTING & RANKING LOGIC ---------------- */
   const sortedResults = useMemo(() => {
     let items = [...results].map((r) => {

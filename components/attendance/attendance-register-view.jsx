@@ -93,7 +93,7 @@ export default function AttendanceRegisterView() {
 
   const handleExportCSV = () => {
     if (!data) return;
-    const { students, attendanceDocs, daysInMonth } = data;
+    const { students, attendanceDocs, daysInMonth, sessionStats } = data;
     const attendanceMap = buildAttendanceMap(attendanceDocs);
 
     const headers = [
@@ -315,6 +315,7 @@ export default function AttendanceRegisterView() {
             daysInMonth={data.daysInMonth}
             month={filters.month}
             year={filters.year}
+            sessionStats={data.sessionStats}
           />
           <AttendanceRegisterStats
             data={data}
