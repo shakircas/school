@@ -313,7 +313,11 @@ export default function AttendanceRegisterStats({
   const sessionTotalRecords = totalMarked || 1;
   const sessionAvgNum = (sessionPresent / sessionTotalRecords) * 100;
   const sessionAvg = sessionAvgNum > 0 ? sessionAvgNum.toFixed(1) : monthlyAvg;
-
+  console.log(
+    sessionPresent / sessionTotalRecords,
+    sessionAvgNum,
+    sessionAvgNum.toFixed(1),
+  );
   // Assuming you pass the sessionStats object from the parent component
   const totalPresents = sessionStats?.totalPresent || 0;
   const totalAbsents = sessionStats?.totalAbsent || 0;
@@ -337,7 +341,8 @@ export default function AttendanceRegisterStats({
         />
         <StatBox
           title="Current Enrollment"
-          mainValue={activeCount}
+          // mainValue={activeCount}
+          mainValue={closingEnrollment}
           subLeft={`Total Students`}
           subRight={`Month: ${currentMonth}/${currentYear}`}
           icon={<Users className="text-blue-500 h-4 w-4" />}

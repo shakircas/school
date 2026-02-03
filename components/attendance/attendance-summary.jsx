@@ -136,6 +136,9 @@ export default function AttendanceSummary({
   const totalSessionPresents =
     students?.reduce((acc, s) => acc + (s.totalPresentTillDate || 0), 0) || 0;
 
+  const totalSessionAbsents =
+    students?.reduce((acc, s) => acc + (s.totalAbsentTillDate || 0), 0) || 0;
+
   // To get the session average, we need to know how many days have been marked in the whole session
   // We can estimate this from the first student's session stats or pass it from API
   // Here we calculate the average presents per student for the session
@@ -191,7 +194,7 @@ export default function AttendanceSummary({
       {/* Session Cumulative Stats (Prev + Current) */}
       <StatCard
         title="Session Grand Total"
-        value={totalSessionPresents}
+        value={`${totalSessionPresents}/${totalSessionAbsents}`}
         footer="Cumulative (Session YTD)"
         color="text-blue-700"
       />

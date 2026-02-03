@@ -71,6 +71,12 @@ export default function AttendanceTable({
   const totalAbsentsSession = sessionStats?.totalAbsent || 0;
   const totalLeaves = sessionStats?.totalLeave || 0;
 
+  console.log(
+    Math.round((totalPresents / (totalPresents + totalAbsents)) * 100),
+  );
+
+  console.log(totalPresents, totalAbsents);
+
   return (
     <Card className="border-none shadow-lg print:shadow-none print:border-none space-y-6">
       {/* DASHBOARD SUMMARY */}
