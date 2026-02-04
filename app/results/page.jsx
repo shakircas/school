@@ -24,6 +24,7 @@ import {
 import { ResultsFiltersBar } from "@/components/results/results-filters-bar";
 import { ResultsTable } from "@/components/results/results-table";
 import AddResultDialogue from "./add-result-dialogue";
+import { getGradeBadge } from "@/lib/constants";
 
 const fetcher = (url) => fetch(url).then((r) => r.json());
 
@@ -55,19 +56,36 @@ export default function ResultsPage() {
   // --- ACTIONS ---
   const handleExportExcel = () => {
     if (results.length === 0) return toast.error("No data to export");
-    const data = results.map((r) => ({
-      Roll: r.student?.rollNumber,
-      Student: r.student?.name,
-      Class: r.classId?.name,
-      Exam: r.exam?.name,
-      Percentage: `${r.percentage}%`,
-      Grade: r.grade,
-      Status: r.status,
-    }));
+
+    const data = results.map((r) => {
+      // Calculate totals from subjects if not present in root (fallback)
+      const obt = r.subjects.reduce((a, b) => a + b.obtainedMarks, 0);
+      const total = r.subjects.reduce((a, b) => a + b.totalMarks, 0);
+
+      const percentage = total > 0 ? (obt / total) * 100 : 0;
+      const grade = getGradeBadge(percentage);
+
+      return {
+        "Roll No": r.student?.rollNumber,
+        "Student Name": r.student?.name,
+        Class: r.classId?.name,
+        // Section: r.sectionId,
+        Exam: r.exam?.name,
+        "Obtained Marks": obt,
+        "Total Marks": total,
+        Percentage: `${percentage}%`,
+        Grade: grade || "N/A",
+        Status: r.status,
+      };
+    });
+
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Results");
-    XLSX.writeFile(wb, "Student_Results_Report.xlsx");
+    XLSX.utils.book_append_sheet(wb, ws, "Academic Report");
+    XLSX.writeFile(
+      wb,
+      `Results_Report_${new Date().toLocaleDateString()}.xlsx`,
+    );
   };
 
   const handleDelete = async (id) => {

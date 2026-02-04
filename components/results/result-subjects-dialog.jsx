@@ -103,17 +103,18 @@ export function ResultSubjectsDialog({ open, onOpenChange, result }) {
         </DialogHeader>
 
         {/* --- PRINTABLE A4 PAGE --- */}
-        <div className="flex-1 overflow-y-auto print:overflow-visible p-8 print:p-0 bg-slate-200 print:bg-white flex justify-center">
+        <div className="flex-1 overflow-y-auto print:overflow-visible p-0 sm:p-8 bg-slate-200 print:bg-white flex justify-center">
           <div
             ref={componentRef}
-            className="print-container bg-white shadow-2xl print:shadow-none"
+            className="print-container bg-white shadow-2xl print:shadow-none print:m-0"
             style={{
               width: "210mm",
-              minHeight: "297mm",
+              height: "297mm", // Fixed height for perfect A4
               padding: "15mm",
               position: "relative",
               backgroundColor: "#fff",
               color: "#000",
+              boxSizing: "border-box", // Essential for padding math
             }}
           >
             {/* All your existing certificate layout code stays exactly the same here */}
@@ -306,41 +307,56 @@ export function ResultSubjectsDialog({ open, onOpenChange, result }) {
           </div>
         </div>
 
-        {/* --- CRITICAL PRINT CSS --- */}
-        {/* Global Styles for Print Isolation */}
+        {/* --- PERFECTED PRINT CSS --- */}
         <style jsx global>{`
           @media print {
-            html,
-            body {
-              width: 210mm;
-              height: 297mm;
+            /* 1. Reset page defaults */
+            @page {
+              size: A4 portrait;
               margin: 0;
-              padding: 0;
             }
 
-            body > *:not(.print-target) {
+            /* 2. Force colors and backgrounds (Modern Browsers) */
+            * {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+              color-adjust: exact !important;
+            }
+
+            /* 3. Hide everything except the dialog content */
+            body > *:not(.print-target),
+            header,
+            nav,
+            button {
               display: none !important;
             }
 
+            /* 4. Fix the container to the top-left */
             .print-target {
-              position: static !important;
+              position: absolute !important;
+              left: 0 !important;
+              top: 0 !important;
               width: 210mm !important;
-              min-height: 297mm !important;
-              margin: 0 auto !important;
-              overflow: visible !important;
+              height: 297mm !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              background: white !important;
             }
 
-            @page {
-              size: A4;
-              margin: 0;
-            }
-
-            .pdf-safe,
-            .pdf-safe * {
-              color: rgb(0, 0, 0) !important;
-              background-color: rgb(255, 255, 255) !important;
-              border-color: rgb(0, 0, 0) !important;
+            /* 5. Ensure the container fills the A4 sheet exactly */
+            .print-container {
+              width: 210mm !important;
+              height: 297mm !important;
+              padding: 15mm !important;
+              border: none !important;
               box-shadow: none !important;
+              display: block !important;
+            }
+
+            /* 6. Fix for text rendering */
+            body {
+              -webkit-font-smoothing: antialiased;
+              background: white !important;
             }
           }
         `}</style>

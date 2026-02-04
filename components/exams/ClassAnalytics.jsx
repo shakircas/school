@@ -54,7 +54,7 @@ export function ClassAnalytics({ results }) {
     <div className="space-y-6 print:hidden">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* OVERALL PERFORMANCE */}
-        <Card className="bg-primary text-white border-none shadow-xl">
+        <Card className="bg text-black border-none shadow-xl">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-emerald-400" />
@@ -65,7 +65,7 @@ export function ClassAnalytics({ results }) {
             <div className="text-4xl font-black">
               {stats.averagePercentage}%
             </div>
-            <p className="text-[10px] text-white mt-1 uppercase tracking-widest">
+            <p className="text-[10px] text-black mt-1 uppercase tracking-widest">
               Aggregate across all subjects
             </p>
           </CardContent>

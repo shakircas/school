@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import useSWR from "swr";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, Controller } from "react-hook-form";
 import {
   Card,
   CardContent,
@@ -36,12 +36,27 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Download, Eye, Plus, Printer, Trophy } from "lucide-react";
+import {
+  Download,
+  Eye,
+  Plus,
+  Printer,
+  Trophy,
+  Trash2,
+  Edit3,
+  BookOpen,
+  User,
+  CheckCircle2,
+  XCircle,
+  ArrowUpDown,
+  ChevronUp,
+  ChevronDown,
+  Loader2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { StudentResultCard } from "./StudentResultCard";
 import { ClassAnalytics } from "./ClassAnalytics";
 import { ResultSubjectsDialog } from "../results/result-subjects-dialog";
-import { ArrowUpDown, ChevronUp, ChevronDown } from "lucide-react";
 import { SubjectPerformanceOverview } from "./SubjectPerformanceOverview";
 import { getGradeBadge } from "@/lib/constants";
 
@@ -49,31 +64,25 @@ const fetcher = (url) => fetch(url).then((r) => r.json());
 
 export function ResultsContent() {
   const [open, setOpen] = useState(false);
+  const [editingResultId, setEditingResultId] = useState(null);
   const [examId, setExamId] = useState("");
   const [classId, setClassId] = useState("");
-  const [sectionId, setSectionId] = useState("");
+  const [sectionId, setSectionId] = useState("A"); // Default Section A
   const [openDmc, setOpenDmc] = useState(false);
   const [activeResult, setActiveResult] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // const [filters, setFilters] = useState({
-  //   examId: "",
-  //   classId: "",
-  //   sectionId: "",
-  //   student: "",
-  // });
-
-  // 1. PERSISTENT FILTERS INITIALIZATION
+  /* ---------------- PERSISTENT STATE ---------------- */
   const [filters, setFilters] = useState(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("results-filters");
       return saved
         ? JSON.parse(saved)
-        : { examId: "", classId: "", sectionId: "", student: "" };
+        : { examId: "", classId: "", sectionId: "A", student: "" };
     }
-    return { examId: "", classId: "", sectionId: "", student: "" };
+    return { examId: "", classId: "", sectionId: "A", student: "" };
   });
 
-  // 2. PERSISTENT SORTING INITIALIZATION
   const [sortConfig, setSortConfig] = useState(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("results-sort");
@@ -84,7 +93,6 @@ export function ResultsContent() {
     return { key: "percentage", direction: "desc" };
   });
 
-  // Sync to localStorage
   useEffect(() => {
     localStorage.setItem("results-filters", JSON.stringify(filters));
   }, [filters]);
@@ -93,30 +101,24 @@ export function ResultsContent() {
     localStorage.setItem("results-sort", JSON.stringify(sortConfig));
   }, [sortConfig]);
 
+  /* ---------------- API DATA ---------------- */
   const resultsUrl = useMemo(() => {
     const params = new URLSearchParams();
-
     if (filters.examId) params.append("examId", filters.examId);
     if (filters.classId) params.append("classId", filters.classId);
     if (filters.sectionId) params.append("sectionId", filters.sectionId);
     if (filters.student) params.append("student", filters.student);
-
     return `/api/results?${params.toString()}`;
   }, [filters]);
 
-  // const { data: results = [], mutate } = useSWR(resultsUrl, fetcher);
-
-  /* ---------------- API ---------------- */
   const { data: examsRes } = useSWR("/api/exams", fetcher);
   const { data: resultsRes, mutate } = useSWR(resultsUrl, fetcher);
   const { data: subjectsRes } = useSWR("/api/academics/subjects", fetcher);
   const { data: classesRes } = useSWR("/api/academics/classes", fetcher);
 
-  const studentsUrl =
-    classId && sectionId
-      ? `/api/students?classId=${classId}&sectionId=${sectionId}`
-      : null;
-
+  const studentsUrl = classId
+    ? `/api/students?classId=${classId}&sectionId=${sectionId}`
+    : null;
   const { data: studentsRes } = useSWR(studentsUrl, fetcher);
 
   const exams = examsRes?.data || [];
@@ -125,123 +127,140 @@ export function ResultsContent() {
   const classes = classesRes?.data || [];
   const students = studentsRes?.students || [];
 
-  /* ---------------- EXAM ---------------- */
-  const exam = useMemo(
+  /* ---------------- FORM SETUP ---------------- */
+  const { register, handleSubmit, control, reset, setValue, watch } = useForm({
+    defaultValues: { student: "", subjects: [] },
+  });
+
+  const { fields, append, remove, replace } = useFieldArray({
+    control,
+    name: "subjects",
+  });
+  const watchedSubjects = watch("subjects");
+
+  const selectedExam = useMemo(
     () => exams.find((e) => e._id === examId),
     [examId, exams],
   );
 
-  console.log(results);
-
-  /* Sync class & section from exam */
+  // Sync Class and Schedule when Exam changes
   useEffect(() => {
-    if (exam) {
-      setClassId(exam.classId);
-      setSectionId(exam.sectionId);
-    } else {
-      setClassId("");
-      setSectionId("");
+    if (selectedExam && !editingResultId) {
+      const cid = selectedExam.classId?._id || selectedExam.classId;
+      setClassId(cid);
+      if (selectedExam.schedule?.length > 0) {
+        const sched = selectedExam.schedule.map((s) => ({
+          subject: s.subject,
+          totalMarks: s.totalMarks || 100,
+          obtainedMarks: 0,
+          passingMarks: s.passingMarks || 33,
+        }));
+        replace(sched);
+      }
     }
-  }, [exam]);
+  }, [selectedExam, replace, editingResultId]);
 
-  /* ---------------- FORM ---------------- */
-  const { register, handleSubmit, control, reset, setValue } = useForm({
-    defaultValues: {
-      student: "",
-      subjects: [{ subject: "", totalMarks: 100, obtainedMarks: 0 }],
-    },
-  });
+  /* ---------------- ACTIONS ---------------- */
+  const handleEdit = (result) => {
+    setEditingResultId(result._id);
+    setExamId(result.exam._id);
+    setClassId(result.classId._id || result.classId);
+    setSectionId(result.sectionId || "A");
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "subjects",
-  });
+    reset({
+      student: result.student._id,
+      subjects: result.subjects.map((s) => ({
+        subject: s.subject,
+        totalMarks: s.totalMarks,
+        obtainedMarks: s.obtainedMarks,
+        passingMarks: s.passingMarks || 33,
+      })),
+    });
+    setOpen(true);
+  };
 
-  /* ---------------- SUBMIT ---------------- */
-  const onSubmit = async (form) => {
+  const onSubmit = async (data) => {
+    setIsSubmitting(true);
     try {
-      if (!exam) return toast.error("Please select exam");
+      const overallStatus = data.subjects.some(
+        (s) => s.obtainedMarks < (s.passingMarks || 33),
+      )
+        ? "Fail"
+        : "Pass";
 
       const payload = {
+        id: editingResultId, // Included for updates
         exam: examId,
-        student: form.student,
-        classId: exam.classId,
-        sectionId: exam.sectionId,
-        academicYear: exam.academicYear,
-        subjects: form.subjects,
+        student: data.student,
+        classId,
+        sectionId,
+        academicYear: selectedExam?.academicYear || "2024-25",
+        subjects: data.subjects,
+        status: overallStatus,
       };
 
       const res = await fetch("/api/results", {
-        method: "POST",
+        method: editingResultId ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       if (!res.ok) throw new Error();
-
-      toast.success("Result saved successfully");
-      reset();
+      toast.success(editingResultId ? "Result updated" : "Result saved");
       setOpen(false);
+      setEditingResultId(null);
+      reset();
       mutate();
     } catch {
-      toast.error("Failed to save result");
+      toast.error("Error saving result. Check if entry already exists.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const exportResults = async () => {
+  const deleteResult = async (id) => {
+    if (!confirm("Are you sure you want to delete this result?")) return;
     try {
-      const response = await fetch(
-        `/api/results?export=csv&class=${selectedClass}&exam=${selectedExam}`,
-      );
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "results.csv";
-      a.click();
-      toast.success("Results exported successfully");
-    } catch (error) {
-      toast.error("Failed to export results");
+      await fetch("/api/results", {
+        method: "DELETE",
+        body: JSON.stringify({ id }),
+      });
+      toast.success("Result deleted");
+      mutate();
+    } catch {
+      toast.error("Failed to delete");
     }
   };
 
-  
-  /* ---------------- SORTING & RANKING LOGIC ---------------- */
+  /* ---------------- SORTING ---------------- */
   const sortedResults = useMemo(() => {
     let items = [...results].map((r) => {
-      // Pre-calculate totals for accurate sorting
       const totalMax =
         r.subjects?.reduce((acc, s) => acc + (s.totalMarks || 0), 0) || 0;
       const totalObtained =
         r.subjects?.reduce((acc, s) => acc + (s.obtainedMarks || 0), 0) || 0;
-      const percentage = totalMax > 0 ? (totalObtained / totalMax) * 100 : 0;
       return {
         ...r,
-        calculatedPerc: percentage,
+        calculatedPerc: totalMax > 0 ? (totalObtained / totalMax) * 100 : 0,
         calculatedObtained: totalObtained,
+        calculatedTotalMax: totalMax,
       };
     });
 
     if (sortConfig.key) {
       items.sort((a, b) => {
-        let aVal, bVal;
-        if (sortConfig.key === "student") {
-          aVal = a.student?.name;
-          bVal = b.student?.name;
-        } else if (sortConfig.key === "percentage") {
-          aVal = a.calculatedPerc;
-          bVal = b.calculatedPerc;
-        } else if (sortConfig.key === "obtained") {
-          aVal = a.calculatedObtained;
-          bVal = b.calculatedObtained;
-        } else if (sortConfig.key === "rollNumber") {
-          aVal = Number(a.student?.rollNumber) || 0;
-          bVal = Number(b.student?.rollNumber) || 0;
-        } else {
-          aVal = a[sortConfig.key];
-          bVal = b[sortConfig.key];
-        }
-
+        let aVal =
+          sortConfig.key === "student"
+            ? a.student?.name
+            : sortConfig.key === "percentage"
+              ? a.calculatedPerc
+              : a[sortConfig.key];
+        let bVal =
+          sortConfig.key === "student"
+            ? b.student?.name
+            : sortConfig.key === "percentage"
+              ? b.calculatedPerc
+              : b[sortConfig.key];
         if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
         if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
         return 0;
@@ -251,459 +270,476 @@ export function ResultsContent() {
   }, [results, sortConfig]);
 
   const requestSort = (key) => {
-    let direction = "asc";
-    if (sortConfig.key === key && sortConfig.direction === "asc") {
-      direction = "desc";
-    }
-    setSortConfig({ key, direction });
+    setSortConfig((prev) => ({
+      key,
+      direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc",
+    }));
   };
 
-  const SortIcon = ({ column }) => {
-    if (sortConfig.key !== column)
-      return <ArrowUpDown className="ml-2 h-3 w-3" />;
-    return sortConfig.direction === "asc" ? (
-      <ChevronUp className="bg-rose ml-2 h-3 w-3" />
-    ) : (
-      <ChevronDown className="ml-2 h-3 w-3" />
-    );
-  };
-
-  /* ---------------- UI ---------------- */
   return (
-    <div className="space-y-6 print:block print:space-y-0 print:max-w-none">
-      {/* HEADER */}
-      <div className="print:hidden flex justify-between items-center">
+    <div className="space-y-6 max-w-[1600px] mx-auto p-4 md:p-6 lg:p-8 animate-in fade-in duration-500">
+      {/* HEADER SECTION */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b pb-6">
         <div>
-          <h2 className="text-2xl font-bold">Exam Results</h2>
-          <p className="text-muted-foreground">
-            Exam → Class → Section → Student → Subjects
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
+            Academic Results
+          </h1>
+          <p className="text-slate-500 mt-1 flex items-center gap-2">
+            <Trophy className="h-4 w-4 text-amber-500" /> Central Management
+            System for Student Performance
           </p>
         </div>
-        <Button onClick={() => setOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Result
-        </Button>
-        <Button variant="outline" onClick={exportResults}>
-          <Download className="h-4 w-4 mr-2" />
-          Export{" "}
-        </Button>
-      </div>
-
-      {/* ADD RESULT */}
-      <div className="print:hidden">
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="max-w-4xl">
-            <DialogHeader>
-              <DialogTitle>Add Exam Result</DialogTitle>
-            </DialogHeader>
-
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              {/* EXAM */}
-              <div>
-                <Label>Exam</Label>
-                <Select value={examId} onValueChange={setExamId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select exam" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {exams.map((e) => (
-                      <SelectItem key={e._id} value={e._id}>
-                        {e.name} — {e.examType} ({e.academicYear}-
-                        {e.classId?.name})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* CLASS */}
-              <div>
-                <Label>Class</Label>
-                <Select value={classId} onValueChange={setClassId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select class" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {/* {classes.map((c) => (
-                    <SelectItem key={c._id} value={c._id}>
-                      {c.name}
-                    </SelectItem>
-                  ))} */}
-                    {exams.map((e) => (
-                      <SelectItem key={e._id} value={e.classId}>
-                        {e.classId.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* SECTION */}
-              <div>
-                <Label>Section</Label>
-                <Select
-                  value={sectionId}
-                  onValueChange={setSectionId}
-                  disabled={!classId}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select section" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {classes
-                      .find((c) => c._id === classId)
-                      ?.sections?.map((s) => (
-                        <SelectItem key={s._id} value={s.name}>
-                          {s.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* STUDENT */}
-              <div>
-                <Label>Student</Label>
-                <Select
-                  disabled={!students.length}
-                  onValueChange={(v) => setValue("student", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select student" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {students.map((s) => (
-                      <SelectItem key={s._id} value={s._id}>
-                        {s.name} ({s.rollNumber})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* SUBJECTS */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Subject Marks</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {fields.map((f, i) => (
-                    <div key={f._id} className="grid grid-cols-4 gap-2">
-                      {/* SUBJECT DROPDOWN */}
-                      <Select
-                        value={f.subject}
-                        onValueChange={(v) =>
-                          setValue(`subjects.${i}.subject`, v)
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select subject" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {subjects.map((sub) => (
-                            <SelectItem key={sub._id} value={sub.name}>
-                              {sub.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-
-                      <Input
-                        type="number"
-                        placeholder="Total"
-                        {...register(`subjects.${i}.totalMarks`, {
-                          required: true,
-                        })}
-                      />
-
-                      <Input
-                        type="number"
-                        placeholder="Obtained"
-                        {...register(`subjects.${i}.obtainedMarks`, {
-                          required: true,
-                        })}
-                      />
-
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        onClick={() => remove(i)}
-                      >
-                        ✕
-                      </Button>
-                    </div>
-                  ))}
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() =>
-                      append({
-                        subject: "",
-                        totalMarks: 100,
-                        obtainedMarks: 0,
-                      })
-                    }
-                  >
-                    + Add Subject
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <DialogFooter>
-                <Button type="submit">Save Result</Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <div className="print:hidden grid grid-cols-1 gap-6 max-w-7xl mx-auto space-y-12">
-        {/* Dashboard first */}
-        <ClassAnalytics results={results} />
-
-        {/* Then the printable cards */}
-        {/* <div className="grid grid-cols-1 gap-8">
-          {results.map((r) => (
-            <StudentResultCard key={r._id} result={r} />
-          ))}
-        </div> */}
-        <section>
-          <h3 className="text-xl font-bold mb-4">
-            Subject-Wise Mastery (Principal's View)
-          </h3>
-          <SubjectPerformanceOverview results={results} />
-        </section>
-      </div>
-
-      {/* Filter result */}
-      <Card className="print-hidden">
-        <CardContent className="grid md:grid-cols-5 gap-3">
-          <Select
-            value={filters.examId}
-            onValueChange={(v) => setFilters((p) => ({ ...p, examId: v }))}
+        <div className="flex gap-3 w-full md:w-auto">
+          <Button
+            onClick={() => {
+              setEditingResultId(null);
+              reset();
+              setOpen(true);
+            }}
+            className="bg-indigo-600 hover:bg-indigo-700 shadow-md"
           >
-            <SelectTrigger>
-              <SelectValue placeholder="Exam" />
-            </SelectTrigger>
-            <SelectContent>
-              {exams.map((e) => (
-                <SelectItem key={e._id} value={e._id}>
-                  {e.name} ({e.examType} - {e.academicYear} - {e.classId?.name})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select
-            value={filters.classId}
-            onValueChange={(v) => setFilters((p) => ({ ...p, classId: v }))}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Class" />
-            </SelectTrigger>
-            <SelectContent>
-              {classes.map((c) => (
-                <SelectItem key={c._id} value={c._id}>
-                  {c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Input
-            placeholder="Search student / roll"
-            value={filters.student}
-            onChange={(e) =>
-              setFilters((p) => ({ ...p, student: e.target.value }))
-            }
-          />
-
+            <Plus className="mr-2 h-4 w-4" /> Add Result
+          </Button>
           <Button
             variant="outline"
-            onClick={() =>
-              setFilters({
-                examId: "",
-                classId: "",
-                sectionId: "",
-                student: "",
-              })
-            }
-          >
-            Reset
-          </Button>
-          <Button
             onClick={() => window.print()}
-            disabled={!results.length}
-            className="bg-indigo-600 text-white"
+            className="hidden md:flex"
           >
-            <Printer className="h-4 w-4 mr-2" /> Print
+            <Printer className="h-4 w-4 mr-2" /> Print Reports
           </Button>
+        </div>
+      </div>
+
+      {/* ANALYTICS SECTION */}
+      {/* <div className="grid grid-cols-1 lg:grid-cols-3 gap-6"> */}
+      <div className="lg:col-span-3">
+        <ClassAnalytics results={results} />
+      </div>
+      <div className="lg:col-span-1">
+        <SubjectPerformanceOverview results={results} />
+      </div>
+      {/* </div> */}
+
+      {/* FILTER BAR */}
+      <Card className="border-none shadow-sm bg-slate-50/50">
+        <CardContent className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+          <div className="space-y-1.5">
+            <Label className="text-[10px] font-bold uppercase text-slate-400">
+              Filter Exam
+            </Label>
+            <Select
+              value={filters.examId}
+              onValueChange={(v) => setFilters((p) => ({ ...p, examId: v }))}
+            >
+              <SelectTrigger className="bg-white">
+                <SelectValue placeholder="All Exams" />
+              </SelectTrigger>
+              <SelectContent>
+                {exams.map((e) => (
+                  <SelectItem key={e._id} value={e._id}>
+                    {e.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-[10px] font-bold uppercase text-slate-400">
+              Filter Class
+            </Label>
+            <Select
+              value={filters.classId}
+              onValueChange={(v) => setFilters((p) => ({ ...p, classId: v }))}
+            >
+              <SelectTrigger className="bg-white">
+                <SelectValue placeholder="All Classes" />
+              </SelectTrigger>
+              <SelectContent>
+                {classes.map((c) => (
+                  <SelectItem key={c._id} value={c._id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-[10px] font-bold uppercase text-slate-400">
+              Search Student
+            </Label>
+            <Input
+              placeholder="Name or Roll No..."
+              value={filters.student}
+              onChange={(e) =>
+                setFilters((p) => ({ ...p, student: e.target.value }))
+              }
+              className="bg-white"
+            />
+          </div>
+          <div className="flex items-end gap-2 lg:col-span-2">
+            <Button
+              variant="secondary"
+              className="w-full"
+              onClick={() =>
+                setFilters({
+                  examId: "",
+                  classId: "",
+                  sectionId: "A",
+                  student: "",
+                })
+              }
+            >
+              Reset
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
       {/* RESULTS TABLE */}
-
-      {/* Change print:block to simply ensuring it's not hidden if a parent is hidden */}
-      <Card className="print:block print:static print:visible print:w-full print:border-none print:shadow-none">
-        <CardHeader className="print:pb-2">
-          <CardTitle className="print:text-xl">Exam Results Report</CardTitle>
-          <CardDescription className="print:hidden">
-            Published exam results
-          </CardDescription>
-
-          {/* Add a Print-Only Header for Context */}
-          <div className="hidden print:block text-sm font-semibold mt-2">
-            Exam:{" "}
-            {exams.find((e) => e._id === filters.examId)?.name || "All Exams"} |
-            Class:{" "}
-            {classes.find((c) => c._id === filters.classId)?.name ||
-              "All Classes"}
+      <Card className="border-none shadow-lg overflow-hidden">
+        <Table>
+          <TableHeader className="bg-slate-50">
+            <TableRow>
+              <TableHead
+                className="w-[80px] cursor-pointer"
+                onClick={() => requestSort("percentage")}
+              >
+                Rank <ArrowUpDown className="ml-1 h-3 w-3 inline" />
+              </TableHead>
+              <TableHead
+                className="cursor-pointer"
+                onClick={() => requestSort("rollNumber")}
+              >
+                Roll No <ArrowUpDown className="ml-1 h-3 w-3 inline" />
+              </TableHead>
+              <TableHead
+                className="min-w-[200px] cursor-pointer"
+                onClick={() => requestSort("student")}
+              >
+                Student <ArrowUpDown className="ml-1 h-3 w-3 inline" />
+              </TableHead>
+              <TableHead>Class</TableHead>
+              <TableHead>Marks</TableHead>
+              <TableHead className="text-center">Score %</TableHead>
+              <TableHead>Grade</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sortedResults.map((r, index) => (
+              <TableRow
+                key={r._id}
+                className="hover:bg-slate-50/50 transition-colors"
+              >
+                <TableCell className="font-bold text-slate-400">
+                  #{index + 1}
+                </TableCell>
+                <TableCell className="font-mono text-xs">
+                  {r.student?.rollNumber}
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs">
+                      {r.student?.name?.charAt(0)}
+                    </div>
+                    <span className="font-semibold text-slate-700">
+                      {r.student?.name}
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline" className="bg-white">
+                    {r.classId?.name}
+                  </Badge>
+                </TableCell>
+                <TableCell> {r.calculatedObtained}/ {r.calculatedTotalMax} </TableCell>
+                <TableCell className="text-center">
+                  <span
+                    className={`font-bold ${r.calculatedPerc >= 33 ? "text-emerald-600" : "text-red-600"}`}
+                  >
+                    {r.calculatedPerc.toFixed(1)}%
+                  </span>
+                </TableCell>
+                <TableCell>{getGradeBadge(r.calculatedPerc)}</TableCell>
+                <TableCell>
+                  <Badge
+                    className={
+                      r.status === "Pass"
+                        ? "bg-emerald-500 hover:bg-emerald-600"
+                        : "bg-rose-500 hover:bg-rose-600"
+                    }
+                  >
+                    {r.status}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-1">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-indigo-600"
+                      onClick={() => {
+                        setActiveResult(r);
+                        setOpenDmc(true);
+                      }}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-slate-600"
+                      onClick={() => handleEdit(r)}
+                    >
+                      <Edit3 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-rose-600"
+                      onClick={() => deleteResult(r._id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        {!results.length && (
+          <div className="p-20 text-center text-slate-400">
+            <Trophy className="h-12 w-12 mx-auto mb-4 opacity-20" />
+            <p>No results match your current filters.</p>
           </div>
-        </CardHeader>
-        <CardContent className="print:p-0">
-          {!results.length ? (
-            <div className="text-center py-10 text-muted-foreground">
-              <Trophy className="mx-auto mb-2" />
-              No results found
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead
-                    className="cursor-pointer"
-                    onClick={() => requestSort("percentage")}
-                  >
-                    Rank <SortIcon column="percentage" />
-                  </TableHead>
-
-                  <TableHead
-                    className="cursor-pointer"
-                    onClick={() => requestSort("rollNumber")}
-                  >
-                    Roll No. <SortIcon column="rollNumber" />
-                  </TableHead>
-
-                  <TableHead
-                    className="cursor-pointer"
-                    onClick={() => requestSort("student")}
-                  >
-                    Student <SortIcon column="student" />
-                  </TableHead>
-                  <TableHead>Class</TableHead>
-                  <TableHead>Exam</TableHead>
-                  <TableHead className="text-center">Subjects</TableHead>
-                  <TableHead
-                    className="cursor-pointer text-center"
-                    onClick={() => requestSort("obtained")}
-                  >
-                    Obtained <SortIcon column="obtained" />
-                  </TableHead>
-                  <TableHead
-                    className="cursor-pointer text-center"
-                    onClick={() => requestSort("percentage")}
-                  >
-                    Score % <SortIcon column="percentage" />
-                  </TableHead>
-                  <TableHead>Grade</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sortedResults.map((r, index) => (
-                  <TableRow key={r._id}>
-                    {/* Local Rank calculation based on sorting */}
-                    <TableCell className="font-bold">
-                      {sortConfig.key === "percentage" &&
-                      sortConfig.direction === "desc"
-                        ? `#${index + 1}`
-                        : "-"}
-                    </TableCell>
-                    <TableCell>{r.student?.rollNumber}</TableCell>
-                    <TableCell>
-                      <div className="font-medium">{r.student?.name}</div>
-                      {/* <div className="text-xs text-muted-foreground">
-                        {r.student?.rollNumber}
-                      </div> */}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">
-                        <Badge> {r.classId?.name}</Badge>{" "}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-xs">{r.exam?.name}</TableCell>
-                    <TableCell className="text-center">
-                      {r.subjects?.length}
-                    </TableCell>
-                    <TableCell className="text-center font-mono">
-                      {r.calculatedObtained} /{" "}
-                      {r.subjects?.reduce(
-                        (acc, s) => acc + (s.totalMarks || 0),
-                        0,
-                      )}
-                    </TableCell>
-                    <TableCell className="text-center font-bold">
-                      {r.calculatedPerc.toFixed(1)}%
-                    </TableCell>
-                    <TableCell>{getGradeBadge(r.calculatedPerc)}</TableCell>
-                    <TableCell>
-                      <Badge
-                        className={
-                          r.status === "Pass" ? "bg-green-600" : "bg-red-600"
-                        }
-                      >
-                        {r.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right space-x-1">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => {
-                          setActiveResult(r);
-                          setOpenDmc(true);
-                        }}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        onClick={() => {
-                          setOpen(true);
-                          setExamId(r.exam._id);
-                          setValue("student", r.student._id);
-                          reset({ subjects: r.subjects });
-                        }}
-                      >
-                        ✏️
-                      </Button>
-
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        onClick={async () => {
-                          if (!confirm("Delete this result?")) return;
-                          await fetch("/api/results", {
-                            method: "DELETE",
-                            body: JSON.stringify({ id: r._id }),
-                          });
-                          toast.success("Result deleted");
-                          mutate();
-                        }}
-                      >
-                        🗑️
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
+        )}
       </Card>
+
+      {/* ADD / EDIT DIALOG */}
+      <Dialog
+        open={open}
+        onOpenChange={(v) => {
+          if (!v) {
+            setOpen(false);
+            setEditingResultId(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+          <DialogHeader className="p-6 border-b bg-slate-50/50">
+            <DialogTitle className="flex items-center gap-2 text-indigo-700">
+              {editingResultId ? (
+                <Edit3 className="h-5 w-5" />
+              ) : (
+                <Plus className="h-5 w-5" />
+              )}
+              {editingResultId
+                ? "Modify Student Result"
+                : "Register New Result"}
+            </DialogTitle>
+          </DialogHeader>
+
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="flex-1 overflow-y-auto p-6 space-y-6"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase text-slate-500">
+                  Target Examination
+                </Label>
+                <Select
+                  value={examId}
+                  onValueChange={setExamId}
+                  disabled={!!editingResultId}
+                >
+                  <SelectTrigger className="h-11">
+                    <SelectValue placeholder="Select Exam" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {exams.map((e) => (
+                      <SelectItem key={e._id} value={e._id}>
+                        {e.name} ({e.classId?.name})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase text-slate-500">
+                  Student
+                </Label>
+                <Controller
+                  name="student"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      disabled={!!editingResultId || !students.length}
+                    >
+                      <SelectTrigger className="h-11">
+                        <SelectValue placeholder="Select Student" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {students.map((s) => (
+                          <SelectItem key={s._id} value={s._id}>
+                            {s.name} ({s.rollNumber})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+            </div>
+
+            <Card className="border-slate-200">
+              <CardHeader className="bg-slate-50/50 py-3 border-b flex flex-row items-center justify-between">
+                <CardTitle className="text-xs font-black uppercase text-slate-500 flex items-center gap-2">
+                  <BookOpen className="h-4 w-4" /> Marks Distribution
+                </CardTitle>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    append({
+                      subject: "",
+                      totalMarks: 100,
+                      obtainedMarks: 0,
+                      passingMarks: 33,
+                    })
+                  }
+                  className="text-indigo-600 h-7"
+                >
+                  <Plus className="h-3 w-3 mr-1" /> Add Subject
+                </Button>
+              </CardHeader>
+              <CardContent className="p-4 space-y-4">
+                {fields.map((f, i) => {
+                  const isPassing =
+                    watchedSubjects[i]?.obtainedMarks >=
+                    (watchedSubjects[i]?.passingMarks || 33);
+                  return (
+                    <div
+                      key={f.id}
+                      className="grid grid-cols-12 gap-3 items-center group animate-in slide-in-from-right-2 duration-300"
+                    >
+                      <div className="col-span-4">
+                        <Controller
+                          name={`subjects.${i}.subject`}
+                          control={control}
+                          render={({ field }) => (
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                            >
+                              <SelectTrigger className="h-10">
+                                <SelectValue placeholder="Subject" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {subjects.map((sub) => (
+                                  <SelectItem key={sub._id} value={sub.name}>
+                                    {sub.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <Input
+                          type="number"
+                          {...register(`subjects.${i}.totalMarks`)}
+                          placeholder="Total"
+                          className="text-center h-10"
+                        />
+                      </div>
+                      <div className="col-span-2 text-center">
+                        <Input
+                          type="number"
+                          {...register(`subjects.${i}.passingMarks`)}
+                          placeholder="Pass"
+                          className="text-center h-10 bg-slate-50"
+                        />
+                      </div>
+                      <div className="col-span-3">
+                        <Input
+                          type="number"
+                          {...register(`subjects.${i}.obtainedMarks`, {
+                            valueAsNumber: true,
+                          })}
+                          className={`text-center h-10 font-bold ${isPassing ? "text-emerald-600 border-emerald-200" : "text-rose-600 border-rose-200"}`}
+                        />
+                      </div>
+                      <div className="col-span-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => remove(i)}
+                          className="text-slate-300 hover:text-rose-600"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          </form>
+
+          <DialogFooter className="p-6 border-t bg-slate-50/50">
+            <div className="flex flex-col md:flex-row w-full items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-slate-500">
+                  Final Decision:
+                </span>
+                {watchedSubjects?.length > 0 && (
+                  <Badge
+                    className={`text-sm py-1 px-4 ${watchedSubjects.every((s) => s.obtainedMarks >= (s.passingMarks || 33)) ? "bg-emerald-600" : "bg-rose-600"}`}
+                  >
+                    {watchedSubjects.every(
+                      (s) => s.obtainedMarks >= (s.passingMarks || 33),
+                    )
+                      ? "PASS"
+                      : "FAIL / PROMOTED"}
+                  </Badge>
+                )}
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setOpen(false);
+                    setEditingResultId(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  disabled={isSubmitting}
+                  onClick={handleSubmit(onSubmit)}
+                  className="bg-indigo-600 hover:bg-indigo-700 px-8 min-w-[140px]"
+                >
+                  {isSubmitting ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : editingResultId ? (
+                    "Update Result"
+                  ) : (
+                    "Save Result"
+                  )}
+                </Button>
+              </div>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <ResultSubjectsDialog
         open={openDmc}
         onOpenChange={setOpenDmc}
