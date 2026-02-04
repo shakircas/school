@@ -180,8 +180,87 @@ export async function GET(req) {
 //   }
 // }
 
+// /* -------------------------------------------------
+//    POST — Mark attendance (WITH PRE-ADMISSION GUARD)
+// ------------------------------------------------- */
+// export async function POST(req) {
+//   await connectDB();
+
+//   try {
+//     const body = await req.json();
+//     const { date, type, classId, sectionId, records = [], markedBy } = body;
+
+//     if (!date || !type) return error("Date and type are required");
+
+//     const markingDate = new Date(date);
+//     const isTeacher = type === "Teacher";
+
+//     // 1️⃣ Logic to filter out students not yet admitted
+//     let filteredRecords = records;
+
+//     if (type === "Student") {
+//       // Fetch admission dates for all students in this batch
+//       const personIds = records.map(r => r.personId);
+//       const students = await Student.find({ _id: { $in: personIds } }).select("_id createdAt");
+      
+//       const studentAdmissionMap = {};
+//       students.forEach(s => {
+//         studentAdmissionMap[s._id.toString()] = s.createdAt;
+//       });
+
+//       // Filter records: Keep only if admissionDate <= markingDate
+//       filteredRecords = records.filter(r => {
+//         const admissionDate = studentAdmissionMap[r.personId.toString()];
+//         // If we don't have a date, default to allowing it, or strictly disallow
+//         return admissionDate ? admissionDate <= markingDate : true;
+//       });
+//     }
+
+//     if (!filteredRecords.length) {
+//       return error("No valid students to mark for this date (check admission dates)");
+//     }
+
+//     /* ---- Prevent duplicate attendance per day ---- */
+//     const start = new Date(date);
+//     start.setHours(0, 0, 0, 0);
+//     const end = new Date(date);
+//     end.setHours(23, 59, 59, 999);
+
+//     const findQuery = {
+//       date: { $gte: start, $lte: end },
+//       type,
+//       classId: isTeacher ? null : classId,
+//       sectionId: isTeacher ? "Staff" : sectionId,
+//     };
+
+//     const existing = await Attendance.findOne(findQuery);
+
+//     if (existing) {
+//       existing.records = filteredRecords; // Use filtered records
+//       existing.markedAt = new Date();
+//       if (markedBy) existing.markedBy = markedBy;
+//       await existing.save();
+//       return NextResponse.json({ data: existing });
+//     }
+
+//     const attendance = await Attendance.create({
+//       date,
+//       type,
+//       classId: isTeacher ? undefined : classId,
+//       sectionId: isTeacher ? "Staff" : sectionId,
+//       records: filteredRecords, // Use filtered records
+//       markedBy: markedBy || null,
+//     });
+
+//     return NextResponse.json({ data: attendance }, { status: 201 });
+//   } catch (err) {
+//     console.error("POST attendance error", err);
+//     return error(err.message || "Failed to mark attendance");
+//   }
+// }
+
 /* -------------------------------------------------
-   POST — Mark attendance (WITH PRE-ADMISSION GUARD)
+   POST — Mark attendance (WITH HOLIDAY & ADMISSION GUARD)
 ------------------------------------------------- */
 export async function POST(req) {
   await connectDB();
@@ -193,13 +272,28 @@ export async function POST(req) {
     if (!date || !type) return error("Date and type are required");
 
     const markingDate = new Date(date);
+    
+    // 🚩 1️⃣ HOLIDAY & SUNDAY GUARD
+    const HOLIDAYS = ["2026-01-26", "2026-03-23", "2026-02-05"];
+    
+    // Format date to YYYY-MM-DD for comparison
+    const dateString = markingDate.toISOString().split('T')[0];
+    const isSunday = markingDate.getDay() === 0;
+    const isHoliday = HOLIDAYS.includes(dateString);
+
+    if (isSunday || isHoliday) {
+      return NextResponse.json(
+        { error: `Attendance cannot be marked on ${isSunday ? 'Sundays' : 'Holidays'}.` }, 
+        { status: 400 }
+      );
+    }
+
     const isTeacher = type === "Teacher";
 
-    // 1️⃣ Logic to filter out students not yet admitted
+    // 2️⃣ Logic to filter out students not yet admitted
     let filteredRecords = records;
 
     if (type === "Student") {
-      // Fetch admission dates for all students in this batch
       const personIds = records.map(r => r.personId);
       const students = await Student.find({ _id: { $in: personIds } }).select("_id createdAt");
       
@@ -208,19 +302,17 @@ export async function POST(req) {
         studentAdmissionMap[s._id.toString()] = s.createdAt;
       });
 
-      // Filter records: Keep only if admissionDate <= markingDate
       filteredRecords = records.filter(r => {
         const admissionDate = studentAdmissionMap[r.personId.toString()];
-        // If we don't have a date, default to allowing it, or strictly disallow
-        return admissionDate ? admissionDate <= markingDate : true;
+        return admissionDate ? new Date(admissionDate) <= markingDate : true;
       });
     }
 
     if (!filteredRecords.length) {
-      return error("No valid students to mark for this date (check admission dates)");
+      return error("No valid students found for this date (check admission dates)");
     }
 
-    /* ---- Prevent duplicate attendance per day ---- */
+    /* ---- Duplicate Check & Save Logic ---- */
     const start = new Date(date);
     start.setHours(0, 0, 0, 0);
     const end = new Date(date);
@@ -236,7 +328,7 @@ export async function POST(req) {
     const existing = await Attendance.findOne(findQuery);
 
     if (existing) {
-      existing.records = filteredRecords; // Use filtered records
+      existing.records = filteredRecords;
       existing.markedAt = new Date();
       if (markedBy) existing.markedBy = markedBy;
       await existing.save();
@@ -248,7 +340,7 @@ export async function POST(req) {
       type,
       classId: isTeacher ? undefined : classId,
       sectionId: isTeacher ? "Staff" : sectionId,
-      records: filteredRecords, // Use filtered records
+      records: filteredRecords,
       markedBy: markedBy || null,
     });
 
@@ -258,8 +350,6 @@ export async function POST(req) {
     return error(err.message || "Failed to mark attendance");
   }
 }
-
-
 /* -------------------------------------------------
    DELETE — Clear Attendance for a specific day/class
 ------------------------------------------------- */

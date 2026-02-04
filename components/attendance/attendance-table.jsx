@@ -30,7 +30,7 @@ export default function AttendanceTable({
   const attendanceMap = buildAttendanceMap(attendanceDocs);
   const [withdrawTarget, setWithdrawTarget] = useState(null);
 
-  const HOLIDAYS = ["2026-01-26", "2026-03-23"];
+  const HOLIDAYS = ["2026-01-26", "2026-03-23", "2026-02-05"];
 
   const getDayInfo = (day, month, year) => {
     const date = new Date(year, month - 1, day);

@@ -19,6 +19,7 @@ import StudentProgressChart from "@/components/reports/StudentProgressChart";
 import AttendanceHistoryTable from "@/components/reports/AttendanceHistoryTable";
 import AttendanceCalendar from "@/components/reports/AttendanceCalendar";
 import { MainLayout } from "@/components/layout/main-layout";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function StudentReportPage() {
   const params = useParams();
@@ -87,28 +88,69 @@ export default function StudentReportPage() {
         </div>
 
         {/* STUDENT INFO BAR */}
-        <header className="bg-primary text-white p-6 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:bg-white print:text-slate-900 print:p-0 print:border-b print:rounded-none">
-          <div className="space-y-1">
-            <h2 className="text-3xl font-black uppercase tracking-tight">
-              {data.student.name}
-            </h2>
-            <div className="flex flex-wrap gap-4 text-xs font-bold text-white print:text-slate-600">
-              <span className="flex items-center gap-1">
-                <User size={14} /> {data.student.rollNumber}
-              </span>
-              <span className="flex items-center gap-1">
-                <BookOpen size={14} />{" "}
-                {data.student.classId?.name || "Class Record"}
-              </span>
+        <header className="relative overflow-hidden bg-slate-50 p-4 md:p-8 rounded-3xl border border-slate-200 shadow-sm print:shadow-none print:border-b print:rounded-none print:bg-transparent print:p-0">
+          {/* Decorative Background Element (Hidden in Print) */}
+          <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-emerald-50 rounded-full blur-3xl opacity-60 print:hidden" />
+
+          <div className="relative flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 w-full md:w-auto">
+              {/* Student Initials/Avatar */}
+              <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-600 text-white text-2xl font-black shadow-lg shadow-emerald-200 print:border print:text-black print:shadow-none">
+                {data.student.name.charAt(0)}
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap items-center gap-3">
+                  <h2 className="text-2xl md:text-4xl font-black uppercase tracking-tight text-slate-900">
+                    {data.student.name}
+                  </h2>
+                  <Badge
+                    variant="outline"
+                    className={`${
+                      data.student.status === "Active"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : "bg-rose-50 text-rose-700 border-rose-200"
+                    } px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider print:text-black`}
+                  >
+                    {data.student.status}
+                  </Badge>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm font-bold text-slate-500 print:text-slate-600">
+                  <div className="flex items-center gap-2 group">
+                    <div className="p-1.5 rounded-md bg-white border border-slate-200 group-hover:border-emerald-500 transition-colors">
+                      <User size={14} className="text-emerald-600" />
+                    </div>
+                    <span>Roll #{data.student.rollNumber}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 group">
+                    <div className="p-1.5 rounded-md bg-white border border-slate-200 group-hover:border-emerald-500 transition-colors">
+                      <BookOpen size={14} className="text-emerald-600" />
+                    </div>
+                    <span>{data.student.classId?.name || "Unassigned"}</span>
+                  </div>
+
+                  {/* Admission Date Logic Integration */}
+                  {data.student.createdAt && (
+                    <div className="flex items-center gap-2 group">
+                      <div className="p-1.5 rounded-md bg-white border border-slate-200 group-hover:border-emerald-500 transition-colors">
+                        <Calendar size={14} className="text-emerald-600" />
+                      </div>
+                      <span>
+                        Joined{" "}
+                        {new Date(data.student.createdAt).toLocaleDateString(
+                          "en-GB",
+                          { day: "2-digit", month: "short", year: "numeric" },
+                        )}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
-          <Badge
-            className={`${data.student.status === "Active" ? "bg-emerald-500" : "bg-rose-500"} px-4 py-1 uppercase font-bold print:border print:text-black`}
-          >
-            {data.student.status}
-          </Badge>
         </header>
-
         {/* STATS & CHARTS */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 print:grid-cols-3">
           <AttendanceCircle reportData={data.report} />
@@ -170,7 +212,7 @@ export default function StudentReportPage() {
         </div>
 
         {/* HISTORY TABLE */}
-        <div className="space-y-4 pt-4 break-inside-avoid">
+        <div className="space-y-4 pt-4 break-inside-avoid print:hidden">
           <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight border-l-4 border-indigo-600 pl-3">
             Detailed Log
           </h3>
@@ -178,7 +220,7 @@ export default function StudentReportPage() {
         </div>
 
         {/* SIGNATURE FOOTER (Print Only) */}
-        <div className="hidden print:grid grid-cols-3 gap-12 mt-20 text-[9px] font-black uppercase text-slate-400 text-center">
+        <div className="hidden print:grid grid-cols-3 gap-12 mt-0 text-[9px] font-black uppercase text-slate-400 text-center">
           <div className="border-t-2 border-slate-200 pt-3">Class Teacher</div>
           <div className="border-t-2 border-slate-200 pt-3">
             Parent / Guardian

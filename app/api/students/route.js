@@ -78,6 +78,33 @@ export async function GET(request) {
   }
 }
 
+
+// for attendance entry
+
+/* -------------------------------------------------
+   GET — Fetch students for marking UI
+------------------------------------------------- */
+// export async function GET(req) {
+//   await connectDB();
+//   const { searchParams } = new URL(req.url);
+//   const dateStr = searchParams.get("date"); // e.g., "2026-01-15"
+//   const classId = searchParams.get("classId");
+//   const sectionId = searchParams.get("sectionId");
+
+//   const selectedDate = new Date(dateStr);
+//   selectedDate.setHours(23, 59, 59, 999); // End of the selected day
+
+//   const students = await Student.find({
+//     classId,
+//     sectionId,
+//     status: "Active",
+//     // ONLY show students whose admission/creation date is <= selectedDate
+//     createdAt: { $lte: selectedDate } 
+//   }).sort({ rollNumber: 1 }).lean();
+
+//   return NextResponse.json({ data: students });
+// }
+
 // // =========================
 // //     CREATE STUDENT
 // //   (ADMISSION ENTRY)

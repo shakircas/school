@@ -109,9 +109,6 @@ export default function AttendanceSummary({
   const totalPeople = students?.length || 0;
   const daysMarked = attendanceDocs?.length || 0;
 
-  console.log(daysInMonth);
-  console.log(daysMarked);
-  console.log(totalMarked);
 
   // 1. Monthly Stats Calculation
   let monthlyPresentCount = 0;
