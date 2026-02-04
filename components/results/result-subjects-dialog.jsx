@@ -69,7 +69,8 @@ export function ResultSubjectsDialog({ open, onOpenChange, result }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="print-target w-full max-w-[950px] max-h-[95vh] overflow-y-auto bg-slate-100 p-0 border-none flex flex-col top-[50%] translate-y-[-50%]">
+      <DialogContent className="print-target w-full max-w-[950px] max-h-[95vh] overflow-y-auto bg-slate-100 p-0 border-none flex flex-col sm:top-[50%] sm:translate-y-[-50%] print:top-0 print:translate-y-0 print:bg-white print:max-h-none print:shadow-none">
+        {/* Actions Bar */}
         {/* Actions Bar */}
         <DialogHeader className="p-4 bg-white border-b flex flex-row items-center justify-between sticky top-0 z-50 print:hidden">
           <DialogTitle className="text-lg font-bold flex items-center gap-2">
@@ -80,8 +81,6 @@ export function ResultSubjectsDialog({ open, onOpenChange, result }) {
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Close
             </Button>
-
-            {/* NEW DOWNLOAD BUTTON */}
             <Button
               variant="secondary"
               onClick={generatePDF}
@@ -95,7 +94,6 @@ export function ResultSubjectsDialog({ open, onOpenChange, result }) {
               )}
               Save PDF
             </Button>
-
             <Button onClick={handlePrint} className="gap-2 bg-indigo-600">
               <Printer className="h-4 w-4" /> Print
             </Button>
@@ -103,18 +101,16 @@ export function ResultSubjectsDialog({ open, onOpenChange, result }) {
         </DialogHeader>
 
         {/* --- PRINTABLE A4 PAGE --- */}
-        <div className="flex-1 overflow-y-auto print:overflow-visible p-0 sm:p-8 bg-slate-200 print:bg-white flex justify-center">
+        <div className="flex-1 overflow-y-auto print:overflow-visible p-4 sm:p-8 bg-slate-200 print:bg-white flex justify-center">
           <div
             ref={componentRef}
             className="print-container bg-white shadow-2xl print:shadow-none print:m-0"
             style={{
               width: "210mm",
-              height: "297mm", // Fixed height for perfect A4
+              height: "297mm",
               padding: "15mm",
               position: "relative",
               backgroundColor: "#fff",
-              color: "#000",
-              boxSizing: "border-box", // Essential for padding math
             }}
           >
             {/* All your existing certificate layout code stays exactly the same here */}
@@ -310,28 +306,18 @@ export function ResultSubjectsDialog({ open, onOpenChange, result }) {
         {/* --- PERFECTED PRINT CSS --- */}
         <style jsx global>{`
           @media print {
-            /* 1. Reset page defaults */
-            @page {
-              size: A4 portrait;
-              margin: 0;
+            /* Hide everything globally */
+            body * {
+              visibility: hidden;
             }
 
-            /* 2. Force colors and backgrounds (Modern Browsers) */
-            * {
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-              color-adjust: exact !important;
+            /* Show only the print target and its children */
+            .print-target,
+            .print-target * {
+              visibility: visible;
             }
 
-            /* 3. Hide everything except the dialog content */
-            body > *:not(.print-target),
-            header,
-            nav,
-            button {
-              display: none !important;
-            }
-
-            /* 4. Fix the container to the top-left */
+            /* Reset the print target position so it starts at the top of the A4 page */
             .print-target {
               position: absolute !important;
               left: 0 !important;
@@ -341,22 +327,26 @@ export function ResultSubjectsDialog({ open, onOpenChange, result }) {
               margin: 0 !important;
               padding: 0 !important;
               background: white !important;
+              visibility: visible !important;
             }
 
-            /* 5. Ensure the container fills the A4 sheet exactly */
             .print-container {
-              width: 210mm !important;
-              height: 297mm !important;
-              padding: 15mm !important;
+              position: absolute !important;
+              top: 0 !important;
+              left: 0 !important;
+              margin: 0 !important;
               border: none !important;
-              box-shadow: none !important;
-              display: block !important;
             }
 
-            /* 6. Fix for text rendering */
-            body {
-              -webkit-font-smoothing: antialiased;
-              background: white !important;
+            /* Force background colors to print */
+            * {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+
+            @page {
+              size: A4 portrait;
+              margin: 0;
             }
           }
         `}</style>
