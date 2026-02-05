@@ -166,9 +166,13 @@ const studentSchema = new mongoose.Schema(
 studentSchema.index({ admissionDate: -1 });
 
 // Unique per class + section
+// Change this in your Student Model file
 studentSchema.index(
   { rollNumber: 1, classId: 1, sectionId: 1 },
-  { unique: true }
+  { 
+    unique: true, 
+    partialFilterExpression: { status: "Active" } // CRITICAL: Only active students count for uniqueness
+  }
 );
 studentSchema.index({ registrationNumber: 1 }, { unique: true });
 
