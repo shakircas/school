@@ -134,6 +134,29 @@ const navigation = [
       { name: "Sudents Sujects Result", href: "/results/result-ledger" },
     ],
   },
+
+  {
+    name: "Downloads",
+    icon: Download,
+    roles: ["admin", "teacher", "student"],
+    children: [
+      { name: "Results", href: "/downloads/results" },
+      { name: "Marksheets", href: "/downloads/marksheets" },
+      { name: "Exams", href: "/downloads/exams" },
+    ],
+  },
+
+  {
+    name: 'Promotion',
+    icon: Users,
+    roles: ["admin"],
+    children: [
+      { name: "Promote Students", href: "/promotion" },
+      { name: "Restore Students", href: "/promotion/restore" },
+    ],
+  }
+  ,
+
   {
     name: "Quizzes",
     icon: BookOpenCheck,

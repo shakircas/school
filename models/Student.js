@@ -54,6 +54,11 @@ const studentSchema = new mongoose.Schema(
       default: "all",
     },
 
+    academicYear: {
+      type: String,
+      required: true,
+    },
+
     // Legacy support (DO NOT USE IN NEW CODE)
     class: String,
     section: String,
@@ -156,7 +161,7 @@ const studentSchema = new mongoose.Schema(
     ],
   },
 
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // =============================
