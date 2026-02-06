@@ -104,47 +104,109 @@ export default function PromotionMenu() {
     }));
   };
 
+  // const handleAction = async () => {
+  //   const targetIds = Object.keys(selectedStudents).filter(
+  //     (id) => selectedStudents[id],
+  //   );
+  //   if (targetIds.length === 0) return alert("Select students first.");
+
+  //   const confirmMsg =
+  //     viewMode === "restore"
+  //       ? `Restore ${targetIds.length} students to Active status?`
+  //       : isHighest
+  //         ? `Archive ${targetIds.length} students as Graduated?`
+  //         : `Promote ${targetIds.length} students to ${nextClass?.name}?`;
+
+  //   if (!confirm(confirmMsg)) return;
+
+  //   setLoading(true);
+  //   try {
+  //     const endpoint =
+  //       viewMode === "restore"
+  //         ? "/api/promotion/restore"
+  //         : "/api/admin/promotion";
+  //     const response = await fetch(endpoint, {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({
+  //         studentIds: targetIds,
+  //         nextClassId: nextClass?._id,
+  //         isHighestClass: isHighest,
+  //       }),
+  //     });
+
+  //     if (response.ok) {
+  //       alert("Operation successful");
+  //       router.refresh();
+  //     }
+  //   } catch (err) {
+  //     alert("Error processing request");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const handleAction = async () => {
     const targetIds = Object.keys(selectedStudents).filter(
       (id) => selectedStudents[id],
     );
-    if (targetIds.length === 0) return alert("Select students first.");
+
+    if (targetIds.length === 0) {
+      return alert("Select students first.");
+    }
 
     const confirmMsg =
       viewMode === "restore"
         ? `Restore ${targetIds.length} students to Active status?`
         : isHighest
-          ? `Archive ${targetIds.length} students as Graduated?`
+          ? `Graduate ${targetIds.length} students (Class completed)?`
           : `Promote ${targetIds.length} students to ${nextClass?.name}?`;
 
     if (!confirm(confirmMsg)) return;
 
     setLoading(true);
+
     try {
       const endpoint =
         viewMode === "restore"
-          ? "/api/promotion/restore"
+          ? "/api/archive/students/restore"
           : "/api/admin/promotion";
+
+      const payload =
+        viewMode === "restore"
+          ? {
+              studentIds: targetIds,
+            }
+          : {
+              studentIds: targetIds,
+              nextClassId: nextClass?._id || null,
+              isHighestClass: isHighest,
+              currentClassId: selectedClassId, // ✅ REQUIRED
+            };
+
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          studentIds: targetIds,
-          nextClassId: nextClass?._id,
-          isHighestClass: isHighest,
-        }),
+        body: JSON.stringify(payload),
       });
 
-      if (response.ok) {
-        alert("Operation successful");
-        router.refresh();
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || "Operation failed");
+        return;
       }
+
+      alert(data.message || "Operation successful");
+      router.refresh();
     } catch (err) {
+      console.error(err);
       alert("Error processing request");
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <MainLayout>

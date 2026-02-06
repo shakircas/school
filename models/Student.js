@@ -1,3 +1,4 @@
+import { getActiveAcademicYear } from "../lib/getAcademicYear.js";
 import mongoose from "mongoose";
 
 const studentSchema = new mongoose.Schema(
@@ -56,7 +57,17 @@ const studentSchema = new mongoose.Schema(
 
     academicYear: {
       type: String,
-      required: true,
+      index: true,
+    },
+
+    graduationYear: {
+      type: String, // "2024-2025"
+      index: true,
+    },
+
+    lastClassId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Class",
     },
 
     // Legacy support (DO NOT USE IN NEW CODE)
@@ -111,7 +122,7 @@ const studentSchema = new mongoose.Schema(
 
     admissionStatus: {
       type: String,
-      enum: ["pending", "approved", "rejected"],
+      enum: ["pending", "approved", "rejected", "withdrawn"],
       default: "pending",
       index: true,
     },
@@ -164,6 +175,13 @@ const studentSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+studentSchema.pre("save", async function (next) {
+  if (!this.academicYear) {
+    this.academicYear = await getActiveAcademicYear();
+  }
+  next();
+});
+
 // =============================
 // INDEXES (PERFORMANCE + SAFETY)
 // =============================
@@ -174,10 +192,10 @@ studentSchema.index({ admissionDate: -1 });
 // Change this in your Student Model file
 studentSchema.index(
   { rollNumber: 1, classId: 1, sectionId: 1 },
-  { 
-    unique: true, 
-    partialFilterExpression: { status: "Active" } // CRITICAL: Only active students count for uniqueness
-  }
+  {
+    unique: true,
+    partialFilterExpression: { status: "Active" }, // CRITICAL: Only active students count for uniqueness
+  },
 );
 studentSchema.index({ registrationNumber: 1 }, { unique: true });
 

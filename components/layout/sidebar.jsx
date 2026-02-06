@@ -33,6 +33,7 @@ import {
   Search,
   LogOut,
   X,
+  Archive,
 } from "lucide-react";
 import { Input } from "../ui/input";
 
@@ -49,9 +50,9 @@ const navigation = [
       { name: "Dashboard", href: "/dashboard" },
       { name: "Users", href: "/admin/users" },
       { name: "Analytics", href: "/analytics" },
+      {name: "Academic Year", href:"/admin/academic-year"}
     ],
   },
-
 
   {
     name: "Students",
@@ -147,15 +148,14 @@ const navigation = [
   },
 
   {
-    name: 'Promotion',
+    name: "Promotion",
     icon: Users,
     roles: ["admin"],
     children: [
       { name: "Promote Students", href: "/promotion" },
-      { name: "Restore Students", href: "/promotion/restore" },
+      // { name: "Restore Students", href: "/promotion/restore" },
     ],
-  }
-  ,
+  },
 
   {
     name: "Quizzes",
@@ -251,6 +251,28 @@ const navigation = [
     ],
   },
 
+  {
+    name: "See Archives",
+    icon: Archive, // Ensure you import { Archive } from "lucide-react"
+    roles: ["admin", "teacher"],
+    children: [
+      { name: "Past Exams", href: "/archives/exams/view" },
+      { name: "Historical Results", href: "/archives/results/view" },
+      { name: "Past Attendance", href: "/archives/attendance/view" },
+      { name: "Graduated Students", href: "/archives/students/view" },
+    ],
+  },
+  {
+    name: "Make Archives",
+    icon: Archive,
+    roles: ["admin", "teacher"],
+    children: [
+      { name: "Exams", href: "/archives/exams" },
+      { name: "Results", href: "/archives/results" },
+      { name: "Attendance", href: "/archives/attendance" },
+      { name: "Students", href: "/archives/students" },
+    ],
+  },
   {
     name: "Settings",
     icon: Settings,

@@ -1,7 +1,14 @@
+import { getActiveAcademicYear } from "../lib/getAcademicYear.js";
 import mongoose from "mongoose";
 
 const attendanceSchema = new mongoose.Schema(
   {
+    academicYear: {
+      type: String,
+      // required: true,
+      index: true,
+    },
+
     date: {
       type: Date,
       required: true,
@@ -54,12 +61,24 @@ const attendanceSchema = new mongoose.Schema(
   },
 );
 
-attendanceSchema.index({
-  date: 1,
-  type: 1,
-  classId: 1,
-  sectionId: 1,
+attendanceSchema.pre("save", async function (next) {
+  if (!this.academicYear) {
+    this.academicYear = await getActiveAcademicYear();
+  }
+  next();
 });
+
+
+attendanceSchema.index(
+  {
+    date: 1,
+    academicYear: 1,
+    classId: 1,
+    sectionId: 1,
+    type: 1,
+  },
+  { unique: true },
+);
 
 export default mongoose.models.Attendance ||
   mongoose.model("Attendance", attendanceSchema);
