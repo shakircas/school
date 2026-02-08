@@ -25,6 +25,7 @@ import {
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { MainLayout } from "@/components/layout/main-layout";
+import { Alert } from "@/components/ui/alert";
 
 const fetcher = (url) => fetch(url).then((r) => r.json());
 
@@ -77,18 +78,18 @@ export default function PromotionMenu() {
   }, [students, searchTerm]);
 
   // Handle auto-selection
-//   useEffect(() => {
-//     if (filteredStudents.length > 0) {
-//       const nextState = {};
-//       filteredStudents.forEach((s) => (nextState[s._id] = true));
+  //   useEffect(() => {
+  //     if (filteredStudents.length > 0) {
+  //       const nextState = {};
+  //       filteredStudents.forEach((s) => (nextState[s._id] = true));
 
-//       // Only update if the number of students changed to avoid infinite loops
-//       setSelectedStudents(nextState);
-//     } else {
-//       setSelectedStudents({});
-//     }
-//     // We remove selectedStudents from dependencies to stop the loop
-//   }, [students, searchTerm]);
+  //       // Only update if the number of students changed to avoid infinite loops
+  //       setSelectedStudents(nextState);
+  //     } else {
+  //       setSelectedStudents({});
+  //     }
+  //     // We remove selectedStudents from dependencies to stop the loop
+  //   }, [students, searchTerm]);
 
   const currentClass = sortedClasses.find((c) => c._id === selectedClassId);
   const classIndex = sortedClasses.findIndex((c) => c._id === selectedClassId);
@@ -152,7 +153,7 @@ export default function PromotionMenu() {
     );
 
     if (targetIds.length === 0) {
-      return alert("Select students first.");
+      return Alert("Select students first.");
     }
 
     const confirmMsg =
@@ -193,20 +194,19 @@ export default function PromotionMenu() {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.error || "Operation failed");
+        Alert(data.error || "Operation failed");
         return;
       }
 
-      alert(data.message || "Operation successful");
+      Alert(data.message || "Operation successful");
       router.refresh();
     } catch (err) {
       console.error(err);
-      alert("Error processing request");
+      Alert("Error processing request");
     } finally {
       setLoading(false);
     }
   };
-
 
   return (
     <MainLayout>

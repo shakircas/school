@@ -4,7 +4,7 @@ import { MainLayout } from "@/components/layout/main-layout";
 import { useEffect, useState } from "react";
 
 export default function ArchivedStudentsView() {
-  const [graduationYear, setGraduationYear] = useState("2024-2025");
+  const [graduationYear, setGraduationYear] = useState("2025-2026");
   const [classId, setClassId] = useState("");
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -77,6 +77,7 @@ export default function ArchivedStudentsView() {
           >
             <option value="2023-2024">2023-2024</option>
             <option value="2024-2025">2024-2025</option>
+            <option value="2024-2025">2025-2026</option>
           </select>
 
           <select
@@ -85,7 +86,7 @@ export default function ArchivedStudentsView() {
             className="border p-2"
           >
             <option value="">Select Class</option>
-            <option value="CLASS10_ID_HERE">Class 10</option>
+            <option value="69687aa57528e3e5c1fdaeef">Class 10</option>
           </select>
 
           <button

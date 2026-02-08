@@ -87,6 +87,7 @@ import { NextResponse } from "next/server";
 import Student from "@/models/Student";
 import connectDB from "@/lib/db";
 import { getActiveAcademicYear } from "@/lib/getAcademicYear";
+import { archiveGraduatedStudents } from "@/lib/archiveGraduatedStudents";
 
 function getNextAcademicYear(current) {
   // "2025-2026" → "2026-2027"
@@ -134,6 +135,13 @@ export async function POST(req) {
           },
         },
       );
+
+      // 🔥 AUTO ARCHIVE
+      // await archiveGraduatedStudents(activeAcademicYear);
+
+      // return NextResponse.json({
+      //   message: "Students graduated and archived successfully",
+      // });
 
       return NextResponse.json({
         success: true,

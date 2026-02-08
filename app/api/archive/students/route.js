@@ -1,46 +1,3 @@
-// import { NextResponse } from "next/server";
-// import mongoose from "mongoose";
-// import Student from "@/models/Student";
-// import connectDB from "@/lib/db";
-
-// export async function POST(req) {
-//   try {
-//     await connectDB();
-//     const { academicYear } = await req.json();
-
-//     if (!academicYear) {
-//       return NextResponse.json(
-//         { error: "academicYear is required" },
-//         { status: 400 },
-//       );
-//     }
-
-//     const archiveCollection = `students_archive_${academicYear.replace("-", "_")}`;
-
-//     // 1️⃣ Copy data
-//     await Student.aggregate([
-//       { $match: { academicYear } },
-//       { $out: archiveCollection },
-//     ]);
-
-//     // 2️⃣ Drop indexes on archive to save space
-//     const db = mongoose.connection.db;
-//     await db.collection(archiveCollection).dropIndexes();
-
-//     // 3️⃣ Delete archived data from main collection
-//     await Student.deleteMany({ academicYear });
-
-//     return NextResponse.json({
-//       success: true,
-//       message: `Students archived for ${academicYear}`,
-//       archiveCollection,
-//     });
-//   } catch (error) {
-//     console.error("Student Archiving Error:", error);
-//     return NextResponse.json({ error: "Archiving failed" }, { status: 500 });
-//   }
-// }
-
 import connectDB from "@/lib/db";
 import mongoose from "mongoose";
 import Student from "@/models/Student";
@@ -84,11 +41,24 @@ export async function POST(req) {
     .dropIndexes()
     .catch(() => {});
 
+  // Add this check after the Student.aggregate line:
+  const archiveExists = await db
+    .listCollections({ name: archiveCollection })
+    .hasNext();
+  if (!archiveExists) {
+    return Response.json(
+      { success: false, error: "Archive collection creation failed." },
+      { status: 500 },
+    );
+  }
+  // ONLY THEN proceed to deleteMany
+
   // 3️⃣ Remove archived students from main collection
   await Student.deleteMany({
     classId: new mongoose.Types.ObjectId(classId),
     graduationYear,
   });
+  console.log(archiveCollection);
 
   return Response.json({
     success: true,
