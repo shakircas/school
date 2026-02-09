@@ -1,10 +1,12 @@
-// components/students/WithdrawalsContent.jsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import useSWR from "swr";
 import { useForm } from "react-hook-form";
 import { saveAs } from "file-saver";
+import { cn } from "@/lib/utils";
+
+// UI Components
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -43,7 +45,28 @@ import { PageHeader } from "@/components/ui/page-header";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Plus, UserMinus, Download, Printer } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+
+// Icons
+import {
+  Plus,
+  UserMinus,
+  Download,
+  Printer,
+  GraduationCap,
+  UserCheck,
+  Search,
+  Filter,
+} from "lucide-react";
 import { toast } from "sonner";
 
 const fetcher = (url) => fetch(url).then((r) => r.json());
@@ -54,544 +77,472 @@ export function WithdrawalsContent() {
   const [classFilter, setClassFilter] = useState("");
   const [sectionFilter, setSectionFilter] = useState("");
   const [limit, setLimit] = useState(10);
+  const [activeTab, setActiveTab] = useState("Active");
 
-  // Independent pagination per table
-  const [activePage, setActivePage] = useState(1);
-  const [withdrawnPage, setWithdrawnPage] = useState(1);
+  // Pagination per status
+  const [pages, setPages] = useState({ Active: 1, Inactive: 1, Graduated: 1 });
+
+  const updatePage = (status, p) =>
+    setPages((prev) => ({ ...prev, [status]: p }));
 
   // Modal & form
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const { register, handleSubmit, reset, setValue } = useForm();
 
-  // Compose query params for Active students
-  const activeParams = useMemo(() => {
+  // Unified Query Helper
+  const getQueryParams = (status) => {
     const p = new URLSearchParams();
     if (search) p.set("search", search);
-    if (classFilter) p.set("class", classFilter);
-    if (sectionFilter) p.set("section", sectionFilter);
-    p.set("status", "Active");
-    p.set("page", String(activePage));
+    if (classFilter && classFilter !== "all") p.set("class", classFilter);
+    if (sectionFilter && sectionFilter !== "all")
+      p.set("section", sectionFilter);
+    p.set("status", status);
+    p.set("page", String(pages[status]));
     p.set("limit", String(limit));
     return p.toString();
-  }, [search, classFilter, sectionFilter, activePage, limit]);
+  };
 
-  // Compose query params for Withdrawn students
-  const withdrawnParams = useMemo(() => {
-    const p = new URLSearchParams();
-    if (search) p.set("search", search);
-    if (classFilter) p.set("class", classFilter);
-    if (sectionFilter) p.set("section", sectionFilter);
-    p.set("status", "Inactive"); // backend stores as Inactive
-    p.set("page", String(withdrawnPage));
-    p.set("limit", String(limit));
-    return p.toString();
-  }, [search, classFilter, sectionFilter, withdrawnPage, limit]);
-
-  // SWR fetch
+  // SWR fetches
   const {
     data: activeRes,
     isLoading: activeLoading,
     mutate: mutateActive,
-  } = useSWR(`/api/students?${activeParams}`, fetcher);
+  } = useSWR(`/api/students?${getQueryParams("Active")}`, fetcher);
   const {
     data: withdrawnRes,
     isLoading: withdrawnLoading,
     mutate: mutateWithdrawn,
-  } = useSWR(`/api/students?${withdrawnParams}`, fetcher);
-
+  } = useSWR(`/api/students?${getQueryParams("Inactive")}`, fetcher);
+  const {
+    data: graduatedRes,
+    isLoading: graduatedLoading,
+    mutate: mutateGraduated,
+  } = useSWR(`/api/students?${getQueryParams("Graduated")}`, fetcher);
   const { data: classesRes } = useSWR(`/api/academics/classes`, fetcher);
 
   const classes = classesRes?.data || [];
 
-  const activeStudents = activeRes?.students || [];
-  const activeTotal = activeRes?.total || 0;
-  const withdrawnStudents = withdrawnRes?.students || [];
-  const withdrawnTotal = withdrawnRes?.total || 0;
+  // Table Data Mapping
+  const tabConfig = {
+    Active: {
+      res: activeRes,
+      loading: activeLoading,
+      mutate: mutateActive,
+      color: "bg-emerald-500",
+    },
+    Inactive: {
+      res: withdrawnRes,
+      loading: withdrawnLoading,
+      mutate: mutateWithdrawn,
+      color: "bg-amber-500",
+    },
+    Graduated: {
+      res: graduatedRes,
+      loading: graduatedLoading,
+      mutate: mutateGraduated,
+      color: "bg-indigo-500",
+    },
+  };
 
-  // Open withdrawal modal
-  function openWithdraw(studentId) {
-    setValue("student", studentId);
-    setIsWithdrawOpen(true);
-  }
-
-  // Withdraw student
-  async function onSubmitWithdraw(formData) {
-    try {
-      const body = {
-        status: "Inactive",
-        withdrawalDate: formData.withdrawalDate,
-        withdrawalReason: formData.reason,
-        notes: formData.notes || "",
-      };
-      const res = await fetch(`/api/students/${formData.student}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) throw new Error("Failed to withdraw student");
-      toast.success("Student withdrawn");
-      setIsWithdrawOpen(false);
-      reset();
-      mutateActive();
-      mutateWithdrawn();
-    } catch (err) {
-      toast.error(err.message);
-    }
-  }
-
-  // Activate student
-  async function activateStudent(id) {
+  // Actions
+  async function handleStatusUpdate(id, newStatus, extraData = {}) {
     try {
       const res = await fetch(`/api/students/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          status: "Active",
-          withdrawalDate: null,
-          withdrawalReason: null,
-        }),
+        body: JSON.stringify({ status: newStatus, ...extraData }),
       });
-      if (!res.ok) throw new Error("Failed to activate student");
-      toast.success("Student activated");
+      if (!res.ok) throw new Error(`Failed to update to ${newStatus}`);
+      toast.success(`Student status updated to ${newStatus}`);
       mutateActive();
       mutateWithdrawn();
+      mutateGraduated();
+      setIsWithdrawOpen(false);
+      reset();
     } catch (err) {
       toast.error(err.message);
     }
   }
 
-  // Print TC
-  function printTC(studentId) {
-    window.open(`/api/students/${studentId}/tc`, "_blank");
-  }
+  // Helper for Pagination Buttons
+  const renderPagination = (status) => {
+    const currentRes = tabConfig[status].res;
+    if (!currentRes || currentRes.totalPages <= 1) return null;
 
-  // Export PDF
-  async function exportPDF(status) {
-    try {
-      const params = new URLSearchParams();
-      if (search) params.set("search", search);
-      if (classFilter) params.set("class", classFilter);
-      if (sectionFilter) params.set("section", sectionFilter);
-      params.set("status", status);
-      const res = await fetch(`/api/students/export?${params.toString()}`);
-      if (!res.ok) throw new Error("Export failed");
-      const blob = await res.blob();
-      saveAs(
-        blob,
-        `${status.toLowerCase()}_students_${new Date()
-          .toISOString()
-          .slice(0, 10)}.pdf`
-      );
-      toast.success("Download started");
-    } catch (err) {
-      toast.error(err.message);
-    }
-  }
+    const currentPage = pages[status];
+    const totalPages = currentRes.totalPages;
 
-  // Export CSV
-  function exportCSV(students, filename) {
-    if (!students.length) return toast.error("No students to export");
-    const headers = [
-      "Name",
-      "Roll",
-      "Registration",
-      "Class",
-      "Section",
-      "Status",
-      "Withdrawal Date",
-      "Reason",
-      "Notes",
-    ];
-    const rows = students.map((s) => [
-      s.name,
-      s.rollNumber,
-      s.registrationNumber,
-      s.class,
-      s.section,
-      s.status === "Inactive" ? "Withdrawn" : s.status,
-      s.withdrawalDate ? new Date(s.withdrawalDate).toLocaleDateString() : "",
-      s.withdrawalReason || "",
-      s.notes || "",
-    ]);
-    const csvContent =
-      "data:text/csv;charset=utf-8," +
-      [headers, ...rows]
-        .map((r) =>
-          r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")
-        )
-        .join("\n");
-    const link = document.createElement("a");
-    link.href = encodeURI(csvContent);
-    link.download = filename;
-    link.click();
-  }
+    return (
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t border-slate-100">
+        <p className="text-sm text-slate-500">
+          Showing{" "}
+          <span className="font-bold text-slate-900">
+            {(currentPage - 1) * limit + 1}
+          </span>{" "}
+          to{" "}
+          <span className="font-bold text-slate-900">
+            {Math.min(currentPage * limit, currentRes.total)}
+          </span>{" "}
+          of{" "}
+          <span className="font-bold text-slate-900">{currentRes.total}</span>{" "}
+          entries
+        </p>
+        <Pagination className="w-auto mx-0">
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                className="cursor-pointer"
+                onClick={() =>
+                  currentPage > 1 && updatePage(status, currentPage - 1)
+                }
+              />
+            </PaginationItem>
+            {[...Array(totalPages)].map((_, i) => (
+              <PaginationItem key={i} className="hidden sm:inline-block">
+                <PaginationLink
+                  isActive={currentPage === i + 1}
+                  onClick={() => updatePage(status, i + 1)}
+                  className="cursor-pointer"
+                >
+                  {i + 1}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
+            <PaginationItem>
+              <PaginationNext
+                className="cursor-pointer"
+                onClick={() =>
+                  currentPage < totalPages &&
+                  updatePage(status, currentPage + 1)
+                }
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      </div>
+    );
+  };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-10">
       <PageHeader
-        title="Student Withdrawals"
-        description="Manage student withdrawals, exports and transfer certificates"
+        title="Student Lifecycle"
+        description="Manage active, withdrawn, and graduated student records."
       >
-        <div className="flex items-center gap-2">
-          <Button onClick={() => exportPDF("Active")} variant="outline">
-            <Download className="h-4 w-4 mr-2" /> Export Active (PDF)
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" className="bg-white">
+            <Download className="h-4 w-4 mr-2" /> PDF Report
           </Button>
-          <Button onClick={() => exportPDF("Inactive")} variant="outline">
-            <Download className="h-4 w-4 mr-2" /> Export Withdrawn (PDF)
-          </Button>
-          <Button
-            onClick={() => exportCSV(activeStudents, "active_students.csv")}
-            variant="outline"
-          >
-            <Download className="h-4 w-4 mr-2" /> Export Active (CSV)
-          </Button>
-          <Button
-            onClick={() =>
-              exportCSV(withdrawnStudents, "withdrawn_students.csv")
-            }
-            variant="outline"
-          >
-            <Download className="h-4 w-4 mr-2" /> Export Withdrawn (CSV)
+          <Button variant="outline" size="sm" className="bg-white">
+            <Download className="h-4 w-4 mr-2" /> Export CSV
           </Button>
         </div>
       </PageHeader>
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="flex flex-col sm:flex-row gap-3 items-center">
-          <div className="flex-1 relative max-w-sm">
-            <Input
-              placeholder="Search (name, roll, registration)"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setActivePage(1);
-                setWithdrawnPage(1);
-              }}
-            />
-          </div>
-          <Select
-            onValueChange={(v) => {
-              setClassFilter(v);
-              setActivePage(1);
-              setWithdrawnPage(1);
-            }}
+      {/* Stats Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {[
+          {
+            label: "Active",
+            val: activeRes?.total,
+            icon: UserCheck,
+            color: "text-emerald-600",
+            bg: "bg-emerald-50",
+          },
+          {
+            label: "Withdrawn",
+            val: withdrawnRes?.total,
+            icon: UserMinus,
+            color: "text-amber-600",
+            bg: "bg-amber-50",
+          },
+          {
+            label: "Graduates",
+            val: graduatedRes?.total,
+            icon: GraduationCap,
+            color: "text-indigo-600",
+            bg: "bg-indigo-50",
+          },
+        ].map((stat) => (
+          <Card
+            key={stat.label}
+            className="border-none shadow-sm ring-1 ring-slate-200"
           >
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="Class" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Classes</SelectItem>
-              {classes.map((c) => (
-                <SelectItem key={c._id} value={c._id}>
-                  {c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            onValueChange={(v) => {
-              setSectionFilter(v);
-              setActivePage(1);
-              setWithdrawnPage(1);
-            }}
-          >
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="Section" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Sections</SelectItem>
-              {classes
-                .find((c) => c._id === classFilter)
-                ?.sections?.map((s) => (
-                  <SelectItem key={s._id} value={s.name}>
-                    {s.name}
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
-          <Select onValueChange={(v) => setLimit(Number(v))}>
-            <SelectTrigger className="w-28">
-              <SelectValue>{limit} / page</SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {[10, 25, 50, 100].map((n) => (
-                <SelectItem key={n} value={String(n)}>
-                  {n} / page
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </CardContent>
-      </Card>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold">{activeTotal}</div>
-            <p className="text-sm text-muted-foreground">Active Students</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold">{withdrawnTotal}</div>
-            <p className="text-sm text-muted-foreground">Withdrawn Students</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold">
-              {activeTotal + withdrawnTotal}
-            </div>
-            <p className="text-sm text-muted-foreground">Total (filtered)</p>
-          </CardContent>
-        </Card>
+            <CardContent className="p-6 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-500">
+                  {stat.label} Students
+                </p>
+                <h3 className="text-3xl font-bold mt-1 text-slate-900">
+                  {stat.val || 0}
+                </h3>
+              </div>
+              <div className={cn("p-3 rounded-xl", stat.bg)}>
+                <stat.icon className={cn("h-6 w-6", stat.color)} />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      {/* Active Students Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Active Students</CardTitle>
-          <CardDescription>Choose a student to withdraw</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {activeLoading ? (
-            <div className="py-6 flex justify-center">
-              <LoadingSpinner />
+      {/* Enhanced Filters */}
+      <Card className="border-none shadow-sm ring-1 ring-slate-200 overflow-hidden">
+        <CardContent className="p-4 bg-slate-50/50">
+          <div className="flex flex-col md:flex-row gap-3 items-center">
+            <div className="w-full md:flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="Search by name, roll, or ID..."
+                className="pl-10 bg-white"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
             </div>
-          ) : activeStudents.length === 0 ? (
-            <EmptyState
-              title="No active students"
-              description="No results for your filters"
-            />
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Student</TableHead>
-                  <TableHead>Class</TableHead>
-                  <TableHead>Roll</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {activeStudents.map((s) => (
-                  <TableRow key={s._id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar>
-                          <AvatarImage
-                            src={s.photo?.url || "/placeholder.svg"}
-                          />
-                          <AvatarFallback>{s.name?.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="font-medium">{s.name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {s.registrationNumber}
-                          </div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{s.class}</TableCell>
-                    <TableCell>{s.rollNumber}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{s.status}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => openWithdraw(s._id)}
-                      >
-                        Withdraw
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-          {/* Active Pagination */}
-          <div className="flex items-center justify-between mt-4">
-            <div className="text-sm text-muted-foreground">
-              Page {activeRes?.page || 1} of {activeRes?.totalPages || 1}
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                disabled={(activeRes?.page || 1) <= 1}
-                onClick={() => setActivePage((p) => Math.max(1, p - 1))}
+            <div className="flex items-center gap-2 w-full md:w-auto">
+              <Select onValueChange={setClassFilter} value={classFilter}>
+                <SelectTrigger className="w-full md:w-[160px] bg-white">
+                  <SelectValue placeholder="All Classes" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Classes</SelectItem>
+                  {classes.map((c) => (
+                    <SelectItem key={c._id} value={c._id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                onValueChange={(v) => {
+                  setLimit(Number(v));
+                  setPages({ Active: 1, Inactive: 1, Graduated: 1 });
+                }}
               >
-                Prev
-              </Button>
-              <Button
-                disabled={
-                  (activeRes?.page || 1) >= (activeRes?.totalPages || 1)
-                }
-                onClick={() => setActivePage((p) => p + 1)}
-              >
-                Next
-              </Button>
+                <SelectTrigger className="w-[100px] bg-white">
+                  <SelectValue placeholder={`${limit} / page`} />
+                </SelectTrigger>
+                <SelectContent>
+                  {[10, 20, 50].map((n) => (
+                    <SelectItem key={n} value={String(n)}>
+                      {n} / page
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Withdrawn Students Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Withdrawn Students</CardTitle>
-          <CardDescription>Recently withdrawn students</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {withdrawnLoading ? (
-            <div className="py-6 flex justify-center">
-              <LoadingSpinner />
-            </div>
-          ) : withdrawnStudents.length === 0 ? (
-            <EmptyState
-              icon={UserMinus}
-              title="No withdrawal records"
-              description="No students have been withdrawn yet"
-            />
-          ) : (
-            <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Student</TableHead>
-                    <TableHead>Class</TableHead>
-                    <TableHead>Withdrawal Date</TableHead>
-                    <TableHead>Reason</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {withdrawnStudents.map((s) => (
-                    <TableRow key={s._id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar>
-                            <AvatarImage
-                              src={s.photo?.url || "/placeholder.svg"}
-                            />
-                            <AvatarFallback>{s.name?.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium">{s.name}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {s.rollNumber}
-                            </div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{s.class}</TableCell>
-                      <TableCell>
-                        {s.withdrawalDate
-                          ? new Date(s.withdrawalDate).toLocaleDateString()
-                          : "-"}
-                      </TableCell>
-                      <TableCell className="capitalize">
-                        {s.withdrawalReason || "-"}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => printTC(s._id)}
-                          >
-                            <Printer className="h-4 w-4 mr-2" />
-                            TC
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={() => activateStudent(s._id)}
-                          >
-                            Activate
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+      {/* Main Content Tabs */}
+      <Tabs
+        defaultValue="Active"
+        className="w-full"
+        onValueChange={setActiveTab}
+      >
+        <TabsList className="grid w-full md:w-[400px] grid-cols-3 mb-4">
+          <TabsTrigger value="Active">Active</TabsTrigger>
+          <TabsTrigger value="Inactive">Withdrawn</TabsTrigger>
+          <TabsTrigger value="Graduated">Graduated</TabsTrigger>
+        </TabsList>
 
-              {/* Withdrawn Pagination */}
-              <div className="flex items-center justify-between mt-4">
-                <div className="text-sm text-muted-foreground">
-                  Page {withdrawnRes?.page || 1} of{" "}
-                  {withdrawnRes?.totalPages || 1}
+        {Object.entries(tabConfig).map(([status, config]) => (
+          <TabsContent key={status} value={status}>
+            <Card className="border-none shadow-sm ring-1 ring-slate-200">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                <div>
+                  <CardTitle>{status} Database</CardTitle>
+                  <CardDescription>
+                    Records of students currently marked as {status}
+                  </CardDescription>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    disabled={(withdrawnRes?.page || 1) <= 1}
-                    onClick={() => setWithdrawnPage((p) => Math.max(1, p - 1))}
-                  >
-                    Prev
-                  </Button>
-                  <Button
-                    disabled={
-                      (withdrawnRes?.page || 1) >=
-                      (withdrawnRes?.totalPages || 1)
-                    }
-                    onClick={() => setWithdrawnPage((p) => p + 1)}
-                  >
-                    Next
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+                <Badge className={cn("capitalize", config.color)}>
+                  {status}
+                </Badge>
+              </CardHeader>
+              <CardContent>
+                {config.loading ? (
+                  <div className="h-60 flex items-center justify-center">
+                    <LoadingSpinner />
+                  </div>
+                ) : config.res?.students.length === 0 ? (
+                  <EmptyState
+                    title={`No ${status} students found`}
+                    description="Try adjusting your search or filters."
+                  />
+                ) : (
+                  <>
+                    <div className="rounded-md border border-slate-100 overflow-hidden">
+                      <Table>
+                        <TableHeader className="bg-slate-50">
+                          <TableRow>
+                            <TableHead className="w-[300px]">Student</TableHead>
+                            <TableHead>Class</TableHead>
+                            <TableHead>
+                              {status === "Active" ? "Roll No" : "Status Date"}
+                            </TableHead>
+                            <TableHead className="text-right">
+                              Actions
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {config.res.students.map((s) => (
+                            <TableRow
+                              key={s._id}
+                              className="hover:bg-slate-50/50 transition-colors"
+                            >
+                              <TableCell>
+                                <div className="flex items-center gap-3">
+                                  <Avatar className="h-9 w-9 border border-slate-200">
+                                    <AvatarImage src={s.photo?.url} />
+                                    <AvatarFallback className="bg-slate-100 text-slate-600 font-bold">
+                                      {s.name?.charAt(0)}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <div className="font-semibold text-slate-900">
+                                      {s.name}
+                                    </div>
+                                    <div className="text-xs text-slate-500 uppercase">
+                                      {s.registrationNumber}
+                                    </div>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell className="font-medium text-slate-700">
+                                {s.class}
+                              </TableCell>
+                              <TableCell className="text-slate-600 text-sm">
+                                {status === "Active"
+                                  ? s.rollNumber
+                                  : new Date(
+                                      s.withdrawalDate || s.updatedAt,
+                                    ).toLocaleDateString()}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-2">
+                                  {status === "Active" ? (
+                                    <>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="text-indigo-600"
+                                        onClick={() =>
+                                          handleStatusUpdate(s._id, "Graduated")
+                                        }
+                                      >
+                                        <GraduationCap className="h-4 w-4 mr-1" />{" "}
+                                        Graduate
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        onClick={() => {
+                                          setValue("student", s._id);
+                                          setIsWithdrawOpen(true);
+                                        }}
+                                      >
+                                        Withdraw
+                                      </Button>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() =>
+                                          window.open(
+                                            `/api/students/${s._id}/tc`,
+                                            "_blank",
+                                          )
+                                        }
+                                      >
+                                        <Printer className="h-4 w-4 mr-1" /> TC
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() =>
+                                          handleStatusUpdate(s._id, "Active")
+                                        }
+                                      >
+                                        Re-Activate
+                                      </Button>
+                                    </>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    {renderPagination(status)}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        ))}
+      </Tabs>
 
-      {/* Withdraw Modal */}
+      {/* Withdrawal Dialog stays essentially the same but calls handleStatusUpdate */}
       <Dialog open={isWithdrawOpen} onOpenChange={setIsWithdrawOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Process Withdrawal</DialogTitle>
+            <DialogTitle className="flex items-center gap-2 text-amber-600">
+              <UserMinus className="h-5 w-5" /> Process Withdrawal
+            </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit(onSubmitWithdraw)} className="space-y-4">
+          <form
+            onSubmit={handleSubmit((data) =>
+              handleStatusUpdate(data.student, "Inactive", data),
+            )}
+            className="space-y-4 pt-4"
+          >
             <input type="hidden" {...register("student")} />
-            <div>
-              <Label>Withdrawal Date</Label>
+            <div className="grid gap-2">
+              <Label htmlFor="date">Withdrawal Date</Label>
               <Input
                 type="date"
+                id="date"
                 {...register("withdrawalDate", { required: true })}
               />
             </div>
-            <div>
-              <Label>Reason</Label>
-              <Select onValueChange={(v) => setValue("reason", v)}>
+            <div className="grid gap-2">
+              <Label>Primary Reason</Label>
+              <Select onValueChange={(v) => setValue("reason", v)} required>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select reason" />
+                  <SelectValue placeholder="Choose reason..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="transfer">
-                    Transfer to another school
-                  </SelectItem>
-                  <SelectItem value="relocation">Family relocation</SelectItem>
-                  <SelectItem value="financial">Financial reasons</SelectItem>
-                  <SelectItem value="health">Health issues</SelectItem>
+                  <SelectItem value="transfer">School Transfer</SelectItem>
+                  <SelectItem value="relocation">Relocation</SelectItem>
+                  <SelectItem value="financial">Financial</SelectItem>
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label>Notes</Label>
-              <Textarea {...register("notes")} rows={3} />
+            <div className="grid gap-2">
+              <Label>Administrative Notes</Label>
+              <Textarea
+                {...register("notes")}
+                placeholder="Enter any additional details..."
+                rows={3}
+              />
             </div>
             <DialogFooter>
               <Button
-                variant="outline"
+                type="button"
+                variant="ghost"
                 onClick={() => setIsWithdrawOpen(false)}
               >
                 Cancel
               </Button>
-              <Button type="submit">Process Withdrawal</Button>
+              <Button type="submit" variant="destructive">
+                Confirm Withdrawal
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
