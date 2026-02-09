@@ -164,7 +164,7 @@ export default function ArchiveManagement() {
           <div className="lg:col-span-2">
             <StorageHealthMonitor totalSize={summary.totalSize} limitMB={512} />
           </div>
-          <Card className="bg-slate-900 text-white border-none shadow-2xl overflow-hidden relative">
+          <Card className="bg text-black border-none shadow-2xl overflow-hidden relative">
             <div className="absolute top-0 right-0 p-4 opacity-10">
               <HardDrive size={120} />
             </div>
