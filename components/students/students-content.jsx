@@ -56,6 +56,9 @@ import {
   X,
   FileDown,
   CalendarDays,
+  BookCopy,
+  BookOpen,
+  BadgeCheck,
 } from "lucide-react";
 import { useClasses } from "../hooks/useClasses";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -268,22 +271,21 @@ export function StudentsContent() {
           {
             label: "Teachers",
             value: teachers?.length || 0,
-            icon: Users,
+            icon: GraduationCap,
             color: "black",
           },
 
           {
             label: "Subjects",
-            // value: students.filter((s) => s.status !== "Active").length,
             value: subjects?.length || 0,
-            icon: UserX,
+            icon: BookOpen,
             color: "black",
           },
 
           {
             label: "Classes",
             value: classes?.length || 0,
-            icon: GraduationCap,
+            icon: BadgeCheck,
             color: "black",
           },
         ].map((card, idx) => (
