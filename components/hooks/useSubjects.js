@@ -1,4 +1,4 @@
-import { useSchoolData } from "@/context/SchoolDataContext";
+import { useSchoolData } from "../context/SchoolDataContext";
 
 export const useSubjects = () => {
   const { subjects, loading } = useSchoolData();

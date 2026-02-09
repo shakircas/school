@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -66,6 +64,8 @@ import { downloadStudentTemplate } from "@/lib/excel-templates";
 import { ImportPreviewDialog } from "./import-preview-dialog";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "../ui/card";
+import { useSubjects } from "../hooks/useSubjects";
+import { useTeachers } from "../hooks/useTeachers";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 const statuses = ["Active", "Inactive", "Graduated", "Transferred"];
@@ -82,7 +82,7 @@ export function StudentsContent() {
   const [search, setSearch] = useState("");
   const [classFilter, setClassFilter] = useState("all");
   const [sectionFilter, setSectionFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
   const limit = 10;
 
@@ -96,13 +96,13 @@ export function StudentsContent() {
 
     setSearch(searchParams.get("search") || initialFilters.search || "");
     setClassFilter(
-      searchParams.get("classId") || initialFilters.classFilter || "all"
+      searchParams.get("classId") || initialFilters.classFilter || "all",
     );
     setSectionFilter(
-      searchParams.get("sectionId") || initialFilters.sectionFilter || "all"
+      searchParams.get("sectionId") || initialFilters.sectionFilter || "all",
     );
     setStatusFilter(
-      searchParams.get("status") || initialFilters.statusFilter || "Active"
+      searchParams.get("status") || initialFilters.statusFilter || "Active",
     );
   }, []);
 
@@ -124,7 +124,7 @@ export function StudentsContent() {
         classFilter,
         sectionFilter,
         statusFilter,
-      })
+      }),
     );
   }, [search, classFilter, sectionFilter, statusFilter, page]);
 
@@ -142,9 +142,11 @@ export function StudentsContent() {
     mutate,
   } = useSWR(`/api/students?${queryParams.toString()}`, fetcher);
   const { classes, classesLoading } = useClasses();
+  const { subjects, subjectsLoading } = useSubjects();
+  const { teachers, teachersLoading } = useTeachers();
 
   const students = data?.students || [];
-  console.log(students)
+  console.log(students);
 
   const getClassById = (classId) => classes?.find((c) => c._id === classId);
 
@@ -260,31 +262,35 @@ export function StudentsContent() {
             label: "Total Students",
             value: data?.total || 0,
             icon: Users,
-            color: "from-indigo-500 to-blue-600",
+            color: "black",
           },
+
           {
-            label: "Active",
-            value: students.filter((s) => s.status === "Active").length,
-            icon: UserCheck,
-            color: "from-emerald-500 to-teal-600",
+            label: "Teachers",
+            value: teachers?.length || 0,
+            icon: Users,
+            color: "black",
           },
+
           {
-            label: "Inactive/Other",
-            value: students.filter((s) => s.status !== "Active").length,
+            label: "Subjects",
+            // value: students.filter((s) => s.status !== "Active").length,
+            value: subjects?.length || 0,
             icon: UserX,
-            color: "from-orange-500 to-rose-600",
+            color: "black",
           },
+
           {
             label: "Classes",
             value: classes?.length || 0,
             icon: GraduationCap,
-            color: "from-amber-500 to-orange-600",
+            color: "black",
           },
         ].map((card, idx) => (
-          <div
+          <Card
             key={idx}
             className={cn(
-              "relative overflow-hidden rounded-2xl p-5 text-white shadow-lg shadow-indigo-100/20 bg-gradient-to-br",
+              "relative overflow-hidden rounded-2xl p-5  shadow-lg shadow-indigo-100/20 bg-gradient-to-br",
               card.color,
             )}
           >
@@ -298,7 +304,7 @@ export function StudentsContent() {
               <card.icon className="h-10 w-10 opacity-30" />
             </div>
             <div className="absolute -bottom-2 -right-2 h-16 w-16 rounded-full bg-white/10 blur-2xl" />
-          </div>
+          </Card>
         ))}
       </div>
 

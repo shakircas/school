@@ -1,6 +1,7 @@
-import { useSchoolData } from "@/context/SchoolDataContext";
+import { useSchoolData } from "../context/SchoolDataContext";
 
 export const useTeachers = () => {
   const { teachers, loading } = useSchoolData();
-  return { teachers: teachers?.data || [], loading };
+  console.log(teachers);
+  return { teachers: teachers?.teachers || [], loading };
 };
