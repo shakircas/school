@@ -46,9 +46,6 @@ import {
   Upload,
   FileSpreadsheet,
   GraduationCap,
-  Users,
-  UserCheck,
-  UserX,
   Printer,
   ChevronLeft,
   ChevronRight,
@@ -56,9 +53,6 @@ import {
   X,
   FileDown,
   CalendarDays,
-  BookCopy,
-  BookOpen,
-  BadgeCheck,
 } from "lucide-react";
 import { useClasses } from "../hooks/useClasses";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -69,6 +63,10 @@ import { cn } from "@/lib/utils";
 import { Card, CardContent } from "../ui/card";
 import { useSubjects } from "../hooks/useSubjects";
 import { useTeachers } from "../hooks/useTeachers";
+import SummaryStats from "./SummaryStats";
+import StudentTable from "./StudentTable";
+import { Pagination } from "../ui/pagination";
+import StudentTablePagination from "./StudentTablePagination";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 const statuses = ["Active", "Inactive", "Graduated", "Transferred"];
@@ -87,7 +85,7 @@ export function StudentsContent() {
   const [sectionFilter, setSectionFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
-  const limit = 10;
+  const [limit, setLimit] = useState(10);
 
   const debouncedSearch = useDebounce(search, 400);
   const searchParams = useSearchParams();
@@ -258,57 +256,12 @@ export function StudentsContent() {
 
   return (
     <div className="space-y-6 pb-8">
-      {/* Summary Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          {
-            label: "Total Students",
-            value: data?.total || 0,
-            icon: Users,
-            color: "black",
-          },
-
-          {
-            label: "Teachers",
-            value: teachers?.length || 0,
-            icon: GraduationCap,
-            color: "black",
-          },
-
-          {
-            label: "Subjects",
-            value: subjects?.length || 0,
-            icon: BookOpen,
-            color: "black",
-          },
-
-          {
-            label: "Classes",
-            value: classes?.length || 0,
-            icon: BadgeCheck,
-            color: "black",
-          },
-        ].map((card, idx) => (
-          <Card
-            key={idx}
-            className={cn(
-              "relative overflow-hidden rounded-2xl p-5  shadow-lg shadow-indigo-100/20 bg-gradient-to-br",
-              card.color,
-            )}
-          >
-            <div className="relative z-10 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium opacity-80">{card.label}</p>
-                <p className="text-3xl font-bold tracking-tight">
-                  {card.value}
-                </p>
-              </div>
-              <card.icon className="h-10 w-10 opacity-30" />
-            </div>
-            <div className="absolute -bottom-2 -right-2 h-16 w-16 rounded-full bg-white/10 blur-2xl" />
-          </Card>
-        ))}
-      </div>
+      <SummaryStats
+        data={data}
+        teachers={teachers}
+        subjects={subjects}
+        classes={classes}
+      />
 
       <Card className="border-none shadow-sm ring-1 ring-slate-200">
         <CardContent className="p-0">
@@ -384,7 +337,7 @@ export function StudentsContent() {
                 >
                   <Link href="/students/add">
                     <Plus className="h-4 w-4 sm:mr-2" />
-                    <span>Add Student</span>
+                    <span>Add</span>
                   </Link>
                 </Button>
               </div>
@@ -497,387 +450,24 @@ export function StudentsContent() {
               </div>
             )}
           </div>
-
           {/* Table / Content Area */}
-          <div className="border-t border-slate-100">
-            {studentsLoading ? (
-              <div className="flex flex-col items-center justify-center py-24 space-y-4">
-                <LoadingSpinner size="lg" className="text-indigo-600" />
-                <p className="text-sm text-slate-500 font-medium">
-                  Fetching records...
-                </p>
-              </div>
-            ) : students.length === 0 ? (
-              <div className="py-20">
-                <EmptyState
-                  icon={GraduationCap}
-                  title="No students found"
-                  description="Adjust your filters or add a new student to the system."
-                  action={
-                    <Button onClick={clearFilters} variant="outline">
-                      Clear All Filters
-                    </Button>
-                  }
-                />
-              </div>
-            ) : (
-              <>
-                {/* Mobile View */}
-                {/* Mobile View */}
-                <div className="grid gap-4 p-4 sm:hidden">
-                  {students.map((student) => (
-                    <div
-                      key={student._id}
-                      className="rounded-xl border border-slate-200 p-4 space-y-4 bg-white shadow-sm"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-12 w-12 border-2 border-slate-100">
-                            <AvatarImage src={student.photo?.url} />
-                            <AvatarFallback className="bg-indigo-50 text-indigo-700">
-                              {student.name?.[0]}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-bold text-slate-900 truncate">
-                              {student.name}
-                            </p>
-                            <p className="text-xs text-slate-500 font-mono">
-                              Roll #{student.rollNumber}
-                            </p>
-                          </div>
-                        </div>
 
-                        {/* Unified Mobile Actions Dropdown */}
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="rounded-full -mt-1 -mr-1"
-                            >
-                              <MoreHorizontal className="h-5 w-5 text-slate-400" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-56">
-                            <DropdownMenuItem
-                              onClick={() =>
-                                router.push(`/students/${student._id}`)
-                              }
-                            >
-                              <Eye className="h-4 w-4 mr-2" /> View Full Profile
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                router.push(`/students/${student._id}/report`)
-                              }
-                            >
-                              <CalendarDays className="h-4 w-4 mr-2" />{" "}
-                              Attendance Record
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                router.push(`/students/${student._id}/edit`)
-                              }
-                            >
-                              <Edit className="h-4 w-4 mr-2" /> Edit Records
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() =>
-                                router.push(
-                                  `/students/${student._id}/admission-form`,
-                                )
-                              }
-                            >
-                              <Printer className="h-4 w-4 mr-2" /> Admission
-                              Form
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                router.push(`/students/${student._id}/print`)
-                              }
-                            >
-                              <Printer className="h-4 w-4 mr-2" /> Student ID
-                              Card
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => handleDelete(student._id)}
-                              className="text-rose-600 focus:text-rose-600 focus:bg-rose-50"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" /> Delete Student
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3 text-sm border-t border-slate-50 pt-3">
-                        <div>
-                          <p className="text-slate-400 text-[11px] uppercase font-bold tracking-wider">
-                            Academic
-                          </p>
-                          <p className="font-medium text-slate-700">
-                            {student.classId?.name} -{" "}
-                            {student.sectionId || "N/A"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-slate-400 text-[11px] uppercase font-bold tracking-wider">
-                            Guardian
-                          </p>
-                          <p className="font-medium text-slate-700 truncate">
-                            {student.fatherName}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between pt-2 border-t border-slate-50">
-                        <div className="flex items-center gap-2">
-                          <Badge
-                            className={cn(
-                              "rounded-full font-bold text-[10px] uppercase px-2.5",
-                              student.status === "Active"
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                                : "bg-slate-100 text-slate-600 border-slate-200",
-                            )}
-                          >
-                            {student.status}
-                          </Badge>
-                          <span className="text-xs text-slate-400 font-mono">
-                            {student.registrationNumber}
-                          </span>
-                        </div>
-                        <p className="text-xs font-semibold text-indigo-600">
-                          {student.phone || student.fatherPhone}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Desktop Table View */}
-                <div className="hidden sm:block">
-                  <Table>
-                    <TableHeader className="bg-slate-50/50">
-                      <TableRow>
-                        <TableHead className="pl-6 py-4 font-bold text-slate-700">
-                          Student Profile
-                        </TableHead>
-                        <TableHead className="font-bold text-slate-700">
-                          Roll No.
-                        </TableHead>
-                        <TableHead className="font-bold text-slate-700">
-                          Class & Section
-                        </TableHead>
-                        <TableHead className="font-bold text-slate-700">
-                          Guardian
-                        </TableHead>
-                        <TableHead className="font-bold text-slate-700">
-                          Contact
-                        </TableHead>
-                        <TableHead className="font-bold text-slate-700">
-                          Status
-                        </TableHead>
-                        <TableHead className="w-16 pr-6"></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {students.map((student) => (
-                        <TableRow
-                          key={student._id}
-                          className="group transition-colors hover:bg-indigo-50/30"
-                        >
-                          <TableCell className="pl-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <Avatar className="h-10 w-10 ring-2 ring-white shadow-sm transition-transform group-hover:scale-110">
-                                <AvatarImage
-                                  src={student.photo?.url || "/placeholder.svg"}
-                                />
-                                <AvatarFallback className="bg-indigo-100 text-indigo-700 font-bold">
-                                  {student.name?.charAt(0)}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
-                                  {student.name}
-                                </p>
-                                <p className="text-xs text-slate-500 font-mono">
-                                  {student.registrationNumber}
-                                </p>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="font-medium text-slate-600">
-                            {student.rollNumber}
-                          </TableCell>
-                          <TableCell>
-                            <div className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-800">
-                              {student.classId?.name} •{" "}
-                              {student.sectionId || "—"}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-slate-600 font-medium">
-                            {student.fatherName}
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm space-y-0.5">
-                              <p className="font-medium text-slate-700">
-                                {student.phone || student.fatherPhone}
-                              </p>
-                              <p className="text-xs text-slate-400 truncate max-w-[150px]">
-                                {student.email}
-                              </p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant="secondary"
-                              className={cn(
-                                "rounded-full font-bold text-[10px] uppercase tracking-tighter px-2.5",
-                                student.status === "Active"
-                                  ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-                                  : "bg-slate-100 text-red-600 border-slate-200",
-                              )}
-                            >
-                              {student.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="pr-6 text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="rounded-full hover:bg-white hover:shadow-sm"
-                                >
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-52">
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    router.push(`/students/${student._id}`)
-                                  }
-                                >
-                                  <Eye className="h-4 w-4 mr-2" /> View Full
-                                  Profile
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    router.push(
-                                      `/students/${student._id}/report`,
-                                    )
-                                  }
-                                >
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  Attendance Record
-                                </DropdownMenuItem>
-
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    router.push(`/students/${student._id}/edit`)
-                                  }
-                                >
-                                  <Edit className="h-4 w-4 mr-2" /> Edit Records
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    router.push(
-                                      `/students/${student._id}/admission-form`,
-                                    )
-                                  }
-                                >
-                                  <Printer className="h-4 w-4 mr-2" /> Admission
-                                  Form
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    router.push(
-                                      `/students/${student._id}/print`,
-                                    )
-                                  }
-                                >
-                                  <Printer className="h-4 w-4 mr-2" /> Student
-                                  ID Card
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={() => handleDelete(student._id)}
-                                  className="text-rose-600 focus:text-rose-600 focus:bg-rose-50"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" /> Delete
-                                  Student
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </>
-            )}
+          {/* 3. The Separated Table Component */}
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <StudentTable
+              students={students}
+              isLoading={studentsLoading}
+              onDelete={handleDelete}
+              onClearFilters={clearFilters}
+            />
           </div>
-
-          {/* Pagination Footer */}
-          <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-6 border-t border-slate-100 gap-4">
-            <p className="text-sm font-medium text-slate-500">
-              Page <span className="text-slate-900">{data?.page || 1}</span> of{" "}
-              <span className="text-slate-900">{data?.totalPages || 1}</span>
-              <span className="ml-2 text-slate-300">|</span>
-              <span className="ml-2 font-normal">
-                Total {data?.total || 0} entries
-              </span>
-            </p>
-
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="bg-white hover:bg-slate-50 border-slate-200 shadow-sm disabled:opacity-50"
-                disabled={page === 1}
-                onClick={() => setPage((p) => p - 1)}
-              >
-                <ChevronLeft className="h-4 w-4 mr-1" />
-                Previous
-              </Button>
-
-              <div className="flex items-center -space-x-px">
-                {Array.from({ length: Math.min(data?.totalPages || 0, 5) }).map(
-                  (_, i) => (
-                    <Button
-                      key={i}
-                      variant={page === i + 1 ? "default" : "outline"}
-                      size="sm"
-                      className={cn(
-                        "h-8 w-8 p-0 rounded-none first:rounded-l-md last:rounded-r-md",
-                        page === i + 1
-                          ? "bg-indigo-600 border-indigo-600"
-                          : "bg-white",
-                      )}
-                      onClick={() => setPage(i + 1)}
-                    >
-                      {i + 1}
-                    </Button>
-                  ),
-                )}
-              </div>
-
-              <Button
-                variant="outline"
-                size="sm"
-                className="bg-white hover:bg-slate-50 border-slate-200 shadow-sm disabled:opacity-50"
-                disabled={page === data?.totalPages}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                Next
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
-            </div>
-          </div>
+          <StudentTablePagination
+            data={data}
+            page={page}
+            setPage={setPage}
+            limit={limit}
+            setLimit={setLimit}
+          />
         </CardContent>
       </Card>
 
