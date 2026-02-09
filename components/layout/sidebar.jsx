@@ -256,6 +256,7 @@ const navigation = [
     icon: Archive, // Ensure you import { Archive } from "lucide-react"
     roles: ["admin", "teacher"],
     children: [
+      {name:"Archives Management", href:"/archives/management"},
       { name: "Past Exams", href: "/archives/exams/view" },
       { name: "Historical Results", href: "/archives/results/view" },
       { name: "Past Attendance", href: "/archives/attendance/view" },
