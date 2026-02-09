@@ -1,5 +1,6 @@
 import connectDB from "@/lib/db";
 import Attendance from "@/models/Attendance";
+import mongoose from "mongoose";
 import { NextResponse } from "next/server";
 
 export async function POST(req) {
@@ -12,11 +13,14 @@ export async function POST(req) {
       );
     }
 
+    console.log(academicYear);
+
     await connectDB();
 
     const [startYear, endYear] = academicYear.split("-");
-    const startDate = new Date(`20${startYear}-04-01`);
-    const endDate = new Date(`20${endYear}-04-01`);
+    const startDate = new Date(`${startYear}-04-01`); // No "20" prefix needed
+    const endDate = new Date(`${endYear}-04-01`);
+    console.log(startDate, endDate);
 
     const archiveCollection = `attendances_${academicYear.replace("-", "_")}`;
     const db = mongoose.connection.db;
