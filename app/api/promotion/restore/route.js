@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import dbConnect from "@/lib/dbConnect";
 import Student from "@/models/Student";
+import connectDB from "@/lib/db";
 
 export async function POST(req) {
   try {
-    await dbConnect();
+    await connectDB();
     const { studentIds } = await req.json();
 
     const result = await Student.updateMany(
