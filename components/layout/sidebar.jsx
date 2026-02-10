@@ -216,7 +216,7 @@ const navigation = [
   },
 
   {
-    name: "Downloads",
+    name: "Download",
     icon: Download,
     roles: ["admin"],
     children: [

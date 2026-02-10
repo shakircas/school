@@ -784,6 +784,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/ui/page-header";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import AIRiskHeatmap from "@/app/dashboard/AIRiskHeatmap";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -1205,7 +1206,12 @@ export function DashboardContent() {
               </Link>
             ))}
           </div>
+
+          
         </CardContent>
+      </Card>
+      <Card>
+        <AIRiskHeatmap />
       </Card>
     </div>
   );

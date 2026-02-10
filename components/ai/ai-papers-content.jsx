@@ -1,342 +1,3 @@
-// "use client";
-
-// import { useState, useRef } from "react";
-// import { useForm } from "react-hook-form";
-// import { Button } from "@/components/ui/button";
-// import {
-//   Card,
-//   CardContent,
-//   CardDescription,
-//   CardHeader,
-//   CardTitle,
-// } from "@/components/ui/card";
-// import { Input } from "@/components/ui/input";
-// import { Label } from "@/components/ui/label";
-// import {
-//   Select,
-//   SelectContent,
-//   SelectItem,
-//   SelectTrigger,
-//   SelectValue,
-// } from "@/components/ui/select";
-// import { Textarea } from "@/components/ui/textarea";
-// import { PageHeader } from "@/components/ui/page-header";
-// import { LoadingSpinner } from "@/components/ui/loading-spinner";
-// import { Badge } from "@/components/ui/badge";
-// import { Wand2, Download, Printer, FileText, Copy } from "lucide-react";
-// import { toast } from "sonner";
-// import ReactMarkdown from "react-markdown";
-// import remarkGfm from "remark-gfm";
-// import { jsPDF } from "jspdf";
-// import { Document, Packer, Paragraph, TextRun } from "docx";
-
-// export function AIPapersContent() {
-//   const [isGenerating, setIsGenerating] = useState(false);
-//   const [generatedPaper, setGeneratedPaper] = useState(null);
-//   const paperRef = useRef(null);
-
-//   const { register, handleSubmit, setValue } = useForm({
-//     defaultValues: {
-//       class: "",
-//       subject: "",
-//       examType: "midterm",
-//       totalMarks: "100",
-//       duration: "3 hours",
-//       topics: "",
-//       questionTypes: "mcq,short,long",
-//     },
-//   });
-
-//   const onSubmit = async (data) => {
-//     setIsGenerating(true);
-//     try {
-//       const response = await fetch("/api/ai/generate", {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify({
-//           type: "exam-paper",
-//           subject: data.subject,
-//           class: data.class,
-//           topic: data.topics || "Complete Syllabus",
-//         }),
-//       });
-
-//       const result = await response.json();
-
-//       if (result.paper) {
-//         setGeneratedPaper(result.paper);
-//         toast.success("Paper generated successfully!");
-//       } else {
-//         throw new Error("Failed to generate paper");
-//       }
-//     } catch (error) {
-//       toast.error("Failed to generate paper. Please try again.");
-//     } finally {
-//       setIsGenerating(false);
-//     }
-//   };
-
-//   const handlePrint = () => {
-//     window.print();
-//   };
-
-//   const handleCopy = () => {
-//     if (generatedPaper) {
-//       navigator.clipboard.writeText(generatedPaper.content);
-//       toast.success("Copied to clipboard!");
-//     }
-//   };
-
-//   const handleDownloadPDF = () => {
-//     if (!generatedPaper) return;
-//     const doc = new jsPDF("p", "pt", "a4");
-//     const content = paperRef.current?.innerText || generatedPaper.content;
-//     const lines = doc.splitTextToSize(content, 500);
-//     doc.text(lines, 40, 40);
-//     doc.save(`${generatedPaper.title}.pdf`);
-//   };
-
-//   const handleDownloadDocx = async () => {
-//     if (!generatedPaper) return;
-//     const doc = new Document({
-//       sections: [
-//         {
-//           properties: {},
-//           children: [
-//             new Paragraph({
-//               children: [
-//                 new TextRun({
-//                   text: generatedPaper.title,
-//                   bold: true,
-//                   size: 32,
-//                 }),
-//               ],
-//               spacing: { after: 300 },
-//             }),
-//             new Paragraph({
-//               children: [
-//                 new TextRun({
-//                   text: `Class: ${generatedPaper.class} | Subject: ${generatedPaper.subject} | Total Marks: ${generatedPaper.totalMarks} | Duration: ${generatedPaper.duration}`,
-//                   italics: true,
-//                 }),
-//               ],
-//               spacing: { after: 300 },
-//             }),
-//             ...generatedPaper.content.split("\n").map(
-//               (line) =>
-//                 new Paragraph({
-//                   children: [new TextRun({ text: line })],
-//                   spacing: { after: 100 },
-//                 })
-//             ),
-//           ],
-//         },
-//       ],
-//     });
-//     const blob = await Packer.toBlob(doc);
-//     const url = URL.createObjectURL(blob);
-//     const a = document.createElement("a");
-//     a.href = url;
-//     a.download = `${generatedPaper.title}.docx`;
-//     a.click();
-//     URL.revokeObjectURL(url);
-//   };
-
-//   return (
-//     <div className="space-y-6">
-//       <PageHeader
-//         title="AI Paper Generator"
-//         description="Generate exam papers using Gemini AI"
-//       >
-//         {generatedPaper && (
-//           <div className="flex gap-2 flex-wrap">
-//             <Button variant="outline" onClick={handleCopy}>
-//               <Copy className="h-4 w-4 mr-2" />
-//               Copy
-//             </Button>
-//             <Button variant="outline" onClick={handlePrint}>
-//               <Printer className="h-4 w-4 mr-2" />
-//               Print
-//             </Button>
-//             <Button variant="outline" onClick={handleDownloadPDF}>
-//               <Download className="h-4 w-4 mr-2" />
-//               Download PDF
-//             </Button>
-//             <Button variant="outline" onClick={handleDownloadDocx}>
-//               <Download className="h-4 w-4 mr-2" />
-//               Download DOCX
-//             </Button>
-//           </div>
-//         )}
-//       </PageHeader>
-
-//       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-//         {/* Settings Panel */}
-//         <Card className="lg:col-span-1">
-//           <CardHeader>
-//             <CardTitle>Paper Settings</CardTitle>
-//             <CardDescription>Configure your exam paper</CardDescription>
-//           </CardHeader>
-//           <CardContent>
-//             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-//               <div className="space-y-2">
-//                 <Label>Class</Label>
-//                 <Select onValueChange={(value) => setValue("class", value)}>
-//                   <SelectTrigger>
-//                     <SelectValue placeholder="Select class" />
-//                   </SelectTrigger>
-//                   <SelectContent>
-//                     {[6, 7, 8, 9, 10].map((cls) => (
-//                       <SelectItem key={cls} value={cls.toString()}>
-//                         Class {cls}
-//                       </SelectItem>
-//                     ))}
-//                   </SelectContent>
-//                 </Select>
-//               </div>
-
-//               <div className="space-y-2">
-//                 <Label>Subject</Label>
-//                 <Select onValueChange={(value) => setValue("subject", value)}>
-//                   <SelectTrigger>
-//                     <SelectValue placeholder="Select subject" />
-//                   </SelectTrigger>
-//                   <SelectContent>
-//                     {[
-//                       "math",
-//                       "english",
-//                       "science",
-//                       "urdu",
-//                       "islamiat",
-//                       "computer",
-//                       "physics",
-//                       "chemistry",
-//                       "biology",
-//                     ].map((sub) => (
-//                       <SelectItem key={sub} value={sub}>
-//                         {sub.charAt(0).toUpperCase() + sub.slice(1)}
-//                       </SelectItem>
-//                     ))}
-//                   </SelectContent>
-//                 </Select>
-//               </div>
-
-//               <div className="space-y-2">
-//                 <Label>Exam Type</Label>
-//                 <Select
-//                   onValueChange={(value) => setValue("examType", value)}
-//                   defaultValue="midterm"
-//                 >
-//                   <SelectTrigger>
-//                     <SelectValue />
-//                   </SelectTrigger>
-//                   <SelectContent>
-//                     <SelectItem value="weekly">Weekly Test</SelectItem>
-//                     <SelectItem value="monthly">Monthly Test</SelectItem>
-//                     <SelectItem value="midterm">Mid-term</SelectItem>
-//                     <SelectItem value="final">Final Exam</SelectItem>
-//                   </SelectContent>
-//                 </Select>
-//               </div>
-
-//               <div className="grid grid-cols-2 gap-4">
-//                 <div className="space-y-2">
-//                   <Label htmlFor="totalMarks">Total Marks</Label>
-//                   <Input
-//                     id="totalMarks"
-//                     {...register("totalMarks")}
-//                     placeholder="100"
-//                   />
-//                 </div>
-//                 <div className="space-y-2">
-//                   <Label htmlFor="duration">Duration</Label>
-//                   <Input
-//                     id="duration"
-//                     {...register("duration")}
-//                     placeholder="3 hours"
-//                   />
-//                 </div>
-//               </div>
-
-//               <div className="space-y-2">
-//                 <Label htmlFor="topics">Topics (Optional)</Label>
-//                 <Textarea
-//                   id="topics"
-//                   {...register("topics")}
-//                   rows={3}
-//                   placeholder="Enter topics separated by commas"
-//                 />
-//               </div>
-
-//               <Button type="submit" className="w-full" disabled={isGenerating}>
-//                 {isGenerating ? (
-//                   <>
-//                     <LoadingSpinner className="mr-2" /> Generating...
-//                   </>
-//                 ) : (
-//                   <>
-//                     <Wand2 className="h-4 w-4 mr-2" /> Generate Paper
-//                   </>
-//                 )}
-//               </Button>
-//             </form>
-//           </CardContent>
-//         </Card>
-
-//         {/* Preview Panel */}
-//         <Card className="lg:col-span-2">
-//           <CardHeader>
-//             <CardTitle>Paper Preview</CardTitle>
-//             <CardDescription>
-//               {generatedPaper
-//                 ? "Your generated exam paper"
-//                 : "Configure settings and generate a paper"}
-//             </CardDescription>
-//           </CardHeader>
-//           <CardContent>
-//             {isGenerating ? (
-//               <div className="flex flex-col items-center justify-center py-12">
-//                 <LoadingSpinner size="lg" />
-//                 <p className="mt-4 text-muted-foreground">
-//                   Generating your exam paper...
-//                 </p>
-//               </div>
-//             ) : generatedPaper ? (
-//               <div
-//                 ref={paperRef}
-//                 className="prose prose-sm max-w-none dark:prose-invert"
-//               >
-//                 <div className="text-center mb-6 pb-4 border-b">
-//                   <h1 className="text-2xl font-bold mb-1">EduManage School</h1>
-//                   <h2 className="text-lg mb-2">{generatedPaper.title}</h2>
-//                   <div className="flex justify-center gap-4 text-sm text-muted-foreground">
-//                     <span>Class: {generatedPaper.class}</span>
-//                     <span>Subject: {generatedPaper.subject}</span>
-//                     <span>Total Marks: {generatedPaper.totalMarks}</span>
-//                     <span>Time: {generatedPaper.duration}</span>
-//                   </div>
-//                 </div>
-//                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
-//                   {generatedPaper.content}
-//                 </ReactMarkdown>
-//               </div>
-//             ) : (
-//               <div className="flex flex-col items-center justify-center py-12 text-center">
-//                 <FileText className="h-16 w-16 text-muted-foreground/50 mb-4" />
-//                 <h3 className="text-lg font-medium mb-2">No Paper Generated</h3>
-//                 <p className="text-muted-foreground max-w-sm">
-//                   Configure your paper settings and click "Generate Paper" to
-//                   create an AI-powered exam paper.
-//                 </p>
-//               </div>
-//             )}
-//           </CardContent>
-//         </Card>
-//       </div>
-//     </div>
-//   );
-// }
-
 "use client";
 
 import { useState, useRef } from "react";
@@ -376,6 +37,8 @@ import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { SolutionManual } from "./SolutionManual";
+import { subjectsKPK } from "@/lib/constants";
+import { exportToWord } from "@/lib/export-word";
 
 export function AIPapersContent() {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -410,7 +73,7 @@ export function AIPapersContent() {
 
       if (response.status === 429) {
         toast.error(
-          "Google's free limit reached. Please wait a minute before trying again!"
+          "Google's free limit reached. Please wait a minute before trying again!",
         );
         return;
       }
@@ -428,9 +91,17 @@ export function AIPapersContent() {
   };
 
   console.log(generatedPaper);
+  const handleDownloadWord = async () => {
+    try {
+      await exportToWord(generatedPaper);
+      toast.success("Word document generated!");
+    } catch (err) {
+      toast.error("Word export failed.");
+    }
+  };
 
   return (
-    <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-8 print:p-0">
+    <div className="max-w-7xl mx-auto p-2 md:p-2 space-y-2 print:p-0">
       {/* Header Area */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
         <div>
@@ -455,8 +126,12 @@ export function AIPapersContent() {
             >
               <Printer className="w-4 h-4 mr-2" /> Print
             </Button>
-            <Button className="bg-slate-900 rounded-xl font-black px-6 shadow-xl">
-              <Download className="w-4 h-4 mr-2" /> Export PDF
+            {/* Updated Download Button */}
+            <Button
+              onClick={handleDownloadWord}
+              className="bg-slate-900 rounded-xl font-black px-6 shadow-xl gap-2"
+            >
+              <FileText className="w-4 h-4" /> Download Word (.docx)
             </Button>
           </div>
         )}
@@ -465,7 +140,7 @@ export function AIPapersContent() {
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
         {/* Left Control Panel: High Density Settings */}
         <Card className="xl:col-span-4 border-2 border-slate-100 shadow-2xl rounded-[2rem] overflow-hidden print:hidden">
-          <div className="bg-slate-900 p-6 text-white flex items-center gap-3">
+          <div className="bg p-2 text-black flex items-center gap-3">
             <Settings2 className="w-5 h-5 text-indigo-400" />
             <h3 className="font-black tracking-tight text-lg">
               Configuration Matrix
@@ -511,19 +186,14 @@ export function AIPapersContent() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {[
-                        "Physics",
-                        "Chemistry",
-                        "Biology",
-                        "Mathematics",
-                        "Computer Science",
-                        "English",
-                        "Urdu",
-                        "Islamiat",
-                        "Pak Studies",
-                      ].map((s) => (
-                        <SelectItem key={s} value={s} className="font-bold">
-                          {s}
+                      {subjectsKPK.map((s) => (
+                        <SelectItem
+                          key={s.code}
+                          value={s.value}
+                          className="font-bold"
+                          defaultValue="Biology"
+                        >
+                          {s.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -714,24 +384,20 @@ export function AIPapersContent() {
                   subject={generatedPaper.subject}
                 />
                 {/* BOARD HEADER STYLE */}
+                {/* Inside the generatedPaper block */}
                 <div className="text-center border-4 border-double border-slate-900 p-6 mb-8 rounded-xl print:rounded-none">
                   <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tighter m-0">
                     Government High School Mardan
                   </h1>
                   <div className="flex justify-center gap-2 mt-2">
-                    <Badge
-                      variant="outline"
-                      className="font-black border-slate-900 uppercase"
-                    >
-                      {generatedPaper.title}
+                    <Badge className="font-black border-slate-900 uppercase">
+                      {generatedPaper.title} {/* e.g., Final Term */}
                     </Badge>
-                    <Badge
-                      variant="outline"
-                      className="font-black border-slate-900 uppercase"
-                    >
+                    <Badge className="font-black border-slate-900 uppercase">
                       Session 2026
                     </Badge>
                   </div>
+
                   <div className="grid grid-cols-3 gap-4 mt-6 text-[11px] font-black uppercase border-t-2 border-slate-900 pt-4">
                     <div className="text-left">
                       Class: {generatedPaper.class}
@@ -745,7 +411,7 @@ export function AIPapersContent() {
                     <div className="text-left">
                       Marks: {generatedPaper.totalMarks}
                     </div>
-                    <div className="text-center col-span-2 text-right">
+                    <div className="text-right col-span-2">
                       Name: __________________________
                     </div>
                   </div>

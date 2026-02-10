@@ -103,7 +103,7 @@ export function StudentsContent() {
       searchParams.get("sectionId") || initialFilters.sectionFilter || "all",
     );
     setStatusFilter(
-      searchParams.get("status") || initialFilters.statusFilter || "Active",
+      searchParams.get("status") || initialFilters.statusFilter || "all",
     );
   }, []);
 
