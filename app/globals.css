@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+/* @import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap'); */
 
 @custom-variant dark (&:is(.dark *));
 
@@ -155,3 +156,16 @@
 /* Print System: 
   Professional A4 layout for Certificates and Reports 
 */
+
+
+.font-urdu {
+  font-family: 'Noto Nastaliq Urdu', serif;
+  line-height: 2.5; /* Urdu needs more line height for ligatures */
+  direction: rtl;
+}
+
+/* Ensure Katex equations are slightly larger for readability */
+.katex {
+  font-size: 1.1em !important;
+}
+

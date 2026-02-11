@@ -32,6 +32,7 @@ import {
   BookOpen,
   Target,
   BrainCircuit,
+  Languages,
 } from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
@@ -39,10 +40,13 @@ import remarkGfm from "remark-gfm";
 import { SolutionManual } from "./SolutionManual";
 import { subjectsKPK } from "@/lib/constants";
 import { exportToWord } from "@/lib/export-word";
+import { Switch } from "../ui/switch";
+import { Checkbox } from "../ui/checkbox";
 
 export function AIPapersContent() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedPaper, setGeneratedPaper] = useState(null);
+  const [selectedChapters, setSelectedChapters] = useState([]);
   const paperRef = useRef(null);
 
   const { register, handleSubmit, setValue, watch } = useForm({
@@ -56,8 +60,29 @@ export function AIPapersContent() {
       difficulty: "Standard Board Level",
       sections: "All Sections (A, B, C)",
       chapterRange: "Full Book",
+      language: "English",
     },
   });
+
+  const selectedSubjectValue = watch("subject");
+  const isUrduMode = watch("language") === "Urdu";
+
+  // Find chapters for the current subject
+  const currentSubjectData = subjectsKPK.find(
+    (s) => s.value === selectedSubjectValue,
+  );
+  const availableChapters = currentSubjectData?.chapters || [];
+
+  const handleChapterToggle = (chapter) => {
+    const updated = selectedChapters.includes(chapter)
+      ? selectedChapters.filter((c) => c !== chapter)
+      : [...selectedChapters, chapter];
+    setSelectedChapters(updated);
+    setValue(
+      "chapterRange",
+      updated.length > 0 ? updated.join(", ") : "Full Book",
+    );
+  };
 
   const onSubmit = async (data) => {
     setIsGenerating(true);
@@ -179,7 +204,10 @@ export function AIPapersContent() {
                     Subject
                   </Label>
                   <Select
-                    onValueChange={(v) => setValue("subject", v)}
+                    onValueChange={(v) => {
+                      setValue("subject", v);
+                      setSelectedChapters([]); // Reset chapters when subject changes
+                    }}
                     defaultValue="Physics"
                   >
                     <SelectTrigger className="rounded-xl border-2 font-black">
@@ -306,8 +334,23 @@ export function AIPapersContent() {
                 </div>
               </div>
 
+              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border-2">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-indigo-100 rounded-lg text-indigo-600">
+                    <Languages size={18} />
+                  </div>
+                  <Label className="font-bold">Urdu Medium Mode</Label>
+                </div>
+                <Switch
+                  checked={watch("language") === "Urdu"}
+                  onCheckedChange={(checked) =>
+                    setValue("language", checked ? "Urdu" : "English")
+                  }
+                />
+              </div>
+
               {/* Row 4: Chapter Selection */}
-              <div className="space-y-1.5">
+              {/* <div className="space-y-1.5">
                 <Label className="text-[10px] font-black text-slate-400 uppercase ml-1">
                   Chapter/Syllabus Range
                 </Label>
@@ -316,6 +359,44 @@ export function AIPapersContent() {
                   className="rounded-xl border-2 font-bold"
                   placeholder="e.g. Chapters 1 to 5 only"
                 />
+              </div> */}
+
+              {/* DYNAMIC CHAPTER SELECTION */}
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black text-slate-400 uppercase ml-1">
+                  Chapter Selection
+                </Label>
+                <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto p-2 border-2 rounded-xl bg-slate-50">
+                  {availableChapters.length > 0 ? (
+                    availableChapters.map((ch) => (
+                      <div key={ch} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={ch}
+                          checked={selectedChapters.includes(ch)}
+                          onCheckedChange={() => handleChapterToggle(ch)}
+                        />
+                        <label
+                          htmlFor={ch}
+                          className="text-sm font-bold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          {ch}
+                        </label>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-slate-400 italic">
+                      Select a subject to see chapters
+                    </p>
+                  )}
+                </div>
+                {selectedChapters.length === 0 && (
+                  <Badge
+                    variant="outline"
+                    className="mt-1 text-indigo-600 border-indigo-200"
+                  >
+                    Full Book Selected
+                  </Badge>
+                )}
               </div>
 
               <div className="pt-4">

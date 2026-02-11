@@ -43,19 +43,7 @@ export async function POST(req) {
     });
 
     const body = await req.json();
-    // const {
-    //   type,
-    //   subject,
-    //   class: classLevel,
-    //   topic,
-    //   details,
-    //   notesType,
-    //   count = 10,
-    //   difficulty = "Medium",
-    //   language = "English",
-    // } = body;
 
-    // Destructure the new fields from your frontend
     const {
       type,
       subject,
@@ -76,10 +64,23 @@ export async function POST(req) {
     console.log("type", type);
     console.log("REQUEST BODY:", body);
 
+    // 1. System Instruction
+    const isUrdu = language === "Urdu";
+    const isScience = ["physics", "math", "maths", "chemistry"].includes(
+      subject?.toLowerCase(),
+    );
+
+    let systemInstruction = `
+    You are a subject expert for BISE Mardan. 
+    Language: ${language}. 
+    ${isUrdu ? "STRICT: Write in professional Urdu academic script." : ""}
+    ${isScience ? "STRICT: Use LaTeX for ALL math/science formulas. Use $...$ for inline and $$...$$ for blocks." : ""}
+  `;
+
     // 2. Optimized Prompt Matrix
     switch (type) {
       case "mcqs":
-        prompt = `Act as a senior BISE examiner. Generate ${count} MCQs for Class ${classLevel} ${subject} on Topic: ${topic}. 
+        prompt = `${systemInstruction} Act as a senior BISE examiner. Generate ${count} MCQs for Class ${classLevel} ${subject} on Topic: ${topic}. 
         Difficulty Level: ${difficulty}. 
         Language: ${language}.
         STRICT RULE: Return ONLY a raw JSON array. No markdown blocks. 
@@ -87,7 +88,7 @@ export async function POST(req) {
         break;
 
       case "notes":
-        prompt = `As a subject expert, write ${
+        prompt = `${systemInstruction} As a subject expert, write ${
           notesType || "comprehensive"
         } notes for Class ${classLevel} ${subject}. 
         Topic: ${topic}. 
@@ -98,9 +99,16 @@ export async function POST(req) {
       case "exam-paper":
       case "paper":
         const scheme = getPaperScheme(subject, classLevel);
+        const isUrdu = language === "Urdu";
+        const isScience = ["physics", "maths", "math", "chemistry"].includes(
+          subject.toLowerCase(),
+        );
         prompt = `
         Act as a Senior Paper Setter for BISE Mardan. 
         Generate a professional ${examType} Exam Paper.
+
+        ${isScience ? "STRICT RULE: Use LaTeX for ALL mathematical formulas and physics equations (e.g., $E=mc^2$ or $\\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$)." : ""}
+    ${isUrdu ? "STRICT RULE: Write entirely in Urdu. Use 'حصہ الف' for Section A, 'حصہ ب' for Section B, and 'حصہ ج' for Section C." : ""}
         
         SPECIFICATIONS:
         - Subject: ${subject}
@@ -118,6 +126,10 @@ export async function POST(req) {
 
         FORMATTING:
         - Use professional Markdown.
+        - Use LaTeX for mathematical formulas.
+        - ${isUrdu ? "Alignment: Right-to-Left." : ""}
+        - Use Markdown Lists.
+        - Use Markdown Headers.
         - Bold the Section Headers (e.g., **SECTION-A**).
         - Use a numbered list for questions.
         - Ensure all content is relevant to the ${classLevel} grade curriculum.
@@ -125,13 +137,13 @@ export async function POST(req) {
         break;
 
       case "worksheet":
-        prompt = `Create a classroom worksheet for Class ${classLevel} ${subject} on ${topic}. 
+        prompt = `${systemInstruction} Create a classroom worksheet for Class ${classLevel} ${subject} on ${topic}. 
         Include: Matching Columns, Fill in the blanks, and 2 Concept diagrams descriptions. 
         Format: Markdown.`;
         break;
 
       case "quiz":
-        prompt = `
+        prompt = ` ${systemInstruction}
  You are an experienced school teacher.
 
  Generate ${count} Multiple Choice Questions for a QUIZ.
