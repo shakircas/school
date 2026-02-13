@@ -157,15 +157,52 @@
   Professional A4 layout for Certificates and Reports 
 */
 
+/* @import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap'); */
 
-.font-urdu {
-  font-family: 'Noto Nastaliq Urdu', serif;
-  line-height: 2.5; /* Urdu needs more line height for ligatures */
-  direction: rtl;
+/* Fix for KaTeX equations in Urdu RTL mode */
+[dir="rtl"] .katex {
+  direction: ltr !important;
+  display: inline-block;
 }
 
-/* Ensure Katex equations are slightly larger for readability */
-.katex {
-  font-size: 1.1em !important;
+.markdown-body h2 {
+  font-weight: 900;
+  border-bottom: 2px solid #e2e8f0;
+  margin-top: 1.5em;
+  padding-bottom: 0.3em;
 }
 
+@font-face {
+  font-family: "Jameel Noori";
+  src: url("/fonts/jameel.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer utilities {
+  .font-urdu {
+    font-family: "Jameel Noori", "serif";
+    line-height: 2.8 !important; /* Prevents overlapping of Urdu hooks */
+    word-spacing: 2px;
+  }
+}
+
+@media print {
+  /* Hide UI elements and ensure the font is forced */
+  .print-hidden {
+    display: none !important;
+  }
+
+  .font-urdu {
+    font-family: "Jameel Noori" !important;
+    font-size: 22pt !important;
+    line-height: 2.5 !important;
+  }
+
+  /* Force KaTeX symbols to be black and crisp for printing */
+  .katex {
+    color: black !important;
+    text-shadow: none !important;
+  }
+}

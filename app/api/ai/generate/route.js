@@ -199,8 +199,8 @@ export async function POST(req) {
 
     // 3. Using your requested client.models.generateContent structure
     const response = await client.models.generateContent({
-      model: "gemini-2.5-flash",
-      // model: "gemini-2.5-flash-lite",
+      // model: "gemini-2.5-flash",
+      model: "gemini-2.5-flash-lite",
       // model: "gemini-3-flash-preview",
 
       contents: [
@@ -270,6 +270,8 @@ export async function POST(req) {
           totalMarks: getPaperScheme(subject, classLevel).totalMarks,
           content: text,
           duration: body.duration || "3 Hours",
+          date: body.date || new Date().toISOString(),
+          language: body.language || "English",
         },
       });
     }
