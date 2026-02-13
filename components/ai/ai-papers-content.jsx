@@ -597,6 +597,7 @@ import { subjectsKPK } from "@/lib/constants";
 import { Switch } from "../ui/switch";
 import { Checkbox } from "../ui/checkbox";
 import { SmartRenderer } from "./SmartRenderer";
+import { SolutionManual } from "./SolutionManual";
 
 export function AIPapersContent() {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -1028,6 +1029,16 @@ export function AIPapersContent() {
                     )}
                   </div>
                 )}
+
+                {/* SOLUTION SECTION: This is where we place the manual */}
+                <div className="mt-12 pt-8 border-t-4 border-double border-slate-200">
+                  {/* Passing the correct props to ensure AI has context */}
+                  <SolutionManual
+                    paperContent={generatedPaper.content}
+                    subject={generatedPaper.subject}
+                    classLevel={generatedPaper.class}
+                  />
+                </div>
               </div>
             </CardContent>
           )}
