@@ -163,7 +163,28 @@ function cleanText(text = "") {
 
       // Chemistry Subscripts (e.g., H2O -> H₂O, CO2 -> CO₂)
       // This looks for numbers following capital letters (elements)
-      .replace(/([A-Z][a-z]?|(?<=\))|(?<=\]))(\d+)/g, (match, element, num) => {
+      // .replace(/([A-Z][a-z]?|(?<=\))|(?<=\]))(\d+)/g, (match, element, num) => {
+      //   const subMaps = {
+      //     0: "₀",
+      //     1: "₁",
+      //     2: "₂",
+      //     3: "₃",
+      //     4: "₄",
+      //     5: "₅",
+      //     6: "₆",
+      //     7: "₇",
+      //     8: "₈",
+      //     9: "₉",
+      //   };
+      //   const subscript = num
+      //     .split("")
+      //     .map((n) => subMaps[n] || n)
+      //     .join("");
+      //   return element + subscript;
+      // })
+
+      // Chemistry Subscripts (supports [H2O] or (SO4)2)
+      .replace(/([A-Z][a-z]?|[\(\)\[\]])(\d+)/g, (match, prefix, num) => {
         const subMaps = {
           0: "₀",
           1: "₁",
@@ -180,7 +201,28 @@ function cleanText(text = "") {
           .split("")
           .map((n) => subMaps[n] || n)
           .join("");
-        return element + subscript;
+        return prefix + subscript;
+      })
+
+      // --- STACKED FRACTIONS SUPPORT (Equilibrium Constants) ---
+      .replace(/\\frac{([^}]+)}{([^}]+)}/g, (_, num, den) => {
+        // Clean the internal parts first (for subscripts/powers)
+        const cleanNum = cleanText(num);
+        const cleanDen = cleanText(den);
+
+        // Calculate required width based on the longest part
+        const width = Math.max(cleanNum.length, cleanDen.length);
+        const line = "─".repeat(width + 2); // Using the box-drawing character for a solid line
+
+        // Center the numerator and denominator
+        const padNum = cleanNum
+          .padStart((width + cleanNum.length) / 2)
+          .padEnd(width);
+        const padDen = cleanDen
+          .padStart((width + cleanDen.length) / 2)
+          .padEnd(width);
+
+        return `\n${padNum}\n${line}\n${padDen}\n`;
       })
 
       // --- LOGARITHM SUPPORT ---

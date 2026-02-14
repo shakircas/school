@@ -709,7 +709,7 @@ export function AIPapersContent() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-2 md:p-4 space-y-4 print:p-0 print:m-0">
+    <div className="max-w-7xl mx-auto p-2 md:p-2 space-y-4 print:p-0 print:m-0">
       {/* CSS for Professional Printing */}
       <style jsx global>{`
         @media print {
@@ -738,7 +738,7 @@ export function AIPapersContent() {
       `}</style>
 
       {/* Header Area */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print-hidden">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 print-hidden">
         <div>
           <h1 className="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-3">
             <Sparkles className="text-indigo-600 w-8 h-8" />
@@ -785,8 +785,8 @@ export function AIPapersContent() {
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
         {/* Left Control Panel */}
-        <Card className="xl:col-span-4 border-2 border-slate-100 h-auto shadow-2xl rounded-[2rem] overflow-hidden print-hidden">
-          <div className="bg-slate-50 p-4 text-black flex items-center gap-3 border-b-2 border-slate-100">
+        <Card className="xl:col-span-4 border-2 border-slate-100 min-h-screen shadow-2xl rounded-[1rem] overflow-hidden print-hidden">
+          <div className="bg-slate-50 p-2 text-black flex items-center gap-2 border-b-2 border-slate-100">
             <Settings2 className="w-5 h-5 text-indigo-600" />
             <h3 className="font-black tracking-tight text-lg">
               Configuration Matrix
