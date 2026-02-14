@@ -322,6 +322,8 @@ import {
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { SmartRenderer } from "./SmartRenderer";
+import { subjectsKPK } from "@/lib/constants";
 
 export function AINotesContent() {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -349,7 +351,7 @@ export function AINotesContent() {
 
       if (response.status === 429) {
         toast.error(
-          "Google's free limit reached. Please wait a minute before trying again!"
+          "Google's free limit reached. Please wait a minute before trying again!",
         );
         return;
       }
@@ -443,24 +445,23 @@ export function AINotesContent() {
                     Subject
                   </Label>
                   <Select
-                    onValueChange={(v) => setValue("subject", v)}
-                    defaultValue="Chemistry"
+                    onValueChange={(v) => {
+                      setValue("subject", v);
+                      // setSelectedChapters([]);
+                    }}
+                    defaultValue="Physics"
                   >
                     <SelectTrigger className="rounded-xl border-2 font-black">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {[
-                        "Physics",
-                        "Chemistry",
-                        "Biology",
-                        "English",
-                        "Urdu",
-                        "Islamiat",
-                        "History",
-                      ].map((s) => (
-                        <SelectItem key={s} value={s} className="font-bold">
-                          {s}
+                      {subjectsKPK.map((s) => (
+                        <SelectItem
+                          key={s.code}
+                          value={s.value}
+                          className="font-bold"
+                        >
+                          {s.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -629,6 +630,7 @@ export function AINotesContent() {
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>
                     {generatedNotes.content}
                   </ReactMarkdown>
+                  {/* <SmartRenderer content={generatedNotes} /> */}
                 </div>
               </div>
             </CardContent>

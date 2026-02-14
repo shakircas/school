@@ -90,6 +90,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <link
+        precedence="default"
         rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css"
       />

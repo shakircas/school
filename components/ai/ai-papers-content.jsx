@@ -785,7 +785,7 @@ export function AIPapersContent() {
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
         {/* Left Control Panel */}
-        <Card className="xl:col-span-4 border-2 border-slate-100 h-screen shadow-2xl rounded-[2rem] overflow-hidden print-hidden">
+        <Card className="xl:col-span-4 border-2 border-slate-100 h-auto shadow-2xl rounded-[2rem] overflow-hidden print-hidden">
           <div className="bg-slate-50 p-4 text-black flex items-center gap-3 border-b-2 border-slate-100">
             <Settings2 className="w-5 h-5 text-indigo-600" />
             <h3 className="font-black tracking-tight text-lg">
