@@ -388,36 +388,82 @@ export async function POST(req) {
         Format: Professional Markdown. Language: ${language}.`;
         break;
 
+      // case "exam-paper":
+      // case "paper":
+      //   const scheme = getPaperScheme(subject, classLevel);
+      //   prompt = `
+      //   Act as a Senior Paper Setter for BISE Mardan.
+      //   Generate a professional ${examType} Exam Paper.
+
+      //   ${isScience ? "STRICT RULE: Use LaTeX for ALL mathematical formulas and physics equations (e.g., $E=mc^2$ or $\\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$)." : ""}
+      //   ${isUrdu ? "STRICT RULE: Write entirely in Urdu. Use 'حصہ الف' for Section A, 'حصہ ب' for Section B, and 'حصہ ج' for Section C." : ""}
+
+      //   SPECIFICATIONS:
+      //   - Subject: ${subject}
+      //   - Class: ${classLevel}
+      //   - Syllabus: ${chapterRange}
+      //   - Cognitive Focus: ${cognitiveLevel} (Strictly follow SLO standards)
+      //   - Difficulty: ${difficulty}
+      //   - Language: ${language}
+      //   - Total Marks: ${scheme.totalMarks}
+
+      //   STRUCTURE RULES:
+      //   1. Section A: ${scheme.mcqs} MCQs (1 Mark each) with a numbered list. Provide options A, B, C, D.
+      //   2. Section B: Short Questions numbered 1 to ${scheme.short.questions}. (Attempt any ${scheme.short.attempt}). Each carries ${scheme.short.marksEach} marks.
+      //   3. Section C: Long Questions with parts (a) and (b). Provide ${scheme.long.questions} questions. (Attempt any ${scheme.long.attempt}).
+
+      //   FORMATTING:
+      //   - Use professional Markdown.
+      //   - Use LaTeX for mathematical formulas.
+      //   - ${isUrdu ? "Alignment: Right-to-Left." : ""}
+      //   - Use Markdown Headers (e.g., **SECTION-A**).
+      //   - Use proper Markdown numbered Lists for every Section.
+      // `;
+      //   break;
       case "exam-paper":
       case "paper":
         const scheme = getPaperScheme(subject, classLevel);
+        const marksB = scheme.short.attempt * scheme.short.marksEach;
+        const marksC =
+          scheme.long.attempt *
+          (scheme.long.parts.length * scheme.long.marksEachPart);
+
         prompt = `
         Act as a Senior Paper Setter for BISE Mardan. 
         Generate a professional ${examType} Exam Paper.
 
-        ${isScience ? "STRICT RULE: Use LaTeX for ALL mathematical formulas and physics equations (e.g., $E=mc^2$ or $\\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$)." : ""}
+        ${isScience ? "STRICT RULE: Use LaTeX for ALL math/science formulas. Use $...$ for inline and $$...$$ for blocks." : ""}
         ${isUrdu ? "STRICT RULE: Write entirely in Urdu. Use 'حصہ الف' for Section A, 'حصہ ب' for Section B, and 'حصہ ج' for Section C." : ""}
         
         SPECIFICATIONS:
-        - Subject: ${subject}
-        - Class: ${classLevel}
+        - Subject: ${subject} | Class: ${classLevel} | Total Marks: ${scheme.totalMarks}
         - Syllabus: ${chapterRange}
-        - Cognitive Focus: ${cognitiveLevel} (Strictly follow SLO standards)
+        - Cognitive Focus: ${cognitiveLevel} (SLO standards)
         - Difficulty: ${difficulty}
-        - Language: ${language}
-        - Total Marks: ${scheme.totalMarks}
 
-        STRUCTURE RULES:
-        1. Section A: ${scheme.mcqs} MCQs (1 Mark each) with a numbered list. Provide options A, B, C, D.
-        2. Section B: Short Questions numbered 1 to ${scheme.short.questions}. (Attempt any ${scheme.short.attempt}). Each carries ${scheme.short.marksEach} marks.
-        3. Section C: Long Questions with parts (a) and (b). Provide ${scheme.long.questions} questions. (Attempt any ${scheme.long.attempt}).
+        NUMBERING & STRUCTURE RULES (FOLLOW STRICTLY):
+        
+        1. **SECTION-A (MCQs)** [Marks: ${scheme.mcqs}]
+           - Provide exactly ${scheme.mcqs} Multiple Choice Questions.
+           - NUMBERING: Start from 1 to ${scheme.mcqs}.
+           - FORMAT: Question text followed by options A), B), C), D) on separate lines.
+
+        2. **SECTION-B (Short Questions)** [Marks: ${marksB}]
+           - Instruction: Attempt any ${scheme.short.attempt} questions out of ${scheme.short.questions}.
+           - NUMBERING: Start a NEW numbered list from 1 up to ${scheme.short.questions}.
+           - DO NOT continue from Section A numbering.
+
+        3. **SECTION-C (Long Questions)** [Marks: ${marksC}]
+           - Instruction: Attempt any ${scheme.long.attempt} questions.
+           - NUMBERING: Start a NEW numbered list from 1 up to ${scheme.long.questions}.
+           - Each question MUST have parts (a) and (b).
 
         FORMATTING:
-        - Use professional Markdown.
+        - Use Markdown Headers (e.g., # SECTION-A).
         - Use LaTeX for mathematical formulas.
-        - ${isUrdu ? "Alignment: Right-to-Left." : ""}
-        - Use Markdown Headers (e.g., **SECTION-A**).
-        - Use proper Markdown numbered Lists for every Section.
+        - Use bold for question numbers (e.g., **Q1.**).
+        - Use proper indentation for MCQ options.
+        - ${isUrdu ? "Alignment: Right-to-Left (Urdu script)." : ""}
       `;
         break;
 
