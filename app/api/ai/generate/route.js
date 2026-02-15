@@ -447,22 +447,26 @@ export async function POST(req) {
            - Provide exactly ${scheme.mcqs} Multiple Choice Questions.
            - NUMBERING: Start from 1 to ${scheme.mcqs}.
            - FORMAT: Question text followed by options A), B), C), D) on separate lines.
+           - DO NOT continue from Section B numbering.
+           - ${isUrdu ? "Alignment: Right-to-Left (Urdu script)." : ""}
+           - Provide options A), B), C), D) with proper indentation in new lines.
 
         2. **SECTION-B (Short Questions)** [Marks: ${marksB}]
            - Instruction: Attempt any ${scheme.short.attempt} questions out of ${scheme.short.questions}.
-           - NUMBERING: Start a NEW numbered list from 1 up to ${scheme.short.questions}.
+           - NUMBERING: Start from 1 to ${scheme.short.questions}.
            - DO NOT continue from Section A numbering.
 
         3. **SECTION-C (Long Questions)** [Marks: ${marksC}]
            - Instruction: Attempt any ${scheme.long.attempt} questions.
-           - NUMBERING: Start a NEW numbered list from 1 up to ${scheme.long.questions}.
-           - Each question MUST have parts (a) and (b).
+           - NUMBERING: Start from 1 to ${scheme.long.questions}.
+           - Each question MUST have parts (a) and (b) .
 
         FORMATTING:
         - Use Markdown Headers (e.g., # SECTION-A).
         - Use LaTeX for mathematical formulas.
         - Use bold for question numbers (e.g., **Q1.**).
         - Use proper indentation for MCQ options.
+        - Use proper Markdown numbered Lists for every Section.
         - ${isUrdu ? "Alignment: Right-to-Left (Urdu script)." : ""}
       `;
         break;
