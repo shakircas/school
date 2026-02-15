@@ -417,7 +417,7 @@ export async function POST(req) {
         - Use LaTeX for mathematical formulas.
         - ${isUrdu ? "Alignment: Right-to-Left." : ""}
         - Use Markdown Headers (e.g., **SECTION-A**).
-        - Use proper Markdown Lists for every Section.
+        - Use proper Markdown numbered Lists for every Section.
       `;
         break;
 
