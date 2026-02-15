@@ -447,9 +447,7 @@ export async function POST(req) {
            - Provide exactly ${scheme.mcqs} Multiple Choice Questions.
            - NUMBERING: Start from 1 to ${scheme.mcqs}.
            - FORMAT: Question text followed by options A), B), C), D) on separate lines.
-           - DO NOT continue from Section B numbering.
            - ${isUrdu ? "Alignment: Right-to-Left (Urdu script)." : ""}
-           - Provide options A), B), C), D) with proper indentation in new lines.
 
         2. **SECTION-B (Short Questions)** [Marks: ${marksB}]
            - Instruction: Attempt any ${scheme.short.attempt} questions out of ${scheme.short.questions}.
