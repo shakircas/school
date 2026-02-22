@@ -20,6 +20,7 @@ import AttendanceHistoryTable from "@/components/reports/AttendanceHistoryTable"
 import AttendanceCalendar from "@/components/reports/AttendanceCalendar";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Card, CardContent } from "@/components/ui/card";
+import StudentAIReport from "@/components/dashboard/StudentAIReport";
 
 export default function StudentReportPage() {
   const params = useParams();
@@ -27,7 +28,7 @@ export default function StudentReportPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [remarks, setRemarks] = useState(""); // State for Principal's Remarks
-
+  const [aiData, setaiData] = useState(null);
   useEffect(() => {
     if (!id) return;
     async function fetchReport() {
@@ -42,6 +43,12 @@ export default function StudentReportPage() {
       }
     }
     fetchReport();
+  }, [id]);
+
+  useEffect(() => {
+    fetch(`/api/students/${id}/report`)
+      .then((res) => res.json())
+      .then((json) => setaiData(json));
   }, [id]);
 
   if (loading)
@@ -158,7 +165,9 @@ export default function StudentReportPage() {
             <StudentProgressChart reportData={data.report} />
           </div>
         </div>
-
+        <div id="ai-report-content">
+          <StudentAIReport reportData={aiData} />
+        </div>
         {/* PRINCIPAL REMARKS INPUT (Screen Only) */}
         <div className="bg-indigo-50 p-6 rounded-2xl border border-indigo-100 space-y-3 print:hidden">
           <div className="flex items-center gap-2 text-indigo-900 font-bold">

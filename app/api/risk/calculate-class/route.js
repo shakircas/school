@@ -12,22 +12,26 @@ export async function POST(req) {
     const { classId, sectionId, academicYear } = await req.json();
 
     // 1. Fetch Students
-    const students = await Student.find({ classId, status: "Active" });
+    const students = await Student.find({
+      classId,
+      // status: "Active"
+    });
     if (!students.length)
       return NextResponse.json({ message: "No students found", students: [] });
 
     // 2. Fetch Supporting Data
     const attendanceDocs = await Attendance.find({
+      type:'Student',
       classId,
-    //   sectionId,
-      academicYear,
+      //   sectionId,
+      // academicYear,
     });
     // Important: Get all results to calculate trend over time
     const results = await Result.find({
       classId,
-    //   sectionId,
-    //   academicYear,
-    //   published: true,
+      //   sectionId,
+      //   academicYear,
+      //   published: true,
     }).sort({ createdAt: 1 });
 
     const bulkOps = [];
@@ -48,6 +52,8 @@ export async function POST(req) {
       });
       const attendancePercentage =
         totalDays > 0 ? (presentDays / totalDays) * 100 : 100;
+
+      
 
       // --- B. ACADEMIC & SUBJECT EXTRACTION ---
       const studentResults = results.filter(

@@ -81,7 +81,7 @@ export default function RiskDashboardPage() {
       if (!res.ok) throw new Error("Intelligence Analysis failed");
       const data = await res.json();
 
-      setDashboardData({
+      setDashboardData({    
         students: data.students || [],
         subjectSummary: data.subjectSummary || [],
         pieData: data.pieData || [],

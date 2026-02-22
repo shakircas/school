@@ -66,6 +66,7 @@
     "input-otp": "1.4.1",
     "jspdf": "^3.0.4",
     "jspdf-autotable": "^5.0.2",
+    "jszip": "^3.10.1",
     "katex": "^0.16.28",
     "lucide-react": "^0.454.0",
     "mathjax": "^4.1.0",
