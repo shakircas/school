@@ -80,7 +80,7 @@ export default function StudentAIReport({ reportData }) {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 pb-10">
+    <div className="max-w-5xl mx-auto space-y-6">
       {/* Interactive Controls */}
       <div className="flex justify-between items-center print:hidden px-2">
         <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest">
@@ -106,7 +106,7 @@ export default function StudentAIReport({ reportData }) {
       {/* Capture Container */}
       <div
         ref={reportRef}
-        className="p-8 bg-slate-50 rounded-[3rem] print:bg-white print:p-0"
+        className=" bg-slate-50 rounded-[1rem] print:bg-white print:p-0"
         id="report-content"
       >
         <div className="space-y-6">
