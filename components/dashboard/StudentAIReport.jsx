@@ -132,11 +132,11 @@ export default function StudentAIReport({ reportData }) {
             >
               {profile.riskLevel} Risk
             </Badge>
-            <Card
+            <span
               className={`px-6 py-2 rounded-xl text-xs font-black border uppercase ${getRiskColor(profile.riskLevel)}`}
             >
-              {profile?.finalRiskScore} Risk Score
-            </Card>
+              Risk Score: <span className="text-lg" >{profile?.finalRiskScore}</span>
+            </span>
           </div>
 
           {/* Visualization Area */}
