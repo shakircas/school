@@ -111,7 +111,7 @@ export default function StudentAIReport({ reportData }) {
       >
         <div className="space-y-6">
           {/* Header */}
-          <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 flex justify-between items-center shadow-sm">
+          <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 flex flex-col sm:flex-row justify-between items-center shadow-sm">
             <div className="flex items-center gap-6">
               <div className="h-20 w-20 rounded-3xl bg-slate-900 text-white flex items-center justify-center text-3xl font-black">
                 {profile.student?.name?.charAt(0)}
@@ -128,15 +128,16 @@ export default function StudentAIReport({ reportData }) {
               </div>
             </div>
             <Badge
-              className={`px-6 py-2 rounded-xl text-xs font-black border uppercase ${getRiskColor(profile.riskLevel)}`}
+              className={`px-4 sm:px-6 py-2 rounded-xl text-xs font-black border uppercase ${getRiskColor(profile.riskLevel)}`}
             >
               {profile.riskLevel} Risk
+              <span
+                className={`px-4 sm:px-6 py-2 rounded-xl text-xs font-black border uppercase ${getRiskColor(profile.riskLevel)}`}
+              >
+                Risk Score:{" "}
+                <span className="text-lg">{profile?.finalRiskScore}</span>
+              </span>
             </Badge>
-            <span
-              className={`px-6 py-2 rounded-xl text-xs font-black border uppercase ${getRiskColor(profile.riskLevel)}`}
-            >
-              Risk Score: <span className="text-lg" >{profile?.finalRiskScore}</span>
-            </span>
           </div>
 
           {/* Visualization Area */}

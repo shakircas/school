@@ -11,9 +11,11 @@ import {
   Search,
   ChevronRight,
   GraduationCap,
+  Clock,
+  Trash2,
 } from "lucide-react";
 
-// Shadcn UI Components (Assuming standard path)
+// Shadcn UI Components
 import {
   Card,
   CardContent,
@@ -41,6 +43,7 @@ import RiskTrendChart from "@/components/dashboard/RiskTrendChart";
 import ClassRiskPieChart from "@/components/dashboard/ClassRiskPieChart";
 import AIExplanationPanel from "@/components/dashboard/AIExplanationPanel";
 import { MainLayout } from "@/components/layout/main-layout";
+import StudentDeepDive from "@/components/dashboard/StudentDeepDive";
 
 const fetcher = (url) =>
   fetch(url).then((res) => {
@@ -49,10 +52,29 @@ const fetcher = (url) =>
   });
 
 export default function RiskDashboardPage() {
-  const [selectedClass, setSelectedClass] = useState("");
-  const [selectedSubject, setSelectedSubject] = useState("all");
-  const [isCalculating, setIsCalculating] = useState(false);
+  // --- 1. PERSISTENCE INITIALIZATION ---
+  const [selectedClass, setSelectedClass] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("risk_center_class") || "";
+    }
+    return "";
+  });
 
+  const [selectedSubject, setSelectedSubject] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("risk_center_subject") || "all";
+    }
+    return "all";
+  });
+
+  const [lastAnalyzed, setLastAnalyzed] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("risk_center_timestamp") || null;
+    }
+    return null;
+  });
+
+  const [isCalculating, setIsCalculating] = useState(false);
   const [dashboardData, setDashboardData] = useState({
     students: [],
     subjectSummary: [],
@@ -60,7 +82,30 @@ export default function RiskDashboardPage() {
     trendData: [],
   });
 
-  // 1. Fetch Class List
+  const [isDeepDiveOpen, setIsDeepDiveOpen] = useState(false);
+  const [activeStudent, setActiveStudent] = useState(null);
+
+  const handleStudentClick = (student) => {
+    setActiveStudent(student);
+    setIsDeepDiveOpen(true);
+  };
+
+  // --- 2. STORAGE SYNC EFFECTS ---
+  useEffect(() => {
+    localStorage.setItem("risk_center_class", selectedClass);
+  }, [selectedClass]);
+
+  useEffect(() => {
+    localStorage.setItem("risk_center_subject", selectedSubject);
+  }, [selectedSubject]);
+
+  useEffect(() => {
+    if (lastAnalyzed) {
+      localStorage.setItem("risk_center_timestamp", lastAnalyzed);
+    }
+  }, [lastAnalyzed]);
+
+  // --- 3. DATA FETCHING & ANALYSIS ---
   const { data: classesRes, isLoading: classesLoading } = useSWR(
     "/api/academics/classes",
     fetcher,
@@ -68,41 +113,72 @@ export default function RiskDashboardPage() {
   );
   const classes = classesRes?.data || [];
 
-  // 2. Analysis Logic
-  const handleCalculate = useCallback(async () => {
-    if (!selectedClass) return;
-    setIsCalculating(true);
-    try {
-      const res = await fetch("/api/risk/calculate-class", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ classId: selectedClass }),
-      });
-      if (!res.ok) throw new Error("Intelligence Analysis failed");
-      const data = await res.json();
+  const handleCalculate = useCallback(
+    async (targetClassId = selectedClass) => {
+      if (!targetClassId) return;
+      setIsCalculating(true);
+      try {
+        const res = await fetch("/api/risk/calculate-class", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ classId: targetClassId }),
+        });
+        if (!res.ok) throw new Error("Intelligence Analysis failed");
+        const data = await res.json();
 
-      setDashboardData({    
-        students: data.students || [],
-        subjectSummary: data.subjectSummary || [],
-        pieData: data.pieData || [],
-        trendData: data.trendData || [],
-      });
-      toast.success("Intelligence analysis updated.");
-    } catch (err) {
-      toast.error("Error running analysis.");
-    } finally {
-      setIsCalculating(false);
+        setDashboardData({
+          students: data.students || [],
+          subjectSummary: data.subjectSummary || [],
+          pieData: data.pieData || [],
+          trendData: data.trendData || [],
+        });
+
+        const now = new Date().toLocaleString();
+        setLastAnalyzed(now);
+        toast.success("Intelligence analysis updated.");
+      } catch (err) {
+        toast.error("Error running analysis.");
+      } finally {
+        setIsCalculating(false);
+      }
+    },
+    [selectedClass],
+  );
+
+  // --- 4. DATA MANAGEMENT ---
+  const clearSessionData = () => {
+    localStorage.removeItem("risk_center_class");
+    localStorage.removeItem("risk_center_subject");
+    localStorage.removeItem("risk_center_timestamp");
+    setSelectedClass("");
+    setSelectedSubject("all");
+    setLastAnalyzed(null);
+    setDashboardData({
+      students: [],
+      subjectSummary: [],
+      pieData: [],
+      trendData: [],
+    });
+    toast.info("Command Center data reset.");
+  };
+
+  // --- 5. AUTO-LOAD EFFECT ---
+  useEffect(() => {
+    if (
+      selectedClass &&
+      dashboardData.students.length === 0 &&
+      !isCalculating
+    ) {
+      handleCalculate(selectedClass);
     }
-  }, [selectedClass]);
+  }, []);
 
-  // 3. Dynamic Subject Extraction from Calculated Data
-  // We get subjects directly from the subjectSummary array
+  // --- 6. DATA PROCESSING ---
   const dynamicSubjects = useMemo(
     () => dashboardData.subjectSummary,
     [dashboardData.subjectSummary],
   );
 
-  // 4. Reactive Filtering Logic
   const filteredStudents = useMemo(() => {
     const { students } = dashboardData;
     if (selectedSubject === "all") return students;
@@ -126,7 +202,6 @@ export default function RiskDashboardPage() {
     });
   }, [dashboardData.students, selectedSubject]);
 
-  // 5. KPI Aggregates
   const stats = useMemo(() => {
     const { students, subjectSummary } = dashboardData;
     if (students.length === 0) return null;
@@ -140,7 +215,7 @@ export default function RiskDashboardPage() {
           ?.subjectName || "N/A",
     };
   }, [dashboardData]);
-  console.log(dashboardData);
+
   return (
     <MainLayout>
       <div className="min-h-screen bg-slate-50/50 p-4 md:p-8 lg:p-10 space-y-8">
@@ -159,34 +234,64 @@ export default function RiskDashboardPage() {
             </h1>
           </div>
 
-          <div className="flex items-center gap-3 bg-white p-1.5 rounded-xl border shadow-sm">
-            <Select value={selectedClass} onValueChange={setSelectedClass}>
-              <SelectTrigger className="w-[200px] border-none shadow-none focus:ring-0 font-medium">
-                <SelectValue
-                  placeholder={classesLoading ? "Loading..." : "Select Class"}
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {classes.map((cls) => (
-                  <SelectItem key={cls._id} value={cls._id}>
-                    {cls.name} {cls.section}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Separator orientation="vertical" className="h-6" />
-            <Button
-              onClick={handleCalculate}
-              disabled={!selectedClass || isCalculating}
-              className="rounded-lg px-6 bg-indigo-600 hover:bg-indigo-700 transition-all"
-            >
-              {isCalculating ? (
-                <RefreshCw className="w-4 h-4 animate-spin mr-2" />
-              ) : (
-                <Activity className="w-4 h-4 mr-2" />
-              )}
-              Analyze
-            </Button>
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center gap-3 bg-white p-1.5 rounded-xl border shadow-sm">
+              <Select
+                value={selectedClass}
+                onValueChange={(val) => {
+                  setSelectedClass(val);
+                  handleCalculate(val);
+                }}
+              >
+                <SelectTrigger className="w-[200px] border-none shadow-none focus:ring-0 font-medium">
+                  <SelectValue
+                    placeholder={classesLoading ? "Loading..." : "Select Class"}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {classes.map((cls) => (
+                    <SelectItem key={cls._id} value={cls._id}>
+                      {cls.name} {cls.section}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Separator orientation="vertical" className="h-6" />
+
+              <div className="flex items-center gap-1 pr-1">
+                <Button
+                  onClick={() => handleCalculate()}
+                  disabled={!selectedClass || isCalculating}
+                  className="rounded-lg px-6 bg-indigo-600 hover:bg-indigo-700 transition-all shadow-md"
+                >
+                  {isCalculating ? (
+                    <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <Activity className="w-4 h-4 mr-2" />
+                  )}
+                  Analyze
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={clearSessionData}
+                  className="rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50"
+                  title="Clear Persistence Data"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* LAST ANALYZED TIMESTAMP */}
+            {lastAnalyzed && (
+              <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-tight mr-2">
+                <Clock className="w-3 h-3 text-emerald-500" />
+                Last Update:{" "}
+                <span className="text-slate-700">{lastAnalyzed}</span>
+              </div>
+            )}
           </div>
         </header>
 
@@ -232,7 +337,6 @@ export default function RiskDashboardPage() {
                     </CardDescription>
                   </div>
 
-                  {/* Dynamic Subject Switcher within the Heatmap Header */}
                   <div className="flex items-center gap-3">
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-tighter">
                       Filter By:
@@ -264,6 +368,7 @@ export default function RiskDashboardPage() {
                   <RiskHeatmap
                     students={filteredStudents}
                     selectedSubject={selectedSubject}
+                    onStudentClick={handleStudentClick}
                   />
                 </CardContent>
               </Card>
@@ -287,15 +392,15 @@ export default function RiskDashboardPage() {
 
               {selectedSubject === "all" && (
                 <Card className="border-none shadow-lg rounded-[2rem]">
-                  <CardHeader className="px-8 pt-8">
-                    <CardTitle className="text-xl font-bold">
+                  <CardHeader className="px-8 pt-8 text-center">
+                    <CardTitle className="text-xl text-center font-bold">
                       Curriculum Breakdown
                     </CardTitle>
                     <CardDescription>
                       Subject-specific risk intensity
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="px-8 pb-8">
+                  <CardContent className="px-8">
                     <SubjectHeatmap subjects={dashboardData.subjectSummary} />
                   </CardContent>
                 </Card>
@@ -311,6 +416,11 @@ export default function RiskDashboardPage() {
             !isCalculating && <DashboardEmptyState />
           )}
         </main>
+        <StudentDeepDive
+          student={activeStudent}
+          isOpen={isDeepDiveOpen}
+          onClose={() => setIsDeepDiveOpen(false)}
+        />
       </div>
     </MainLayout>
   );

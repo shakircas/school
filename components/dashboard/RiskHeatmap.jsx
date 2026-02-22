@@ -5,10 +5,12 @@ import { Search, ArrowUpRight, User, AlertCircle, FilterX } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import Link from "next/link";
 
 export default function RiskHeatmap({
   students = [],
   selectedSubject = "all",
+  onStudentClick,
 }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
@@ -146,11 +148,16 @@ export default function RiskHeatmap({
                 >
                   <div className="flex justify-between items-start mb-6">
                     <div className="w-12 h-12 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-sm font-black text-slate-500 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-500">
-                      {student.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")
-                        .toUpperCase()}
+                      <Link
+                        href={`/students/${student._id}/report`}
+                        className="w-full h-full flex items-center justify-center"
+                      >
+                        {student.name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")
+                          .toUpperCase()}
+                      </Link>
                     </div>
                     <Badge
                       variant="outline"
@@ -163,8 +170,13 @@ export default function RiskHeatmap({
                   <div className="space-y-4">
                     <div>
                       <h4 className="font-black text-slate-800 flex items-center gap-1">
-                        {student.name}
-                        <ArrowUpRight className="w-3 h-3 text-slate-300 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
+                        <Link
+                          href={`/students/${student._id}/report`}
+                          className="w-full h-full flex items-center"
+                        >
+                          {student.name}
+                          <ArrowUpRight className="w-3 h-3 text-slate-300 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
+                        </Link>
                       </h4>
                       <p className="text-[10px] font-bold text-slate-400 uppercase">
                         {isSubjectView
@@ -178,7 +190,10 @@ export default function RiskHeatmap({
                         <span className="text-slate-400 uppercase">
                           Risk Score
                         </span>
-                        <span className={styles.text}>
+                        <span
+                          onClick={() => onStudentClick(student)}
+                          className={styles.text}
+                        >
                           {student.displayScore}%
                         </span>
                       </div>
