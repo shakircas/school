@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import {
   TrendingUp,
   Target,
@@ -11,6 +11,7 @@ import {
   Loader2,
   AlertCircle,
   UserCircle,
+  Activity,
 } from "lucide-react";
 import {
   Sheet,
@@ -28,20 +29,24 @@ import {
   PolarGrid,
   PolarAngleAxis,
   ResponsiveContainer,
+  LineChart,
+  Line,
+  YAxis,
+  XAxis,
+  Tooltip,
 } from "recharts";
 import PredictedGrade from "./PredictedGrade";
+import { SmartRenderer } from "../ai/SmartRenderer";
 
 export default function StudentDeepDive({ student, isOpen, onClose }) {
   const [aiData, setAiData] = useState(null);
+  const [aiReport, setAiReport] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Sync with your provided JSON structure
   const id = student?._id;
-  const profile = aiData?.profile || {};
-  const studentInfo = profile?.student || student; // Fallback to prop if fetch fails
-  const insights = aiData?.aiInsights || [];
-  const recommendations = aiData?.recommendations || [];
 
+  // 1. Core Data Fetching
   useEffect(() => {
     if (isOpen && id) {
       setIsLoading(true);
@@ -55,8 +60,37 @@ export default function StudentDeepDive({ student, isOpen, onClose }) {
     }
   }, [id, isOpen]);
 
+  // 2. AI Analysis Fetching (Triggered when aiData is ready)
+  useEffect(() => {
+    if (isOpen && aiData?.profile) {
+      const fetchAIReport = async () => {
+        setIsAnalyzing(true);
+        try {
+          const response = await fetch(`/api/students/${id}/ai-report`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ studentData: aiData.profile }),
+          });
+          const data = await response.json();
+          setAiReport(data);
+        } catch (error) {
+          console.error("AI Analysis failed:", error);
+        } finally {
+          setIsAnalyzing(false);
+        }
+      };
+      fetchAIReport();
+    }
+  }, [isOpen, aiData?.profile, id]);
+
   if (!student) return null;
 
+  // Clean Variable Declarations
+  const profile = aiData?.profile || {};
+  const studentInfo = profile?.student || student;
+  const recommendations = aiData?.recommendations || [];
+
+  // Data for Radar Chart
   const radarData = (
     profile?.subjectBreakdown ||
     student.subjectBreakdown ||
@@ -67,9 +101,7 @@ export default function StudentDeepDive({ student, isOpen, onClose }) {
     fullMark: 100,
   }));
 
-  const handlePrint = () => {
-    window.print();
-  };
+  const handlePrint = () => window.print();
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
@@ -105,8 +137,8 @@ export default function StudentDeepDive({ student, isOpen, onClose }) {
                   {studentInfo.name?.charAt(0)}
                 </div>
                 <div>
-                  <SheetTitle className="text-3xl font-black text-slate-900 tracking-tight">
-                    {studentInfo.name.toUpperCase()}
+                  <SheetTitle className="text-3xl font-black text-slate-900 tracking-tight uppercase">
+                    {studentInfo.name}
                   </SheetTitle>
                   <SheetDescription className="font-bold text-indigo-600 uppercase text-[10px] tracking-widest flex items-center gap-2">
                     Roll: {studentInfo.rollNumber} • Reg:{" "}
@@ -170,58 +202,82 @@ export default function StudentDeepDive({ student, isOpen, onClose }) {
             </div>
           </div>
 
-          {/* AI Behavioral Diagnostics */}
-          {insights.length > 0 && (
-            <div className="bg-white p-5 rounded-[2rem] border border-indigo-100 shadow-sm relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-5">
-                <BrainCircuit className="w-16 h-16 text-indigo-600" />
-              </div>
-              <h4 className="text-[10px] font-black uppercase text-indigo-600 mb-4 flex items-center gap-2 italic">
-                <BrainCircuit className="w-3 h-3" /> AI Behavioral Diagnostics
-              </h4>
-              <div className="space-y-3">
-                {insights.map((insight, i) => (
-                  <div key={i} className="flex gap-3 items-start group">
-                    <div className="mt-1 h-1.5 w-1.5 rounded-full bg-indigo-500 group-hover:scale-150 transition-all" />
-                    <p className="text-xs font-semibold text-slate-600 leading-relaxed italic">
-                      "{insight}"
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Academic Radar Chart */}
+          {/* Subject History Sparklines */}
           <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm">
             <h4 className="text-[10px] font-black uppercase text-slate-400 mb-6 flex items-center gap-2">
-              <UserCircle className="w-3 h-3" /> Subject Performance Analysis
+              <Activity className="w-3 h-3" /> Subject Performance Trends
             </h4>
-            <div className="h-[220px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart data={radarData}>
-                  <PolarGrid stroke="#f1f5f9" />
-                  <PolarAngleAxis
-                    dataKey="subject"
-                    tick={{ fontSize: 10, fontWeight: 800, fill: "#94a3b8" }}
-                  />
-                  <Radar
-                    name="Student"
-                    dataKey="studentScore"
-                    stroke="#4f46e5"
-                    fill="#4f46e5"
-                    fillOpacity={0.6}
-                  />
-                </RadarChart>
-              </ResponsiveContainer>
+            <div className="grid grid-cols-1 gap-6">
+              {(profile.subjectBreakdown || []).map((sub, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between gap-4"
+                >
+                  <div className="w-24 shrink-0">
+                    <p className="text-[10px] font-black uppercase text-slate-500 truncate">
+                      {sub.subject}
+                    </p>
+                    <p className="text-xs font-bold text-slate-900">
+                      {sub.average}%
+                    </p>
+                  </div>
+                  <div className="h-10 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart
+                        data={
+                          sub.history || [
+                            { val: 40 },
+                            { val: 60 },
+                            { val: sub.average },
+                          ]
+                        }
+                      >
+                        <Line
+                          type="monotone"
+                          dataKey="val"
+                          stroke={sub.average < 40 ? "#ef4444" : "#6366f1"}
+                          strokeWidth={2.5}
+                          dot={false}
+                        />
+                        <YAxis hide domain={[0, 100]} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Grade Prediction (Prop-driven) */}
-          <PredictedGrade student={student} />
+          {/* Academic Radar Chart & Predicted Grade Row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm">
+              <h4 className="text-[10px] font-black uppercase text-slate-400 mb-6 flex items-center gap-2">
+                <UserCircle className="w-3 h-3" /> Performance Radar
+              </h4>
+              <div className="h-[220px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart data={radarData}>
+                    <PolarGrid stroke="#f1f5f9" />
+                    <PolarAngleAxis
+                      dataKey="subject"
+                      tick={{ fontSize: 9, fontWeight: 800, fill: "#94a3b8" }}
+                    />
+                    <Radar
+                      name="Student"
+                      dataKey="studentScore"
+                      stroke="#4f46e5"
+                      fill="#4f46e5"
+                      fillOpacity={0.6}
+                    />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+            <PredictedGrade student={profile} />
+          </div>
 
           {/* Intervention Roadmap */}
-          <div className="space-y-4 pb-12">
+          <div className="space-y-4">
             <h4 className="text-[10px] font-black uppercase text-slate-400 px-2 flex items-center gap-2">
               <Target className="w-3 h-3" /> Recommended Intervention Roadmap
             </h4>
@@ -249,6 +305,33 @@ export default function StudentDeepDive({ student, isOpen, onClose }) {
             </div>
           </div>
 
+          {/* AI Deep Dive Analysis (Always at the bottom) */}
+          <div className="bg-white p-5 rounded-[2rem] border border-indigo-100 shadow-sm pb-10">
+            <h4 className="text-[10px] font-black uppercase text-indigo-600 mb-4 flex items-center gap-2">
+              <BrainCircuit className="w-4 h-4" /> AI Deep Dive Diagnostics
+            </h4>
+
+            {isAnalyzing ? (
+              <div className="flex flex-col items-center py-10 space-y-2">
+                <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
+                <p className="text-[10px] font-bold text-slate-400 animate-pulse uppercase tracking-widest">
+                  Analyzing student trajectory...
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {aiReport?.insights?.map((insight, i) => (
+                  <div
+                    key={i}
+                    className="flex gap-3 items-start border-l-2 border-indigo-50 pl-4 py-1 hover:border-indigo-500 transition-colors"
+                  >
+                    <SmartRenderer content={insight} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Print Footer */}
           <div className="hidden print:block mt-12 pt-8 border-t border-slate-200">
             <div className="grid grid-cols-2 gap-8">
@@ -261,7 +344,7 @@ export default function StudentDeepDive({ student, isOpen, onClose }) {
               <div className="text-center space-y-4">
                 <div className="h-px bg-slate-300 w-full" />
                 <p className="text-[9px] font-bold uppercase text-slate-400">
-                  Parent/Guardian Signature
+                  Parent Signature
                 </p>
               </div>
             </div>
@@ -276,7 +359,6 @@ export default function StudentDeepDive({ student, isOpen, onClose }) {
   );
 }
 
-// Sub-component for Stats
 function StatCard({ label, value, color, icon }) {
   return (
     <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between">

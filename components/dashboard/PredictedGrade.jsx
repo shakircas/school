@@ -46,9 +46,9 @@ export default function PredictedGrade({ student }) {
   const confidence = 100 - (student.riskScore || 0);
 
   return (
-    <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
+    <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm relative overflow-hidden flex flex-col gap-4 justify-between">
       {/* Background Decoration */}
-      <div className="absolute -right-4 -top-4 opacity-[0.03]">
+      <div className="absolute -right-4 -top-8 opacity-[0.03]">
         <Target className="w-32 h-32 text-slate-900" />
       </div>
 
