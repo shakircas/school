@@ -369,6 +369,7 @@ export default function RiskDashboardPage() {
                     students={filteredStudents}
                     selectedSubject={selectedSubject}
                     onStudentClick={handleStudentClick}
+                    profileData={dashboardData.profileData}
                   />
                 </CardContent>
               </Card>

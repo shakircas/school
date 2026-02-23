@@ -1,15 +1,16 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
-  X,
-  User,
   TrendingUp,
-  AlertTriangle,
-  MessageSquare,
-  BookOpen,
   Target,
   ArrowRight,
+  Printer,
+  BrainCircuit,
+  CalendarDays,
+  Loader2,
+  AlertCircle,
+  UserCircle,
 } from "lucide-react";
 import {
   Sheet,
@@ -20,6 +21,7 @@ import {
 } from "@/components/ui/sheet";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Radar,
   RadarChart,
@@ -30,154 +32,266 @@ import {
 import PredictedGrade from "./PredictedGrade";
 
 export default function StudentDeepDive({ student, isOpen, onClose }) {
+  const [aiData, setAiData] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Sync with your provided JSON structure
+  const id = student?._id;
+  const profile = aiData?.profile || {};
+  const studentInfo = profile?.student || student; // Fallback to prop if fetch fails
+  const insights = aiData?.aiInsights || [];
+  const recommendations = aiData?.recommendations || [];
+
+  useEffect(() => {
+    if (isOpen && id) {
+      setIsLoading(true);
+      fetch(`/api/students/${id}/report`)
+        .then((res) => res.json())
+        .then((json) => {
+          setAiData(json);
+          setIsLoading(false);
+        })
+        .catch(() => setIsLoading(false));
+    }
+  }, [id, isOpen]);
+
   if (!student) return null;
 
-  // Mock data for the Radar Chart (Subject Strength vs Class Avg)
-  //   const radarData =
-  //     student.subjectBreakdown?.map((sub) => ({
-  //       subject: sub.subject,
-  //       studentScore: sub.average,
-  //       classAvg: 65, // This would ideally come from your dashboardData.subjectSummary
-  //       fullMark: 100,
-  //     })) || [];
-
-  // Inside components/dashboard/StudentDeepDive.js
-
-  // 1. Radar Chart Data mapping
-  const radarData = (student.subjectBreakdown || []).map((sub) => ({
+  const radarData = (
+    profile?.subjectBreakdown ||
+    student.subjectBreakdown ||
+    []
+  ).map((sub) => ({
     subject: sub.subject,
-    studentScore: Math.round(sub.average), // Mapping 'average' from your API
+    studentScore: Math.round(sub.average),
     fullMark: 100,
   }));
 
-  // 2. Calculated Risk Display
-  // Your API provides riskScore (inverse of performance)
-  const currentPerformance = 100 - student.riskScore;
-
-  // 3. Predicted Grade (using your academicScore if you decide to pass it,
-  // or calculating from subjectBreakdown)
-  const predictedScore = student.subjectBreakdown?.length
-    ? Math.round(
-        student.subjectBreakdown.reduce((a, b) => a + b.average, 0) /
-          student.subjectBreakdown.length,
-      )
-    : 0;
+  const handlePrint = () => {
+    window.print();
+  };
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="sm:max-w-xl overflow-y-auto bg-slate-50 border-l-0">
-        <SheetHeader className="space-y-4">
-          <div className="flex justify-between items-start">
-            <div className="h-16 w-16 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-2xl font-black shadow-lg shadow-indigo-200">
-              {student.name?.charAt(0)}
-            </div>
-            <Badge
-              className={`px-4 py-1 rounded-full border-none font-bold uppercase text-[10px] tracking-widest ${
-                student.riskLevel === "High"
-                  ? "bg-red-500 text-white"
-                  : "bg-emerald-500 text-white"
-              }`}
-            >
-              {student.riskLevel} Risk Profile
-            </Badge>
-          </div>
-          <div>
-            <SheetTitle className="text-3xl font-black text-slate-900">
-              {student.name}
-            </SheetTitle>
-            <SheetDescription className="font-bold text-indigo-600 uppercase text-[10px] tracking-widest">
-              Student ID: {student.studentId || "STU-8829"}
-            </SheetDescription>
-          </div>
-        </SheetHeader>
+      <SheetContent className="sm:max-w-xl p-0 overflow-y-auto bg-slate-50/50 backdrop-blur-xl border-l-0 sheet-content-print-target">
+        {/* Print Styles */}
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
+          @media print {
+            .no-print { display: none !important; }
+            .sheet-content-print-target { 
+              position: absolute; 
+              left: 0; top: 0; 
+              width: 100%; 
+              background: white !important; 
+            }
+            body { background: white; }
+          }
+        `,
+          }}
+        />
 
-        <div className="mt-8 space-y-6 pb-10">
-          {/* Radar Chart: Academic Balance */}
-          <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm">
-            <h4 className="text-[10px] font-black uppercase text-slate-400 mb-4 flex items-center gap-2">
-              <TrendingUp className="w-3 h-3 text-indigo-600" /> Academic
-              Balance (vs Class Avg)
+        {/* Top Accent Bar */}
+        <div
+          className={`h-1.5 w-full sticky top-0 z-50 ${profile.riskLevel === "High" ? "bg-red-500" : "bg-indigo-600"}`}
+        />
+
+        <div className="p-6 space-y-8">
+          <SheetHeader className="space-y-4">
+            <div className="flex justify-between items-start">
+              <div className="flex gap-4 items-center">
+                <div className="h-16 w-16 rounded-2xl bg-slate-900 text-white flex items-center justify-center text-2xl font-black shadow-xl shadow-slate-200">
+                  {studentInfo.name?.charAt(0)}
+                </div>
+                <div>
+                  <SheetTitle className="text-3xl font-black text-slate-900 tracking-tight">
+                    {studentInfo.name.toUpperCase()}
+                  </SheetTitle>
+                  <SheetDescription className="font-bold text-indigo-600 uppercase text-[10px] tracking-widest flex items-center gap-2">
+                    Roll: {studentInfo.rollNumber} • Reg:{" "}
+                    {studentInfo.registrationNumber}
+                    {isLoading && <Loader2 className="w-3 h-3 animate-spin" />}
+                  </SheetDescription>
+                </div>
+              </div>
+
+              <div className="flex flex-col items-end gap-2 no-print">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handlePrint}
+                  className="rounded-full h-8 text-[10px] font-bold uppercase tracking-wider border-slate-200 hover:bg-white"
+                >
+                  <Printer className="w-3 h-3 mr-2" /> Print Report
+                </Button>
+                <Badge
+                  className={`px-4 py-1 rounded-full border-none font-bold uppercase text-[9px] tracking-widest ${
+                    profile.riskLevel === "High"
+                      ? "bg-red-500 text-white"
+                      : "bg-amber-500 text-white"
+                  }`}
+                >
+                  {profile.riskLevel || student.riskLevel} Risk
+                </Badge>
+              </div>
+            </div>
+          </SheetHeader>
+
+          {/* Quick Stats Bento Grid */}
+          <div className="grid grid-cols-3 gap-3">
+            <StatCard
+              label="Attendance"
+              value={profile.attendanceScore || 0}
+              color="text-slate-900"
+              icon={<CalendarDays className="w-3 h-3" />}
+            />
+            <StatCard
+              label="Academic"
+              value={profile.academicScore || 0}
+              color="text-slate-900"
+              icon={<TrendingUp className="w-3 h-3" />}
+            />
+            <div className="bg-indigo-600 p-4 rounded-3xl text-white shadow-lg shadow-indigo-100">
+              <p className="text-[8px] font-black uppercase text-indigo-200 mb-1">
+                Risk Factor
+              </p>
+              <p className="text-lg font-black">
+                {profile.finalRiskScore || 0}%
+              </p>
+              <div className="flex gap-1 mt-2">
+                <div
+                  className={`h-1 w-full rounded-full bg-white ${profile.finalRiskScore > 40 ? "opacity-100" : "opacity-30"}`}
+                />
+                <div
+                  className={`h-1 w-full rounded-full bg-white ${profile.finalRiskScore > 70 ? "opacity-100" : "opacity-30"}`}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* AI Behavioral Diagnostics */}
+          {insights.length > 0 && (
+            <div className="bg-white p-5 rounded-[2rem] border border-indigo-100 shadow-sm relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-4 opacity-5">
+                <BrainCircuit className="w-16 h-16 text-indigo-600" />
+              </div>
+              <h4 className="text-[10px] font-black uppercase text-indigo-600 mb-4 flex items-center gap-2 italic">
+                <BrainCircuit className="w-3 h-3" /> AI Behavioral Diagnostics
+              </h4>
+              <div className="space-y-3">
+                {insights.map((insight, i) => (
+                  <div key={i} className="flex gap-3 items-start group">
+                    <div className="mt-1 h-1.5 w-1.5 rounded-full bg-indigo-500 group-hover:scale-150 transition-all" />
+                    <p className="text-xs font-semibold text-slate-600 leading-relaxed italic">
+                      "{insight}"
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Academic Radar Chart */}
+          <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm">
+            <h4 className="text-[10px] font-black uppercase text-slate-400 mb-6 flex items-center gap-2">
+              <UserCircle className="w-3 h-3" /> Subject Performance Analysis
             </h4>
-            <div className="h-[250px] w-full">
+            <div className="h-[220px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart data={radarData}>
-                  <PolarGrid stroke="#e2e8f0" />
+                  <PolarGrid stroke="#f1f5f9" />
                   <PolarAngleAxis
                     dataKey="subject"
-                    tick={{ fontSize: 10, fontWeight: 700, fill: "#64748b" }}
+                    tick={{ fontSize: 10, fontWeight: 800, fill: "#94a3b8" }}
                   />
                   <Radar
                     name="Student"
                     dataKey="studentScore"
                     stroke="#4f46e5"
                     fill="#4f46e5"
-                    fillOpacity={0.5}
-                  />
-                  <Radar
-                    name="Class Avg"
-                    dataKey="classAvg"
-                    stroke="#94a3b8"
-                    fill="#94a3b8"
-                    fillOpacity={0.1}
+                    fillOpacity={0.6}
                   />
                 </RadarChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          {/* AI Behavioral Insights */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-slate-900 p-5 rounded-[1.5rem] text-white">
-              <p className="text-[9px] font-black uppercase text-slate-500 mb-1">
-                Attendance
-              </p>
-              <p className="text-xl font-black">
-                {student.attendanceScore || 85}%
-              </p>
-              <Progress
-                value={student.attendanceScore}
-                className="h-1 bg-white/10 mt-2"
-              />
-            </div>
-            <div className="bg-indigo-600 p-5 rounded-[1.5rem] text-white">
-              <p className="text-[9px] font-black uppercase text-indigo-200 mb-1">
-                Engagement
-              </p>
-              <p className="text-xl font-black">Medium</p>
-              <div className="flex gap-1 mt-3">
-                {[1, 2, 3].map((i) => (
+          {/* Grade Prediction (Prop-driven) */}
+          <PredictedGrade student={student} />
+
+          {/* Intervention Roadmap */}
+          <div className="space-y-4 pb-12">
+            <h4 className="text-[10px] font-black uppercase text-slate-400 px-2 flex items-center gap-2">
+              <Target className="w-3 h-3" /> Recommended Intervention Roadmap
+            </h4>
+            <div className="grid gap-3">
+              {recommendations.length > 0 ? (
+                recommendations.map((rec, i) => (
                   <div
                     key={i}
-                    className={`h-1 w-full rounded-full ${i <= 2 ? "bg-white" : "bg-white/20"}`}
-                  />
-                ))}
-              </div>
+                    className="flex items-center gap-4 p-4 bg-white border border-slate-200 rounded-[1.5rem] hover:border-indigo-400 transition-all group"
+                  >
+                    <div className="h-10 w-10 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
+                      <AlertCircle className="w-5 h-5" />
+                    </div>
+                    <p className="text-xs font-bold text-slate-700 leading-tight">
+                      {rec}
+                    </p>
+                    <ArrowRight className="w-4 h-4 ml-auto text-slate-300 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-slate-400 italic px-2">
+                  No specific interventions logged.
+                </p>
+              )}
             </div>
           </div>
 
-          {/* NEW: AI Prediction Component */}
-          <PredictedGrade student={student} />
-
-          {/* Specific Interventions */}
-          <div className="space-y-3">
-            <h4 className="text-[10px] font-black uppercase text-slate-400">
-              Recommended Next Steps
-            </h4>
-            {student.recommendations?.map((rec, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-4 p-4 bg-white border border-slate-200 rounded-2xl group hover:border-indigo-300 transition-colors"
-              >
-                <div className="h-8 w-8 rounded-xl bg-slate-50 flex items-center justify-center text-indigo-600 shrink-0">
-                  <Target className="w-4 h-4" />
-                </div>
-                <p className="text-xs font-bold text-slate-700">{rec}</p>
-                <ArrowRight className="w-4 h-4 ml-auto text-slate-300 group-hover:text-indigo-600 transition-colors" />
+          {/* Print Footer */}
+          <div className="hidden print:block mt-12 pt-8 border-t border-slate-200">
+            <div className="grid grid-cols-2 gap-8">
+              <div className="text-center space-y-4">
+                <div className="h-px bg-slate-300 w-full" />
+                <p className="text-[9px] font-bold uppercase text-slate-400">
+                  Class Teacher Signature
+                </p>
               </div>
-            ))}
+              <div className="text-center space-y-4">
+                <div className="h-px bg-slate-300 w-full" />
+                <p className="text-[9px] font-bold uppercase text-slate-400">
+                  Parent/Guardian Signature
+                </p>
+              </div>
+            </div>
+            <p className="text-center text-[8px] text-slate-300 mt-8 italic">
+              Report generated via Intelligence Analytics on{" "}
+              {new Date().toLocaleDateString()}
+            </p>
           </div>
         </div>
       </SheetContent>
     </Sheet>
+  );
+}
+
+// Sub-component for Stats
+function StatCard({ label, value, color, icon }) {
+  return (
+    <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between">
+      <div className="flex justify-between items-center mb-1">
+        <p className="text-[8px] font-black uppercase text-slate-400 tracking-tighter">
+          {label}
+        </p>
+        <div className="text-slate-300">{icon}</div>
+      </div>
+      <div>
+        <p className={`text-xl font-black ${color} tracking-tight`}>
+          {Math.round(value)}%
+        </p>
+        <Progress value={value} className="h-1 bg-slate-100 mt-2" />
+      </div>
+    </div>
   );
 }

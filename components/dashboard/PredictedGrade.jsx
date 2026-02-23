@@ -1,76 +1,119 @@
 "use client";
 
 import React from "react";
-import { TrendingDown, TrendingUp, Minus, Sparkles } from "lucide-react";
+import {
+  Target,
+  Sparkles,
+  TrendingUp,
+  AlertCircle,
+  HelpCircle,
+} from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function PredictedGrade({ student }) {
-  // Logic: Calculate trend based on subject breakdown
-  const calculatePrediction = () => {
-    if (!student?.subjectBreakdown?.length)
-      return { score: 0, trend: "neutral" };
+  if (!student) return null;
 
-    const avg = student.riskScore; // Using riskScore as a proxy for performance inverse
-    const performance = 100 - avg;
+  // Calculate Average from Subject Breakdown
+  const avgScore = student.subjectBreakdown?.length
+    ? student.subjectBreakdown.reduce((a, b) => a + b.average, 0) /
+      student.subjectBreakdown.length
+    : student.academicScore || 0;
 
-    // Simulating a "Next Exam" projection based on current momentum
-    const momentum = Math.random() * 10 - 5; // In a real app, calculate (current - previous)
-    const predicted = Math.min(100, Math.max(0, performance + momentum));
-
-    return {
-      score: Math.round(predicted),
-      trend: momentum > 1 ? "up" : momentum < -1 ? "down" : "neutral",
-    };
-  };
-
-  const { score, trend } = calculatePrediction();
-
-  const getTheme = () => {
+  // Logic for Grade Mapping
+  const getGrade = (score) => {
+    if (score >= 90)
+      return { letter: "A+", color: "text-emerald-500", label: "Exceptional" };
     if (score >= 80)
-      return {
-        bg: "bg-emerald-50",
-        text: "text-emerald-700",
-        icon: <TrendingUp />,
-        label: "Distinction Track",
-      };
+      return { letter: "A", color: "text-blue-500", label: "Outstanding" };
+    if (score >= 70)
+      return { letter: "B", color: "text-indigo-500", label: "Good" };
+    if (score >= 60)
+      return { letter: "C", color: "text-amber-500", label: "Average" };
     if (score >= 50)
-      return {
-        bg: "bg-amber-50",
-        text: "text-amber-700",
-        icon: <Minus />,
-        label: "Borderline Pass",
-      };
-    return {
-      bg: "bg-red-50",
-      text: "text-red-700",
-      icon: <TrendingDown />,
-      label: "Failure Risk",
-    };
+      return { letter: "D", color: "text-orange-500", label: "Below Average" };
+    return { letter: "F", color: "text-red-500", label: "Critical Risk" };
   };
 
-  const theme = getTheme();
+  const grade = getGrade(avgScore);
+
+  // Confidence is inversely proportional to risk score
+  const confidence = 100 - (student.riskScore || 0);
 
   return (
-    <div
-      className={`p-6 rounded-[2rem] border-2 border-dashed border-opacity-50 flex flex-col items-center text-center ${theme.bg} ${theme.text.replace("text", "border")}`}
-    >
-      <div className="flex items-center gap-2 mb-2">
-        <Sparkles className="w-4 h-4" />
-        <span className="text-[10px] font-black uppercase tracking-[0.2em]">
-          AI Final Projection
-        </span>
+    <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
+      {/* Background Decoration */}
+      <div className="absolute -right-4 -top-4 opacity-[0.03]">
+        <Target className="w-32 h-32 text-slate-900" />
       </div>
 
-      <div className="text-6xl font-black tracking-tighter mb-1">{score}%</div>
+      <div className="relative z-10">
+        <div className="flex justify-between items-center mb-6">
+          <h4 className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-2">
+            <Sparkles className="w-3 h-3 text-amber-500" /> AI Term Projection
+          </h4>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <HelpCircle className="w-3 h-3 text-slate-300" />
+              </TooltipTrigger>
+              <TooltipContent className="bg-slate-900 text-white text-[10px] p-2 border-none">
+                Calculation based on current subject average and trend data.
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
 
-      <div className="flex items-center gap-2 font-bold text-xs">
-        {theme.icon}
-        {theme.label}
+        <div className="flex items-baseline gap-4">
+          <span
+            className={`text-6xl font-black tracking-tighter ${grade.color}`}
+          >
+            {grade.letter}
+          </span>
+          <div>
+            <p className="text-xs font-bold text-slate-700">{grade.label}</p>
+            <p className="text-[10px] font-medium text-slate-400">
+              Current Projected Grade
+            </p>
+          </div>
+        </div>
       </div>
 
-      <p className="mt-4 text-[10px] opacity-70 font-medium leading-relaxed max-w-[200px]">
-        Based on current momentum and {student.subjectBreakdown?.length} subject
-        inputs.
-      </p>
+      <div className="mt-8 space-y-3 relative z-10">
+        <div className="flex justify-between items-end">
+          <div className="space-y-1">
+            <p className="text-[9px] font-black uppercase text-slate-400 flex items-center gap-1">
+              Prediction Confidence
+            </p>
+            <p className="text-xs font-bold text-slate-600">{confidence}%</p>
+          </div>
+          <div
+            className={`flex items-center gap-1 text-[10px] font-black uppercase ${confidence > 70 ? "text-emerald-500" : "text-amber-500"}`}
+          >
+            <TrendingUp className="w-3 h-3" />
+            {confidence > 70 ? "High Accuracy" : "Variable"}
+          </div>
+        </div>
+
+        <Progress
+          value={confidence}
+          className={`h-1.5 bg-slate-100 [&>div]:${confidence > 70 ? "bg-emerald-500" : "bg-amber-500"}`}
+        />
+
+        {confidence < 60 && (
+          <div className="flex items-center gap-2 mt-2 bg-amber-50 p-2 rounded-xl border border-amber-100">
+            <AlertCircle className="w-3 h-3 text-amber-600 shrink-0" />
+            <p className="text-[9px] font-bold text-amber-700 leading-tight">
+              Low attendance is making this projection volatile.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
