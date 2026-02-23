@@ -105,7 +105,7 @@ export default function StudentDeepDive({ student, isOpen, onClose }) {
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="sm:max-w-xl p-0 overflow-y-auto bg-slate-50/50 backdrop-blur-xl border-l-0 sheet-content-print-target">
+      <SheetContent className="sm:max-w-xl p-0 overflow-y-auto bg-white backdrop-blur-xl border-l-0 sheet-content-print-target">
         {/* Print Styles */}
         <style
           dangerouslySetInnerHTML={{
@@ -204,7 +204,7 @@ export default function StudentDeepDive({ student, isOpen, onClose }) {
 
           {/* Subject History Sparklines */}
           <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm">
-            <h4 className="text-[10px] font-black uppercase text-slate-400 mb-6 flex items-center gap-2">
+            <h4 className="text-[12px] font-black uppercase text- mb-6 flex items-center gap-2">
               <Activity className="w-3 h-3" /> Subject Performance Trends
             </h4>
             <div className="grid grid-cols-1 gap-6">
@@ -214,11 +214,11 @@ export default function StudentDeepDive({ student, isOpen, onClose }) {
                   className="flex items-center justify-between gap-4"
                 >
                   <div className="w-24 shrink-0">
-                    <p className="text-[10px] font-black uppercase text-slate-500 truncate">
+                    <p className="text-[12px] font-black uppercase text-slate-500 truncate">
                       {sub.subject}
                     </p>
                     <p className="text-xs font-bold text-slate-900">
-                      {sub.average}%
+                      {sub.average.toFixed(0)}%
                     </p>
                   </div>
                   <div className="h-10 w-full">
@@ -251,7 +251,7 @@ export default function StudentDeepDive({ student, isOpen, onClose }) {
           {/* Academic Radar Chart & Predicted Grade Row */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm">
-              <h4 className="text-[10px] font-black uppercase text-slate-400 mb-6 flex items-center gap-2">
+              <h4 className="text-[12px] font-black uppercase  mb-6 flex items-center gap-2">
                 <UserCircle className="w-3 h-3" /> Performance Radar
               </h4>
               <div className="h-[220px] w-full">
@@ -260,7 +260,7 @@ export default function StudentDeepDive({ student, isOpen, onClose }) {
                     <PolarGrid stroke="#f1f5f9" />
                     <PolarAngleAxis
                       dataKey="subject"
-                      tick={{ fontSize: 9, fontWeight: 800, fill: "#94a3b8" }}
+                      tick={{ fontSize: 12, fontWeight: 800, fill: "#0f0f0f", textTransform:"uppercase" }}
                     />
                     <Radar
                       name="Student"
@@ -278,7 +278,7 @@ export default function StudentDeepDive({ student, isOpen, onClose }) {
 
           {/* Intervention Roadmap */}
           <div className="space-y-4">
-            <h4 className="text-[10px] font-black uppercase text-slate-400 px-2 flex items-center gap-2">
+            <h4 className="text-[12px] font-black uppercase  px-2 flex items-center gap-2">
               <Target className="w-3 h-3" /> Recommended Intervention Roadmap
             </h4>
             <div className="grid gap-3">
@@ -363,7 +363,7 @@ function StatCard({ label, value, color, icon }) {
   return (
     <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between">
       <div className="flex justify-between items-center mb-1">
-        <p className="text-[8px] font-black uppercase text-slate-400 tracking-tighter">
+        <p className="text-[10px] font-black uppercase text tracking-tighter">
           {label}
         </p>
         <div className="text-slate-300">{icon}</div>

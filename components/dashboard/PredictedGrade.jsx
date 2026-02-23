@@ -54,7 +54,7 @@ export default function PredictedGrade({ student }) {
 
       <div className="relative z-10">
         <div className="flex justify-between items-center mb-6">
-          <h4 className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-2">
+          <h4 className="text-[12px] font-black uppercase text-black flex items-center gap-2">
             <Sparkles className="w-3 h-3 text-amber-500" /> AI Term Projection
           </h4>
           <TooltipProvider>
