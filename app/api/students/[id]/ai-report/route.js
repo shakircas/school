@@ -106,7 +106,7 @@ export async function POST(req, { params }) {
       You are the Lead Academic Intelligence Officer for the BISE Board.
       Analyze the student's performance data and provide 4 specific, deep-dive pedagogical insights.
       STRICT: Correlate attendance (${attendanceScore}%) with subject performance.
-      STRICT: Use LaTeX for statistics and math ($...$).
+     
       STRICT: Return a JSON object with 'insights' (array of strings) and 'strategy' (array of strings).
     `;
 
