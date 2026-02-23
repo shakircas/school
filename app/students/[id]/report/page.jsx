@@ -9,6 +9,7 @@ import {
   User,
   BookOpen,
   MessageSquareQuote,
+  BrainCircuit,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +22,7 @@ import AttendanceCalendar from "@/components/reports/AttendanceCalendar";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Card, CardContent } from "@/components/ui/card";
 import StudentAIReport from "@/components/dashboard/StudentAIReport";
+import { SmartRenderer } from "@/components/ai/SmartRenderer";
 
 export default function StudentReportPage() {
   const params = useParams();
@@ -29,6 +31,34 @@ export default function StudentReportPage() {
   const [loading, setLoading] = useState(true);
   const [remarks, setRemarks] = useState(""); // State for Principal's Remarks
   const [aiData, setaiData] = useState(null);
+
+  const [aiReport, setAiReport] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  // 2. AI Analysis Fetching (Triggered when aiData is ready)
+  useEffect(() => {
+    if (aiData?.profile) {
+      const fetchAIReport = async () => {
+        setIsAnalyzing(true);
+        try {
+          const response = await fetch(`/api/students/${id}/ai-report`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ studentData: aiData.profile }),
+          });
+          const data = await response.json();
+          setAiReport(data);
+        } catch (error) {
+          console.error("AI Analysis failed:", error);
+        } finally {
+          setIsAnalyzing(false);
+        }
+      };
+      fetchAIReport();
+    }
+  }, [aiData?.profile, id]);
+
   useEffect(() => {
     if (!id) return;
     async function fetchReport() {
@@ -168,6 +198,34 @@ export default function StudentReportPage() {
         <div id="ai-report-content">
           <StudentAIReport reportData={aiData} />
         </div>
+
+        {/* AI Deep Dive Analysis (Always at the bottom) */}
+        <div className="bg-white p-5 rounded-[2rem] border border-indigo-100 shadow-sm pb-10">
+          <h4 className="text-[10px] font-black uppercase text-indigo-600 mb-4 flex items-center gap-2">
+            <BrainCircuit className="w-4 h-4" /> AI Deep Dive Diagnostics
+          </h4>
+
+          {isAnalyzing ? (
+            <div className="flex flex-col items-center py-10 space-y-2">
+              <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
+              <p className="text-[10px] font-bold text-slate-400 animate-pulse uppercase tracking-widest">
+                Analyzing student trajectory...
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {aiReport?.insights?.map((insight, i) => (
+                <div
+                  key={i}
+                  className="flex gap-3 items-start border-l-2 border-indigo-50 pl-4 py-1 hover:border-indigo-500 transition-colors"
+                >
+                  <SmartRenderer content={insight} />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* PRINCIPAL REMARKS INPUT (Screen Only) */}
         <div className="bg-indigo-50 p-6 rounded-2xl border border-indigo-100 space-y-3 print:hidden">
           <div className="flex items-center gap-2 text-indigo-900 font-bold">
