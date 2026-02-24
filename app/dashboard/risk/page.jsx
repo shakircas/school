@@ -228,14 +228,14 @@ export default function RiskDashboardPage() {
                 Academic Intelligence
               </span>
             </div>
-            <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
               Risk{" "}
               <span className="text-slate-400 font-light">Command Center</span>
             </h1>
           </div>
 
           <div className="flex flex-col items-end gap-2">
-            <div className="flex items-center gap-3 bg-white p-1.5 rounded-xl border shadow-sm">
+            <div className="flex items-center gap-3 bg-white p-1 sm:p-2 rounded-xl border shadow-sm">
               <Select
                 value={selectedClass}
                 onValueChange={(val) => {
@@ -243,7 +243,7 @@ export default function RiskDashboardPage() {
                   handleCalculate(val);
                 }}
               >
-                <SelectTrigger className="w-[200px] border-none shadow-none focus:ring-0 font-medium">
+                <SelectTrigger className="w-[150px] sm:w-[200px] bg-transparent border-none shadow-none focus:ring-0 font-medium">
                   <SelectValue
                     placeholder={classesLoading ? "Loading..." : "Select Class"}
                   />
@@ -327,7 +327,7 @@ export default function RiskDashboardPage() {
           {dashboardData.students.length > 0 ? (
             <>
               <Card className="border-none shadow-xl shadow-slate-200/60 overflow-hidden rounded-[2rem]">
-                <CardHeader className="bg-white border-b px-8 py-6 flex flex-row items-center justify-between">
+                <CardHeader className="bg-white border-b px-4 flex sm:flex-row flex-col items-center justify-between">
                   <div>
                     <CardTitle className="text-xl font-bold">
                       Student Risk Heatmap
@@ -345,7 +345,7 @@ export default function RiskDashboardPage() {
                       value={selectedSubject}
                       onValueChange={setSelectedSubject}
                     >
-                      <SelectTrigger className="w-[220px] bg-slate-50 border-slate-200 rounded-xl">
+                      <SelectTrigger className="sm:w-[220px] w-[150px] bg-slate-50 border-slate-200 rounded-xl">
                         <SelectValue placeholder="All Subjects" />
                       </SelectTrigger>
                       <SelectContent>
@@ -364,7 +364,7 @@ export default function RiskDashboardPage() {
                     </Select>
                   </div>
                 </CardHeader>
-                <CardContent className="p-8">
+                <CardContent className="p-4">
                   <RiskHeatmap
                     students={filteredStudents}
                     selectedSubject={selectedSubject}
@@ -375,7 +375,7 @@ export default function RiskDashboardPage() {
               </Card>
 
               {selectedSubject === "all" && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <DashboardChartCard
                     title="Risk Trajectory"
                     description="Evolution of risk over recent exams"
@@ -447,7 +447,7 @@ function KPICard({ label, value, icon, trend, color }) {
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
             {label}
           </p>
-          <h4 className="text-2xl font-black text-slate-900 leading-none my-1">
+          <h4 className="text-2xl font-black uppercase text-slate-900 leading-none my-1">
             {value}
           </h4>
           <p className="text-xs font-medium text-slate-500">{trend}</p>
