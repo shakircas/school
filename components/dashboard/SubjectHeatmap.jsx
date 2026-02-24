@@ -49,7 +49,7 @@ export default function SubjectHeatmap({ subjects = [] }) {
   };
 
   return (
-    <div className="space-y-8 mt-10">
+    <div className="space-y-8 mt">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <Badge
@@ -97,7 +97,7 @@ export default function SubjectHeatmap({ subjects = [] }) {
                     </div>
                     <div>
                       <CardTitle className="text-xl font-black text-slate-800">
-                        {subject.subjectName}
+                        {subject.subjectName.toUpperCase()}
                       </CardTitle>
                     </div>
                   </CardHeader>

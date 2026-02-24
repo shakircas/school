@@ -393,14 +393,14 @@ export default function RiskDashboardPage() {
 
               {selectedSubject === "all" && (
                 <Card className="border-none shadow-lg rounded-[2rem]">
-                  <CardHeader className="px-8 pt-8 text-center">
+                  {/* <CardHeader className="px-8 pt- text-center">
                     <CardTitle className="text-xl text-center font-bold">
                       Curriculum Breakdown
                     </CardTitle>
                     <CardDescription>
                       Subject-specific risk intensity
                     </CardDescription>
-                  </CardHeader>
+                  </CardHeader> */}
                   <CardContent className="px-8">
                     <SubjectHeatmap subjects={dashboardData.subjectSummary} />
                   </CardContent>
