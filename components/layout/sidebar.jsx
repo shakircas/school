@@ -85,6 +85,7 @@ const navigation = [
     children: [
       { name: "All Teachers", href: "/teachers" },
       { name: "Add Teacher", href: "/teachers/add" },
+      { name: "Teachers Topic Dashboard", href: "/dashboard/teacher-analytics" },
     ],
   },
 
