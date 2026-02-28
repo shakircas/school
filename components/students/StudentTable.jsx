@@ -36,6 +36,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "../ui/empty-state";
 import { LoadingSpinner } from "../ui/loading-spinner";
+import Link from "next/link";
 
 // Sub-components like LoadingSpinner and EmptyState are assumed to be defined in your project
 
@@ -134,9 +135,14 @@ export default function StudentTable({
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-slate-900 truncate tracking-tight text-base">
-                          {student.name}
-                        </h4>
+                        <Link
+                          className="cursor-pointer"
+                          href={`/dashboard/adaptive/${student._id}`}
+                        >
+                          <h4 className="font-bold text-slate-900 truncate tracking-tight text-base">
+                            {student.name}
+                          </h4>
+                        </Link>
                         <p className="text-[11px] text-indigo-600 font-bold uppercase tracking-wider">
                           Roll: {student.rollNumber}
                         </p>
@@ -257,9 +263,14 @@ export default function StudentTable({
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex flex-col">
-                            <span className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors leading-tight">
-                              {student.name}
-                            </span>
+                            <Link
+                              className="cursor-pointer"
+                              href={`/dashboard/adaptive/${student._id}`}
+                            >
+                              <span className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors leading-tight">
+                                {student.name}
+                              </span>
+                            </Link>
                             <span className="text-[11px] text-slate-400 font-mono mt-0.5 flex items-center gap-1">
                               ID: {student.registrationNumber}
                             </span>

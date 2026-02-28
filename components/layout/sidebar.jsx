@@ -48,6 +48,7 @@ const navigation = [
     roles: ["admin"],
     children: [
       { name: "Dashboard", href: "/dashboard" },
+      { name: "Topics Performance", href: "/dashboard/topic-performance" },
       { name: "Users", href: "/admin/users" },
       { name: "Risk Dashboard", href: "/dashboard/risk" },
       { name: "Analytics", href: "/analytics" },
@@ -63,6 +64,11 @@ const navigation = [
       {
         name: "Dashboard",
         href: "/students/dashboard",
+        roles: ["admin", "teacher"],
+      },
+      {
+        name: "Student Dashboard",
+        href: "/dashboard/student",
         roles: ["admin", "teacher"],
       },
       { name: "All Students", href: "/students" },
