@@ -68,6 +68,13 @@ attendanceSchema.pre("save", async function (next) {
   next();
 });
 
+attendanceSchema.post("save", async function (doc) {
+  const { updateFeaturesFromAttendance } =
+    await import("@/lib/hooks/attendanceHooks");
+
+  await updateFeaturesFromAttendance(doc);
+});
+
 
 attendanceSchema.index(
   {

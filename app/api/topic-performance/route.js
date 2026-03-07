@@ -41,7 +41,9 @@ export async function GET(req) {
 
     const data = await TopicPerformance.find({
       student: studentId,
-    }).sort({ createdAt: -1 });
+    })
+      .sort({ createdAt: -1 })
+      .populate("student", "name rollNumber");
 
     return NextResponse.json(data);
   } catch (error) {

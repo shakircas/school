@@ -1,13 +1,22 @@
-"use client"
+"use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { User, Phone, Mail, MapPin, Calendar, Heart, Users, GraduationCap } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  User,
+  Phone,
+  Mail,
+  MapPin,
+  Calendar,
+  Heart,
+  Users,
+  GraduationCap,
+} from "lucide-react";
 
 export function StudentProfile({ student }) {
-  console.log(student)
+  console.log(student);
   return (
     <div className="space-y-6">
       {/* Header Card */}
@@ -16,13 +25,22 @@ export function StudentProfile({ student }) {
           <div className="flex flex-col md:flex-row items-start gap-6">
             <Avatar className="h-24 w-24">
               <AvatarImage src={student.photo?.url || "/placeholder.svg"} />
-              <AvatarFallback className="text-2xl">{student.name?.charAt(0)}</AvatarFallback>
+              <AvatarFallback className="text-2xl">
+                {student.name?.charAt(0)}
+              </AvatarFallback>
             </Avatar>
 
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
                 <h2 className="text-2xl font-bold">{student.name}</h2>
-                <Badge variant={student.status === "Active" ? "default" : "secondary"}>{student.status}</Badge>
+                {student.predictedFinalExam}
+                <Badge
+                  variant={
+                    student.status === "Active" ? "default" : "secondary"
+                  }
+                >
+                  {student.status}
+                </Badge>
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
@@ -42,7 +60,9 @@ export function StudentProfile({ student }) {
                 </div>
                 <div>
                   <p className="text-muted-foreground">Admission Date</p>
-                  <p className="font-medium">{new Date(student.admissionDate).toLocaleDateString()}</p>
+                  <p className="font-medium">
+                    {new Date(student.admissionDate).toLocaleDateString()}
+                  </p>
                 </div>
               </div>
             </div>
@@ -75,10 +95,26 @@ export function StudentProfile({ student }) {
                   value={new Date(student.dateOfBirth).toLocaleDateString()}
                 />
                 <InfoItem icon={User} label="Gender" value={student.gender} />
-                <InfoItem icon={Heart} label="Blood Group" value={student.bloodGroup || "Not specified"} />
-                <InfoItem icon={Mail} label="Email" value={student.email || "Not specified"} />
-                <InfoItem icon={Phone} label="Phone" value={student.phone || "Not specified"} />
-                <InfoItem icon={MapPin} label="Address" value={formatAddress(student.address)} />
+                <InfoItem
+                  icon={Heart}
+                  label="Blood Group"
+                  value={student.bloodGroup || "Not specified"}
+                />
+                <InfoItem
+                  icon={Mail}
+                  label="Email"
+                  value={student.email || "Not specified"}
+                />
+                <InfoItem
+                  icon={Phone}
+                  label="Phone"
+                  value={student.phone || "Not specified"}
+                />
+                <InfoItem
+                  icon={MapPin}
+                  label="Address"
+                  value={formatAddress(student.address)}
+                />
               </div>
             </CardContent>
           </Card>
@@ -98,16 +134,28 @@ export function StudentProfile({ student }) {
                   <h4 className="font-medium mb-4">Father's Details</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <InfoItem label="Name" value={student.fatherName} />
-                    <InfoItem label="Phone" value={student.fatherPhone || "Not specified"} />
-                    <InfoItem label="Occupation" value={student.fatherOccupation || "Not specified"} />
+                    <InfoItem
+                      label="Phone"
+                      value={student.fatherPhone || "Not specified"}
+                    />
+                    <InfoItem
+                      label="Occupation"
+                      value={student.fatherOccupation || "Not specified"}
+                    />
                   </div>
                 </div>
 
                 <div>
                   <h4 className="font-medium mb-4">Mother's Details</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <InfoItem label="Name" value={student.motherName || "Not specified"} />
-                    <InfoItem label="Phone" value={student.motherPhone || "Not specified"} />
+                    <InfoItem
+                      label="Name"
+                      value={student.motherName || "Not specified"}
+                    />
+                    <InfoItem
+                      label="Phone"
+                      value={student.motherPhone || "Not specified"}
+                    />
                   </div>
                 </div>
 
@@ -116,8 +164,14 @@ export function StudentProfile({ student }) {
                     <h4 className="font-medium mb-4">Guardian Details</h4>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <InfoItem label="Name" value={student.guardianName} />
-                      <InfoItem label="Phone" value={student.guardianPhone || "Not specified"} />
-                      <InfoItem label="Relation" value={student.guardianRelation || "Not specified"} />
+                      <InfoItem
+                        label="Phone"
+                        value={student.guardianPhone || "Not specified"}
+                      />
+                      <InfoItem
+                        label="Relation"
+                        value={student.guardianRelation || "Not specified"}
+                      />
                     </div>
                   </div>
                 )}
@@ -126,9 +180,22 @@ export function StudentProfile({ student }) {
                   <div>
                     <h4 className="font-medium mb-4">Emergency Contact</h4>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <InfoItem label="Name" value={student.emergencyContact.name} />
-                      <InfoItem label="Phone" value={student.emergencyContact.phone || "Not specified"} />
-                      <InfoItem label="Relation" value={student.emergencyContact.relation || "Not specified"} />
+                      <InfoItem
+                        label="Name"
+                        value={student.emergencyContact.name}
+                      />
+                      <InfoItem
+                        label="Phone"
+                        value={
+                          student.emergencyContact.phone || "Not specified"
+                        }
+                      />
+                      <InfoItem
+                        label="Relation"
+                        value={
+                          student.emergencyContact.relation || "Not specified"
+                        }
+                      />
                     </div>
                   </div>
                 )}
@@ -147,10 +214,22 @@ export function StudentProfile({ student }) {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <InfoItem label="Current Class" value={`${student.class} - ${student.section}`} />
-                <InfoItem label="Admission Class" value={student.admissionClass || student.class} />
-                <InfoItem label="Admission Date" value={new Date(student.admissionDate).toLocaleDateString()} />
-                <InfoItem label="Previous School" value={student.previousSchool || "Not specified"} />
+                <InfoItem
+                  label="Current Class"
+                  value={`${student.class} - ${student.section}`}
+                />
+                <InfoItem
+                  label="Admission Class"
+                  value={student.admissionClass || student.class}
+                />
+                <InfoItem
+                  label="Admission Date"
+                  value={new Date(student.admissionDate).toLocaleDateString()}
+                />
+                <InfoItem
+                  label="Previous School"
+                  value={student.previousSchool || "Not specified"}
+                />
               </div>
             </CardContent>
           </Card>
@@ -166,16 +245,25 @@ export function StudentProfile({ student }) {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 gap-6">
-                <InfoItem label="Allergies" value={student.medicalInfo?.allergies || "None reported"} />
-                <InfoItem label="Medical Conditions" value={student.medicalInfo?.conditions || "None reported"} />
-                <InfoItem label="Current Medications" value={student.medicalInfo?.medications || "None"} />
+                <InfoItem
+                  label="Allergies"
+                  value={student.medicalInfo?.allergies || "None reported"}
+                />
+                <InfoItem
+                  label="Medical Conditions"
+                  value={student.medicalInfo?.conditions || "None reported"}
+                />
+                <InfoItem
+                  label="Current Medications"
+                  value={student.medicalInfo?.medications || "None"}
+                />
               </div>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }
 
 function InfoItem({ icon: Icon, label, value }) {
@@ -187,11 +275,17 @@ function InfoItem({ icon: Icon, label, value }) {
         <p className="font-medium">{value}</p>
       </div>
     </div>
-  )
+  );
 }
 
 function formatAddress(address) {
-  if (!address) return "Not specified"
-  const parts = [address.street, address.city, address.state, address.zipCode, address.country]
-  return parts.filter(Boolean).join(", ") || "Not specified"
+  if (!address) return "Not specified";
+  const parts = [
+    address.street,
+    address.city,
+    address.state,
+    address.zipCode,
+    address.country,
+  ];
+  return parts.filter(Boolean).join(", ") || "Not specified";
 }

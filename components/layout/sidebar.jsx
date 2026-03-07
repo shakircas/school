@@ -51,6 +51,7 @@ const navigation = [
       { name: "Topics Performance", href: "/dashboard/topic-performance" },
       { name: "Users", href: "/admin/users" },
       { name: "Risk Dashboard", href: "/dashboard/risk" },
+      { name: "Marks Prediction", href: "/ml" },
       { name: "Analytics", href: "/analytics" },
       { name: "Academic Year", href: "/admin/academic-year" },
     ],
@@ -85,7 +86,10 @@ const navigation = [
     children: [
       { name: "All Teachers", href: "/teachers" },
       { name: "Add Teacher", href: "/teachers/add" },
-      { name: "Teachers Topic Dashboard", href: "/dashboard/teacher-analytics" },
+      {
+        name: "Teachers Topic Dashboard",
+        href: "/dashboard/teacher-analytics",
+      },
     ],
   },
 

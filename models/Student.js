@@ -18,6 +18,23 @@ const studentSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+
+    nameUrdu: {
+      type: String,
+      trim: true,
+      index: true,
+    },
+
+    fatherNameUrdu: {
+      type: String,
+      trim: true,
+    },
+
+    motherNameUrdu: {
+      type: String,
+      trim: true,
+    },
+
     email: {
       type: String,
       trim: true,
@@ -170,6 +187,19 @@ const studentSchema = new mongoose.Schema(
         uploadedAt: { type: Date, default: Date.now },
       },
     ],
+
+    // =============================
+    // AI & ML
+    // =============================
+    predictedFinalExam: {
+      type: Number,
+    },
+    predictionDate: {
+      type: Date,
+    },
+    modelVersion: {
+      type: String,
+    },
   },
 
   { timestamps: true },

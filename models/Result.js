@@ -71,6 +71,12 @@ const resultSchema = new mongoose.Schema(
 resultSchema.index({ exam: 1, student: 1 }, { unique: true });
 resultSchema.index({ classId: 1, sectionId: 1, academicYear: 1 });
 
+resultSchema.post("save", async function (doc) {
+  const { updateFeaturesFromResult } = await import("@/lib/hooks/resultHooks");
+
+  await updateFeaturesFromResult(doc);
+});
+
 // --- MIDDLEWARE: Automated Calculations ---
 resultSchema.pre("save", function (next) {
   if (this.subjects && this.subjects.length > 0) {
@@ -96,6 +102,8 @@ resultSchema.pre("save", function (next) {
         ((totalObtained / totalMax) * 100).toFixed(2),
       );
     }
+
+
 
     // Auto-update status based on marks if not manually set to Held/Pending
     if (this.status !== "Held") {
