@@ -219,6 +219,7 @@ import { getActiveAcademicYear } from "@/lib/getAcademicYear";
 import { MainLayout } from "@/components/layout/main-layout";
 import PredictionClientWrapper from "./PredictionClientWrapper";
 import { calculateStudentFeatures } from "@/lib/ml/calculateStudentFeatures";
+import "@/models/Class";   // IMPORTANT
 
 export default async function ScorePredictedPage({ params }) {
   const { id } = await params;
