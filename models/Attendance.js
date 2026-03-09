@@ -61,11 +61,11 @@ const attendanceSchema = new mongoose.Schema(
   },
 );
 
-attendanceSchema.pre("save", async function (next) {
+attendanceSchema.pre("save", async function () {
   if (!this.academicYear) {
     this.academicYear = await getActiveAcademicYear();
   }
-  next();
+  // next();
 });
 
 attendanceSchema.post("save", async function (doc) {
@@ -74,7 +74,6 @@ attendanceSchema.post("save", async function (doc) {
 
   await updateFeaturesFromAttendance(doc);
 });
-
 
 attendanceSchema.index(
   {

@@ -52,14 +52,14 @@
 //   };
 
 //   const weakest = findWeakestLink();
-  
+
 //   const isFailing = predictedScore !== null && predictedScore < PASS_MARK;
 //   const isAtRisk = predictedScore !== null && predictedScore >= PASS_MARK && predictedScore < PASS_MARK + MAE;
 
 //   return (
 //     <MainLayout>
 //       <div className="max-w-3xl mx-auto p-8 mt-10 bg-white shadow-2xl rounded-[2rem] border border-gray-100 print:shadow-none print:border-none print:mt-0">
-        
+
 //         {/* Header with Print Action */}
 //         <header className="flex justify-between items-start border-b pb-6 mb-8">
 //           <div>
@@ -71,8 +71,8 @@
 //               Academic Analysis for <span className="text-black font-bold">{student.name}</span> • Roll #{student.rollNumber}
 //             </p>
 //           </div>
-//           <button 
-//             onClick={() => window.print()} 
+//           <button
+//             onClick={() => window.print()}
 //             className="print:hidden flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-xl transition-all font-bold text-sm"
 //           >
 //             <FileDown size={18} />
@@ -126,7 +126,7 @@
 //           <div className="bg-gray-900 text-white p-6 rounded-[2rem] shadow-xl relative overflow-hidden">
 //              <div className="absolute top-[-20%] right-[-10%] w-32 h-32 bg-indigo-500/20 blur-3xl rounded-full" />
 //              <h3 className="text-indigo-400 font-black uppercase text-xs tracking-widest mb-4">Smart Intervention</h3>
-             
+
 //              <div className="flex gap-4 items-start">
 //                <div className="bg-white/10 p-3 rounded-xl">
 //                  <TrendingDown className={weakest.val < weakest.threshold ? "text-red-400" : "text-emerald-400"} />
@@ -134,14 +134,14 @@
 //                <div>
 //                  <p className="font-bold text-lg leading-tight">Focus on {weakest.name}</p>
 //                  <p className="text-gray-400 text-sm mt-2 leading-relaxed">
-//                    Currently at <span className="text-white">{weakest.val}%</span>. 
-//                    {isFailing 
+//                    Currently at <span className="text-white">{weakest.val}%</span>.
+//                    {isFailing
 //                      ? ` Critical improvement in ${weakest.name} is the fastest way to pull the score above 50%.`
 //                      : ` Strengthening this area could increase the final projection by up to ${(Math.abs(weakest.impact) * 0.5).toFixed(1)}%.`}
 //                  </p>
 //                </div>
 //              </div>
-             
+
 //              <div className="mt-6 pt-6 border-t border-white/10">
 //                 <p className="text-[10px] font-bold text-indigo-400 uppercase">Faculty Recommendation</p>
 //                 <p className="text-xs italic mt-1 text-gray-400">"Schedule a 15-minute review session focusing on {weakest.name} modules."</p>
@@ -192,11 +192,11 @@
 
 // function RiskAnalysisBanner({ isFailing, isAtRisk, score, mae }) {
 //   if (score === null) return null;
-  
-//   const status = isFailing 
-//     ? { color: "bg-red-600", label: "Critical Risk", icon: "⚠️" } 
-//     : isAtRisk 
-//     ? { color: "bg-amber-500", label: "Needs Monitoring", icon: "💡" } 
+
+//   const status = isFailing
+//     ? { color: "bg-red-600", label: "Critical Risk", icon: "⚠️" }
+//     : isAtRisk
+//     ? { color: "bg-amber-500", label: "Needs Monitoring", icon: "💡" }
 //     : { color: "bg-emerald-600", label: "Excellent Standing", icon: "✅" };
 
 //   return (
@@ -218,6 +218,7 @@ import { predictFinalExam } from "@/lib/ml/predictFinalExam";
 import { getActiveAcademicYear } from "@/lib/getAcademicYear";
 import { MainLayout } from "@/components/layout/main-layout";
 import PredictionClientWrapper from "./PredictionClientWrapper";
+import { calculateStudentFeatures } from "@/lib/ml/calculateStudentFeatures";
 
 export default async function ScorePredictedPage({ params }) {
   const { id } = await params;
@@ -246,7 +247,7 @@ export default async function ScorePredictedPage({ params }) {
   };
 
   const predictionData = await predictFinalExam(features);
-  
+
   // Package data for the Client Component
   const stats = {
     student: {
@@ -265,6 +266,8 @@ export default async function ScorePredictedPage({ params }) {
     MAE,
     PASS_MARK,
   };
+
+  console.log(predictionData);
 
   return (
     <MainLayout>
