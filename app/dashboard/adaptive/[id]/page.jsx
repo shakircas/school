@@ -131,7 +131,7 @@ export default function AdaptivePage() {
 
   return (
     <MainLayout>
-      <div className="min-h-screen bg-[#F8FAFC] px-3 py-6 pb-24 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-[#F8FAFC] px-3 py-6 pb-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl space-y-6 sm:space-y-8">
           {/* Production Header */}
           <header className="flex flex-col gap-6 rounded-[2.5rem] bg-white p-6 sm:p-10 shadow-sm border border-slate-200 md:flex-row md:items-center md:justify-between">
