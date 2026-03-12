@@ -128,36 +128,47 @@ export default function ResultsPage() {
         />
 
         {/* HEADER SECTION */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 no-print">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
+        <div className="flex flex-col gap-6 px-4 py-6 md:flex-row md:items-center md:justify-between no-print">
+          {/* Title & Subtitle */}
+          <div className="space-y-1">
+            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 md:text-3xl">
               Academic Analytics
             </h1>
-            <p className="text-slate-500 font-medium">
+            <p className="text-sm font-medium text-slate-500 md:text-base">
               Head of School Dashboard
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={handleExportExcel}
-              className="border-green-600 text-green-700 hover:bg-green-50"
-            >
-              <FileSpreadsheet className="mr-2 h-4 w-4" /> Export Excel
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => window.print()}
-              className="border-indigo-600 text-indigo-700 hover:bg-indigo-50"
-            >
-              <Printer className="mr-2 h-4 w-4" /> Print PDF
-            </Button>
+
+          {/* Actions Area */}
+          <div className="flex flex-wrap items-center gap-3 md:flex-nowrap">
+            {/* Export/Print Group - Stacks on very small screens, row on medium */}
+            <div className="flex w-full items-center gap-2 sm:w-auto">
+              <Button
+                variant="outline"
+                onClick={handleExportExcel}
+                className="flex-1 border-green-600 text-green-700 hover:bg-green-50 sm:flex-none"
+              >
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                <span className="hidden xs:inline">Export</span> Excel
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={() => window.print()}
+                className="flex-1 border-indigo-600 text-indigo-700 hover:bg-indigo-50 sm:flex-none"
+              >
+                <Printer className="mr-2 h-4 w-4" />
+                <span className="hidden xs:inline">Print</span> PDF
+              </Button>
+            </div>
+
+            {/* Primary Action - Full width on mobile */}
             <Button
               onClick={() => {
                 setEditingResult(null);
                 setOpen(true);
               }}
-              className="bg-indigo-600 hover:bg-indigo-700 shadow-md"
+              className="w-full bg-indigo-600 shadow-md hover:bg-indigo-700 sm:w-auto"
             >
               <Plus className="mr-2 h-4 w-4" /> Add New Result
             </Button>

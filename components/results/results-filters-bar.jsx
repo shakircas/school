@@ -13,14 +13,15 @@ import { RotateCcw, Filter } from "lucide-react";
 
 export function ResultsFiltersBar({ exams, classes, filters, setFilters }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
       {/* Exam */}
       <Select
         value={filters.examId}
         onValueChange={(v) => setFilters((p) => ({ ...p, examId: v }))}
+        
       >
         <SelectTrigger>
-          <SelectValue placeholder="Exam" />
+          <SelectValue placeholder="Select Exam....." />
         </SelectTrigger>
         <SelectContent>
           {exams.map((e) => (
@@ -37,7 +38,7 @@ export function ResultsFiltersBar({ exams, classes, filters, setFilters }) {
         onValueChange={(v) => setFilters((p) => ({ ...p, classId: v }))}
       >
         <SelectTrigger>
-          <SelectValue placeholder="Class" />
+          <SelectValue placeholder="Select Class....." />
         </SelectTrigger>
         <SelectContent>
           {classes.map((c) => (
@@ -49,7 +50,7 @@ export function ResultsFiltersBar({ exams, classes, filters, setFilters }) {
       </Select>
 
       {/* Section */}
-      <Input
+      {/* <Input
         placeholder="Section (A, B...)"
         value={filters.sectionId}
         onChange={(e) =>
@@ -58,7 +59,7 @@ export function ResultsFiltersBar({ exams, classes, filters, setFilters }) {
             sectionId: e.target.value,
           }))
         }
-      />
+      /> */}
 
       {/* Student search */}
       <Input
