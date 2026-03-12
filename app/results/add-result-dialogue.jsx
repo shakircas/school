@@ -237,7 +237,15 @@ const AddResultDialogue = ({ open, setOpen, exams, mutate, editingData }) => {
               </Label>
               <Select
                 value={examId}
-                onValueChange={setExamId}
+                // onValueChange={setExamId}
+                onValueChange={(val) => {
+                  setExamId(val);
+                  const sel = exams.find((e) => e._id === val);
+                  if (sel) {
+                    // Set classId immediately to trigger student fetch
+                    setClassId(sel.classId?._id || sel.classId);
+                  }
+                }}
                 disabled={isEditMode}
               >
                 <SelectTrigger className="h-11">
