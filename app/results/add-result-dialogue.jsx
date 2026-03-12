@@ -195,9 +195,14 @@ const AddResultDialogue = ({ open, setOpen, exams, mutate, editingData }) => {
       <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] flex flex-col p-0 overflow-hidden">
         <DialogHeader className="p-6 pb-2 border-b">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <DialogTitle className="text-xl font-bold text-indigo-700 flex items-center gap-2">
+            <DialogTitle className="text-md sm:text-2xl font-bold text-indigo-700 flex items-center gap-2">
               <User className="h-5 w-5" />{" "}
               {isEditMode ? "Edit Result" : "Add Exam Result"}
+              <span className="text-sm text-muted-foreground ml-2">
+                {isEditMode
+                  ? "Edit existing result"
+                  : "Add result for a new/fresh student"}
+              </span>
             </DialogTitle>
             <div className="flex items-center gap-2">
               <Button

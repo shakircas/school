@@ -233,8 +233,8 @@ function StatsCard({ title, value, icon }) {
     <Card className="flex items-center p-4 space-x-4">
       <div className="p-3 bg-slate-100 rounded-full">{icon}</div>
       <div>
-        <p className="text-sm font-medium text-slate-500">{title}</p>
-        <h3 className="text-xl font-bold text-slate-900">{value}</h3>
+        <p className="text-sm uppercase font-medium text-slate-500">{title}</p>
+        <h3 className="text-xl uppercase font-bold text-slate-900">{value}</h3>
       </div>
     </Card>
   );

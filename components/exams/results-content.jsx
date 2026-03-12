@@ -59,6 +59,7 @@ import { ClassAnalytics } from "./ClassAnalytics";
 import { ResultSubjectsDialog } from "../results/result-subjects-dialog";
 import { SubjectPerformanceOverview } from "./SubjectPerformanceOverview";
 import { getGradeBadge } from "@/lib/constants";
+import { ResultsTable } from "../results/results-table";
 
 const fetcher = (url) => fetch(url).then((r) => r.json());
 
@@ -200,7 +201,8 @@ export function ResultsContent() {
       };
 
       const res = await fetch("/api/results", {
-        method: editingResultId ? "PUT" : "POST",
+        // method: editingResultId ? "PUT" : "POST",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
@@ -439,7 +441,7 @@ export function ResultsContent() {
                   {r.student?.rollNumber}
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 uppercase">
                     <div className="h-8 w-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs">
                       {r.student?.name?.charAt(0)}
                     </div>
@@ -453,7 +455,10 @@ export function ResultsContent() {
                     {r.classId?.name}
                   </Badge>
                 </TableCell>
-                <TableCell> {r.calculatedObtained}/ {r.calculatedTotalMax} </TableCell>
+                <TableCell>
+                  {" "}
+                  {r.calculatedObtained}/ {r.calculatedTotalMax}{" "}
+                </TableCell>
                 <TableCell className="text-center">
                   <span
                     className={`font-bold ${r.calculatedPerc >= 33 ? "text-emerald-600" : "text-red-600"}`}
@@ -515,6 +520,12 @@ export function ResultsContent() {
           </div>
         )}
       </Card>
+
+      <ResultsTable
+        results={results}
+        onEdit={handleEdit}
+        onDelete={deleteResult}
+      />
 
       {/* ADD / EDIT DIALOG */}
       <Dialog

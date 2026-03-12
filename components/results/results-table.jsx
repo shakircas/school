@@ -11,9 +11,10 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import { Car, Eye, Pencil, Trash2 } from "lucide-react";
 import { ResultDMCDialog } from "./ResultDMCDialog";
 import { getGradeBadge, getGradeColor } from "@/lib/constants";
+import { Card } from "../ui/card";
 
 export function ResultsTable({ results, onEdit, onDelete }) {
   const [activeResult, setActiveResult] = useState(null);
@@ -30,10 +31,8 @@ export function ResultsTable({ results, onEdit, onDelete }) {
     return { totalObtained, totalMax, percentage };
   };
 
-  
-
   return (
-    <div className="relative overflow-x-auto rounded-md border">
+    <Card className="relative shadow-lg p-4 px-6 overflow-x-auto rounded-md border">
       <h1 className="md:hidden print:block">Resut</h1>
       <Table>
         <TableHeader className="bg-slate-50/50">
@@ -66,7 +65,7 @@ export function ResultsTable({ results, onEdit, onDelete }) {
                   {i + 1}
                 </TableCell>
                 <TableCell>
-                  <div className="flex flex-col">
+                  <div className="flex flex-col uppercase">
                     <span className="font-bold text-slate-900">
                       {r.student?.name}
                     </span>
@@ -162,6 +161,6 @@ export function ResultsTable({ results, onEdit, onDelete }) {
         onOpenChange={setIsDmcOpen}
         result={activeResult}
       />
-    </div>
+    </Card>
   );
 }
