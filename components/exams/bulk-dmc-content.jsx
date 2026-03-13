@@ -318,9 +318,12 @@ export function BulkDMCContent() {
                     </div>
                   </div>
                   <div className="flex flex-col items-end">
-                    <QRCodeSVG value={`edu-verify-${result._id}`} size={50} />
-                    <p className="text-[7px] font-bold text-slate-400 mt-1 uppercase tracking-widest">
-                      Scan to Verify
+                    <QRCodeSVG
+                      value={`https://school-six-tau.vercel.app/verify/${result._id}`}
+                      size={60}
+                    />
+                    <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">
+                      Scan to Verify Result
                     </p>
                   </div>
                 </div>
