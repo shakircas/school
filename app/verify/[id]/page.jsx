@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import useSWR from "swr";
 import { ShieldCheck, XCircle, GraduationCap, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { use } from "react";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
