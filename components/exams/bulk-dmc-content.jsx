@@ -142,7 +142,7 @@ export function BulkDMCContent() {
             return (
               <div
                 key={result._id}
-                className="dmc-print-area bg-white shadow-2xl print:shadow-none relative overflow-hidden mb-10"
+                className="dmc-print-area bg-white shadow-2xl print:shadow-none relative overflow-hidden"
                 style={{
                   width: "210mm",
                   height: "297mm",
