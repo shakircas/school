@@ -1,8 +1,7 @@
-// app/api/verify/[id]/route.js
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import Result from "@/models/Result";
-// Add these even if you don't use them directly in the code!
+// CRITICAL: You must import these to register the schemas for .populate()
 import Student from "@/models/Student";
 import Class from "@/models/Class";
 import Exam from "@/models/Exam";
@@ -10,11 +9,13 @@ import Exam from "@/models/Exam";
 export async function GET(req, { params }) {
   try {
     await connectToDatabase();
+
+    // In Next.js 15+, params is a Promise
     const { id } = await params;
 
-    // Optional: Validate if ID is a valid MongoDB ObjectId to prevent crash
-    if (id.length !== 24) {
-      return NextResponse.json({ error: "Malformed ID" }, { status: 400 });
+    // Validate ID length to prevent Mongoose CastError (24 chars for ObjectId)
+    if (!id || id.length !== 24) {
+      return NextResponse.json({ error: "Invalid ID format" }, { status: 400 });
     }
 
     const result = await Result.findById(id)
@@ -23,15 +24,13 @@ export async function GET(req, { params }) {
       .populate("examId", "name");
 
     if (!result) {
-      return NextResponse.json(
-        { error: "Invalid Certificate ID" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Result not found" }, { status: 404 });
     }
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error("Verification Error:", error); // Check your Vercel logs for this!
+    // This will show up in your Vercel Dashboard -> Logs
+    console.error("VERIFICATION_ERROR:", error.message);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 },
