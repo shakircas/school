@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
-import { connectToDatabase } from "@/lib/mongodb";
 import Result from "@/models/Result";
 // CRITICAL: You must import these to register the schemas for .populate()
 import Student from "@/models/Student";
 import Class from "@/models/Class";
 import Exam from "@/models/Exam";
+import connectDB from "@/lib/db";
 
 export async function GET(req, { params }) {
   try {
-    await connectToDatabase();
+    await connectDB();
 
     // In Next.js 15+, params is a Promise
     const { id } = await params;
