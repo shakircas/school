@@ -15,6 +15,9 @@ export default function VerificationPage() {
     isLoading,
   } = useSWR(`/api/verify/${id}`, fetcher);
 
+  console.log(id);
+  console.log(result);
+
   if (isLoading)
     return (
       <div className="p-10 text-center font-bold">
