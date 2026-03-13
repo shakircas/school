@@ -157,8 +157,8 @@ export function BulkDMCContent() {
                 {/* Header Section */}
                 <div className="flex justify-between items-start mb-8 relative z-10">
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-slate-900 rounded-lg flex items-center justify-center text-white">
-                      <Library size={28} />
+                    <div className="w-16 h-16 border border-slate-900 rounded-xl flex items-center justify-center text-black">
+                      <GraduationCap size={32} />
                     </div>
                     <div>
                       <h1 className="text-xl font-black uppercase tracking-tighter">
@@ -170,23 +170,23 @@ export function BulkDMCContent() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="bg-slate-900 text-white px-3 py-1 text-[10px] font-bold uppercase mb-1">
-                      Official DMC
+                    <div className="border border-slate-900 text-black px-4 py-1 text-sm font-bold uppercase tracking-widest mb-2">
+                      Official Transcript
                     </div>
-                    <p className="text-[9px] font-mono font-bold">
-                      SN: {result._id.slice(-8).toUpperCase()}
+                    <p className="text-xs font-bold text-slate-600">
+                      ID: {result._id.slice(-10).toUpperCase()}
                     </p>
                   </div>
                 </div>
 
-                <div className="text-center mb-6">
-                  <h2 className="text-2xl font-black text-slate-900 uppercase">
-                    Detailed Marks Certificate
-                  </h2>
-                  <p className="text-xs font-bold text-slate-500 tracking-widest mt-1">
-                    {activeExam?.name} | {result.academicYear}
-                  </p>
-                </div>
+               <div className="text-center mb-8">
+              <h2 className="text-3xl font-black text-slate-900 uppercase underline underline-offset-8 decoration-slate-200">
+                Detailed Marks Certificate
+              </h2>
+              <p className="mt-4 text-sm font-bold text-slate-500 italic uppercase tracking-widest">
+                {activeExam?.name} - {result.academicYear}
+              </p>
+            </div>
 
                 {/* Student Info Box */}
                 <div className="grid grid-cols-2 border-2 border-slate-900 mb-6 bg-slate-50/30">
@@ -226,21 +226,21 @@ export function BulkDMCContent() {
 
                 {/* Marks Table */}
                 <Table className="border-2 border-slate-900 mb-6">
-                  <TableHeader className="bg-slate-900">
-                    <TableRow className="hover:bg-slate-900 h-8">
-                      <TableHead className="text-white font-bold text-[9px] uppercase">
+                  <TableHeader className="">
+                    <TableRow className="hover: h-8 border border-slate-900">
+                      <TableHead className="text-black font-bold text-[12px] border-bottom-2 uppercase">
                         Subject
                       </TableHead>
-                      <TableHead className="text-white font-bold text-[9px] uppercase text-center">
+                      <TableHead className="text-black font-bold text-[12px] border-bottom-2 uppercase text-center">
                         Total
                       </TableHead>
-                      <TableHead className="text-white font-bold text-[9px] uppercase text-center">
+                      <TableHead className="text-black font-bold text-[12px] border-bottom-2 uppercase text-center">
                         Obtained
                       </TableHead>
-                      <TableHead className="text-white font-bold text-[9px] uppercase text-center">
+                      <TableHead className="text-black font-bold text-[12px] border-bottom-2 uppercase text-center">
                         Grade
                       </TableHead>
-                      <TableHead className="text-white font-bold text-[9px] uppercase text-right">
+                      <TableHead className="text-black font-bold text-[12px] border-bottom-2 uppercase text-right">
                         Status
                       </TableHead>
                     </TableRow>
@@ -249,7 +249,7 @@ export function BulkDMCContent() {
                     {result.subjects?.map((s, i) => (
                       <TableRow
                         key={i}
-                        className="border-b border-slate-900 h-10"
+                        className="border border-slate-900 h-10"
                       >
                         <TableCell className="font-bold py-2 uppercase text-[11px]">
                           {s.subject}
@@ -356,23 +356,54 @@ export function BulkDMCContent() {
       {/* ---------------- PRINT ENGINE ---------------- */}
       <style jsx global>{`
         @media print {
+          /* 1. Reset Root Layout */
+          html,
+          body {
+            margin: 0 !important;
+            padding: 0 !important;
+            height: 100%;
+            background: white;
+          }
+
+          /* 2. Hide non-print elements */
           body * {
             visibility: hidden;
           }
-          .dmc-print-area,
+
+          /* 3. The Container Fix: Force content to start at the absolute top */
+          .flex-col.items-center.gap-10 {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 0 !important; /* Remove gaps during print */
+            margin: 0 !important;
+            padding: 0 !important;
+            visibility: visible;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+          }
+
+          /* 4. The DMC Page Fix */
+          .dmc-print-area {
+            visibility: visible;
+            position: relative !important;
+            display: block !important;
+            width: 210mm !important;
+            height: 297mm !important;
+            padding: 15mm !important;
+            margin: 0 !important; /* No margins, use A4 size for spacing */
+            page-break-after: always !important;
+            page-break-inside: avoid !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+
+          /* 5. Ensure all children inside DMC are visible */
           .dmc-print-area * {
             visibility: visible;
           }
-          .dmc-print-area {
-            position: relative;
-            display: block !important;
-            page-break-after: always !important;
-            margin: 0 !important;
-            padding: 15mm !important;
-            box-shadow: none !important;
-            border: none !important;
-            -webkit-print-color-adjust: exact;
-          }
+
           @page {
             size: A4;
             margin: 0;

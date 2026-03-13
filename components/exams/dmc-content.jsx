@@ -184,7 +184,7 @@ export function DMCContent() {
             {/* Header */}
             <div className="flex justify-between items-start mb-10 relative z-10">
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-slate-900 rounded-xl flex items-center justify-center text-white">
+                <div className="w-16 h-16 border border-slate-900 rounded-xl flex items-center justify-center text-black">
                   <GraduationCap size={32} />
                 </div>
                 <div>
@@ -197,7 +197,7 @@ export function DMCContent() {
                 </div>
               </div>
               <div className="text-right">
-                <div className="bg-slate-900 text-white px-4 py-1 text-sm font-bold uppercase tracking-widest mb-2">
+                <div className="border border-slate-900 text-black px-4 py-1 text-sm font-bold uppercase tracking-widest mb-2">
                   Official Transcript
                 </div>
                 <p className="text-xs font-bold text-slate-600">
@@ -254,21 +254,21 @@ export function DMCContent() {
             {/* Marks Table */}
             <div className="mb-8">
               <Table className="border-2 border-slate-900">
-                <TableHeader className="bg-slate-900">
-                  <TableRow className="hover:bg-slate-900">
-                    <TableHead className="text-white font-black uppercase text-[10px]">
+                <TableHeader className="">
+                  <TableRow className="hover:">
+                    <TableHead className="text-black font-black uppercase text-[12px]">
                       Subject
                     </TableHead>
-                    <TableHead className="text-white font-black uppercase text-[10px] text-center">
+                    <TableHead className="text-black font-black uppercase text-[12px] text-center">
                       Max
                     </TableHead>
-                    <TableHead className="text-white font-black uppercase text-[10px] text-center">
+                    <TableHead className="text-black font-black uppercase text-[12px] text-center">
                       Obtained
                     </TableHead>
-                    <TableHead className="text-white font-black uppercase text-[10px] text-center">
+                    <TableHead className="text-black font-black uppercase text-[12px] text-center">
                       Grade
                     </TableHead>
-                    <TableHead className="text-white font-black uppercase text-[10px] text-right">
+                    <TableHead className="text-black font-black uppercase text-[12px] text-right">
                       Status
                     </TableHead>
                   </TableRow>
