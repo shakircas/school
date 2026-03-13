@@ -350,7 +350,7 @@ export function DMCContent() {
               </div>
               <div className="flex flex-col items-end">
                 <QRCodeSVG
-                  value={`https://https://school-six-tau.vercel.app/verify/${result._id}`}
+                  value={`https://school-six-tau.vercel.app/verify/${result._id}`}
                   size={60}
                 />
                 <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">

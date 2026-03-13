@@ -1,53 +1,122 @@
-// app/verify/[id]/page.jsx
-// import { StudentResultCard } from "@/components/results/student-result-card";
-import { StudentResultCard } from "@/components/exams/StudentResultCard";
-import { ShieldCheck, AlertCircle } from "lucide-react";
+"use client";
 
-async function getResult(id) {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_APP_URL}/api/results/public/${id}`,
-    {
-      cache: "no-store",
-    },
-  );
-  if (!res.ok) return null;
-  return res.json();
-}
+import { useParams } from "next/navigation";
+import useSWR from "swr";
+import { ShieldCheck, XCircle, GraduationCap, Calendar } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default async function VerificationPage({ params }) {
-  const data = await getResult(params.id);
+const fetcher = (url) => fetch(url).then((res) => res.json());
 
-  if (!data) {
+export default function VerificationPage() {
+  const { id } = useParams();
+  const {
+    data: result,
+    error,
+    isLoading,
+  } = useSWR(`/api/verify/${id}`, fetcher);
+
+  if (isLoading)
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-slate-50">
-        <AlertCircle className="h-16 w-16 text-red-500 mb-4" />
-        <h1 className="text-2xl font-bold italic">Invalid Transcript</h1>
+      <div className="p-10 text-center font-bold">
+        Verifying Authenticity...
+      </div>
+    );
+  if (error || result?.error)
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center">
+        <XCircle className="text-red-500 h-16 w-16 mb-4" />
+        <h1 className="text-2xl font-bold">Invalid Certificate</h1>
         <p className="text-slate-500">
-          This result could not be verified in our official records.
+          This record could not be found in our official database.
         </p>
       </div>
     );
-  }
 
   return (
-    <div className="min-h-screen bg-slate-100 py-12 px-4">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen bg-slate-50 p-4 md:p-10">
+      <div className="max-w-2xl mx-auto space-y-6">
         {/* Verification Badge */}
-        <div className="bg-emerald-600 text-white p-4 rounded-xl flex items-center justify-center gap-3 shadow-lg">
-          <ShieldCheck className="h-6 w-6" />
-          <p className="font-bold uppercase tracking-widest text-sm">
-            Official Verified Result - EduManage Academy
-          </p>
+        <div className="bg-green-100 border-2 border-green-600 rounded-2xl p-6 flex items-center gap-4">
+          <ShieldCheck className="text-green-600 h-12 w-12" />
+          <div>
+            <h1 className="text-green-900 font-black text-xl uppercase italic">
+              Authenticity Verified
+            </h1>
+            <p className="text-green-700 text-sm">
+              Official Record of EduManage Systems
+            </p>
+          </div>
         </div>
 
-        {/* Display the Card */}
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-          <StudentResultCard result={data.result} isPublicView={true} />
-        </div>
+        <Card className="border-none shadow-xl">
+          <CardHeader className="bg-slate-900 text-white rounded-t-xl">
+            <CardTitle className="flex items-center gap-2">
+              <GraduationCap /> Result Summary
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6 space-y-4">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-slate-400 font-bold uppercase text-[10px]">
+                  Student
+                </p>
+                <p className="font-black text-lg">{result.student?.name}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-slate-400 font-bold uppercase text-[10px]">
+                  Roll No
+                </p>
+                <p className="font-mono font-bold text-lg">
+                  {result.student?.rollNumber}
+                </p>
+              </div>
+              <div>
+                <p className="text-slate-400 font-bold uppercase text-[10px]">
+                  Exam
+                </p>
+                <p className="font-bold">{result.examId?.name}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-slate-400 font-bold uppercase text-[10px]">
+                  Class
+                </p>
+                <p className="font-bold">{result.classId?.name}</p>
+              </div>
+            </div>
 
-        <p className="text-center text-[10px] text-slate-400 uppercase font-medium">
-          Verification ID: {params.id} • Digital Signature Timestamp:{" "}
-          {new Date(data.result.updatedAt).toLocaleString()}
+            <div className="border-t-2 border-dashed pt-4 mt-4">
+              <div className="flex justify-between items-end">
+                <div>
+                  <p className="text-slate-400 font-bold uppercase text-[10px]">
+                    Final Percentage
+                  </p>
+                  <p className="text-3xl font-black text-indigo-600">
+                    {result.percentage}%
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-slate-400 font-bold uppercase text-[10px]">
+                    Status
+                  </p>
+                  <p
+                    className={`text-xl font-black ${result.status === "PASS" ? "text-green-600" : "text-red-600"}`}
+                  >
+                    {result.status}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-3 rounded-lg flex items-center gap-2 text-[10px] text-slate-500 italic">
+              <Calendar size={12} />
+              This result was originally issued on{" "}
+              {new Date(result.createdAt).toLocaleDateString()}.
+            </div>
+          </CardContent>
+        </Card>
+
+        <p className="text-center text-[10px] text-slate-400 uppercase tracking-widest">
+          EduManage Security Protocol v2.1
         </p>
       </div>
     </div>
