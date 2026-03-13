@@ -230,7 +230,7 @@ export default function ResultsPage() {
 
 function StatsCard({ title, value, icon }) {
   return (
-    <Card className="flex items-center p-4 space-x-4">
+    <Card className="flex items-center p-4 space-x-4 text-center">
       <div className="p-3 bg-slate-100 rounded-full">{icon}</div>
       <div>
         <p className="text-sm uppercase font-medium text-slate-500">{title}</p>

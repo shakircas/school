@@ -2,27 +2,9 @@
 
 import { useState, useMemo, useEffect } from "react";
 import useSWR from "swr";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 import { Badge } from "@/components/ui/badge";
-import { Download, Plus, Trophy } from "lucide-react";
 import { toast } from "sonner";
-import { StudentResultCard } from "@/components/exams/StudentResultCard";
 import { MainLayout } from "@/components/layout/main-layout";
 import { PrincipalMasterLedger } from "@/components/results/PrincipalMasterLedger";
 
@@ -76,7 +58,7 @@ export default function ResultsContent() {
   /* ---------------- EXAM ---------------- */
   const exam = useMemo(
     () => exams.find((e) => e._id === examId),
-    [examId, exams]
+    [examId, exams],
   );
 
   /* Sync class & section from exam */
@@ -90,12 +72,10 @@ export default function ResultsContent() {
     }
   }, [exam]);
 
-  
-
   const exportResults = async () => {
     try {
       const response = await fetch(
-        `/api/results?export=csv&class=${selectedClass}&exam=${selectedExam}`
+        `/api/results?export=csv&class=${selectedClass}&exam=${selectedExam}`,
       );
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -121,7 +101,11 @@ export default function ResultsContent() {
   /* ---------------- UI ---------------- */
   return (
     <MainLayout>
-      <PrincipalMasterLedger results={results} classes={classes} exams={exams} />
+      <PrincipalMasterLedger
+        results={results}
+        classes={classes}
+        exams={exams}
+      />
     </MainLayout>
   );
 }

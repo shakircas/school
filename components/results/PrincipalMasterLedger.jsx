@@ -1,287 +1,3 @@
-// "use client";
-
-// import React, { useState, useMemo } from "react";
-// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-// import { Button } from "@/components/ui/button";
-// import { Input } from "@/components/ui/input";
-// import { Badge } from "@/components/ui/badge";
-// import {
-//   Select,
-//   SelectContent,
-//   SelectItem,
-//   SelectTrigger,
-//   SelectValue,
-// } from "@/components/ui/select";
-// import {
-//   Table,
-//   TableBody,
-//   TableCell,
-//   TableHead,
-//   TableHeader,
-//   TableRow,
-// } from "@/components/ui/table";
-// import {
-//   Search,
-//   Download,
-//   Filter,
-//   FileSpreadsheet,
-//   Printer,
-// } from "lucide-react";
-
-// export function PrincipalMasterLedger({ results, classes, exams }) {
-//   const [selectedClass, setSelectedClass] = useState("all");
-//   const [selectedExam, setSelectedExam] = useState("all");
-//   const [searchQuery, setSearchQuery] = useState("");
-
-//   // 1. Filter results based on Principal's selection
-//   const filteredResults = useMemo(() => {
-//     return results.filter((res) => {
-//       const matchClass =
-//         selectedClass === "all" || res.classId?._id === selectedClass;
-//       const matchExam =
-//         selectedExam === "all" || res.exam?._id === selectedExam;
-//       const matchSearch =
-//         res.student?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-//         res.student?.rollNumber?.includes(searchQuery);
-//       return matchClass && matchExam && matchSearch;
-//     });
-//   }, [results, selectedClass, selectedExam, searchQuery]);
-
-//   // 2. Extract unique subject names for table headers
-//   const allSubjectNames = useMemo(() => {
-//     const subjects = new Set();
-//     filteredResults.forEach((res) => {
-//       res.subjects?.forEach((s) => subjects.add(s.subject));
-//     });
-//     return Array.from(subjects);
-//   }, [filteredResults]);
-
-//   const handleExportCSV = () => {
-//     // Basic CSV Logic
-//     const headers = [
-//       "Roll No",
-//       "Student Name",
-//       ...allSubjectNames,
-//       "Total",
-//       "Percentage",
-//       "Status",
-//     ];
-//     const rows = filteredResults.map((res) => {
-//       const subjectMarks = allSubjectNames.map((subjName) => {
-//         const found = res.subjects.find((s) => s.subject === subjName);
-//         return found ? found.obtainedMarks : "-";
-//       });
-//       return [
-//         res.student?.rollNumber,
-//         res.student?.name,
-//         ...subjectMarks,
-//         res.totalObtained,
-//         res.percentage + "%",
-//         res.status,
-//       ];
-//     });
-
-//     const csvContent = [headers, ...rows].map((e) => e.join(",")).join("\n");
-//     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-//     const link = document.createElement("a");
-//     link.href = URL.createObjectURL(blob);
-//     link.download = `Result_Ledger_${new Date().toLocaleDateString()}.csv`;
-//     link.click();
-//   };
-
-//   return (
-//     <Card className="w-full shadow-xl border-t-4 border-t-primary overflow-hidden">
-//       <CardHeader className="bg-slate-50 border-b print:hidden">
-//         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-//           <div className="flex items-center gap-3">
-//             <div className="bg-primary p-2 rounded-lg">
-//               <FileSpreadsheet className="text-white h-6 w-6" />
-//             </div>
-//             <div>
-//               <CardTitle className="text-xl font-bold">
-//                 Master Result Ledger
-//               </CardTitle>
-//               <p className="text-sm text-muted-foreground font-medium text-blue-600">
-//                 Excel-Style Administrative View
-//               </p>
-//             </div>
-//           </div>
-
-//           <div className="flex flex-wrap items-center gap-2">
-//             <Button variant="outline" size="sm" onClick={() => window.print()}>
-//               <Printer className="h-4 w-4 mr-2" /> Print
-//             </Button>
-//             <Button
-//               variant="default"
-//               size="sm"
-//               onClick={handleExportCSV}
-//               className="bg-emerald-600 hover:bg-emerald-700"
-//             >
-//               <Download className="h-4 w-4 mr-2" /> Export CSV
-//             </Button>
-//           </div>
-//         </div>
-
-//         {/* Filters Row */}
-//         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
-//           <div className="space-y-1.5">
-//             <label className="text-[10px] font-bold uppercase text-slate-500 ml-1">
-//               Select Class
-//             </label>
-//             <Select value={selectedClass} onValueChange={setSelectedClass}>
-//               <SelectTrigger className="bg-white">
-//                 <SelectValue placeholder="All Classes" />
-//               </SelectTrigger>
-//               <SelectContent>
-//                 <SelectItem value="all">All Classes</SelectItem>
-//                 {classes?.map((c) => (
-//                   <SelectItem key={c._id} value={c._id}>
-//                     {c.name}
-//                   </SelectItem>
-//                 ))}
-//               </SelectContent>
-//             </Select>
-//           </div>
-
-//           <div className="space-y-1.5">
-//             <label className="text-[10px] font-bold uppercase text-slate-500 ml-1">
-//               Select Exam
-//             </label>
-//             <Select value={selectedExam} onValueChange={setSelectedExam}>
-//               <SelectTrigger className="bg-white">
-//                 <SelectValue placeholder="All Exams" />
-//               </SelectTrigger>
-//               <SelectContent>
-//                 <SelectItem value="all">All Exams</SelectItem>
-//                 {exams?.map((e) => (
-//                   <SelectItem key={e._id} value={e._id}>
-//                     {e.name}
-//                   </SelectItem>
-//                 ))}
-//               </SelectContent>
-//             </Select>
-//           </div>
-
-//           <div className="md:col-span-2 space-y-1.5">
-//             <label className="text-[10px] font-bold uppercase text-slate-500 ml-1">
-//               Search Student
-//             </label>
-//             <div className="relative">
-//               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-//               <Input
-//                 placeholder="Search by name or roll number..."
-//                 className="pl-9 bg-white"
-//                 value={searchQuery}
-//                 onChange={(e) => setSearchQuery(e.target.value)}
-//               />
-//             </div>
-//           </div>
-//         </div>
-//       </CardHeader>
-
-//       <CardContent className="p-0">
-//         <div className="overflow-x-auto max-h-[600px] overflow-y-auto relative">
-//           <Table>
-//             <TableHeader className="sticky top-0 z-20 bg-slate-100 shadow-sm">
-//               <TableRow className="hover:bg-transparent">
-//                 <TableHead className="w-[80px] font-bold text-slate-800 border-r bg-slate-100 sticky left-0 z-30">
-//                   Roll No
-//                 </TableHead>
-//                 <TableHead className="w-[200px] font-bold text-slate-800 border-r bg-slate-100 sticky left-[80px] z-30">
-//                   Student Name
-//                 </TableHead>
-
-//                 {allSubjectNames.map((subj) => (
-//                   <TableHead
-//                     key={subj}
-//                     className="text-center font-bold text-slate-800 border-r min-w-[100px]"
-//                   >
-//                     {subj}
-//                   </TableHead>
-//                 ))}
-
-//                 <TableHead className="text-center font-bold text-indigo-700 bg-indigo-50 border-r min-w-[80px]">
-//                   Total
-//                 </TableHead>
-//                 <TableHead className="text-center font-bold text-indigo-700 bg-indigo-50 min-w-[80px]">
-//                   Result
-//                 </TableHead>
-//               </TableRow>
-//             </TableHeader>
-
-//             <TableBody>
-//               {filteredResults.length > 0 ? (
-//                 filteredResults.map((res) => (
-//                   <TableRow
-//                     key={res._id}
-//                     className="hover:bg-slate-50 transition-colors"
-//                   >
-//                     <TableCell className="font-mono text-xs border-r bg-white sticky left-0 z-10">
-//                       {res.student?.rollNumber}
-//                     </TableCell>
-//                     <TableCell className="font-bold text-slate-700 border-r bg-white sticky left-[80px] z-10">
-//                       {res.student?.name}
-//                     </TableCell>
-
-//                     {allSubjectNames.map((subjName) => {
-//                       const subject = res.subjects?.find(
-//                         (s) => s.subject === subjName,
-//                       );
-//                       const marks = subject?.obtainedMarks;
-//                       const isFail = marks < (subject?.passingMarks || 33);
-
-//                       return (
-//                         <TableCell
-//                           key={subjName}
-//                           className={`text-center border-r font-medium ${isFail ? "text-red-600 bg-red-50/30" : "text-slate-600"}`}
-//                         >
-//                           {marks ?? "-"}
-//                         </TableCell>
-//                       );
-//                     })}
-
-//                     <TableCell className="text-center font-black text-slate-800 bg-indigo-50/30 border-r">
-//                       {res.totalObtained}
-//                     </TableCell>
-//                     <TableCell className="text-center bg-indigo-50/30">
-//                       <Badge
-//                         variant={
-//                           res.status === "Pass" ? "success" : "destructive"
-//                         }
-//                         className="text-[10px] px-2 py-0"
-//                       >
-//                         {res.status}
-//                       </Badge>
-//                     </TableCell>
-//                   </TableRow>
-//                 ))
-//               ) : (
-//                 <TableRow>
-//                   <TableCell
-//                     colSpan={allSubjectNames.length + 4}
-//                     className="h-40 text-center text-muted-foreground italic"
-//                   >
-//                     No results found for the selected criteria.
-//                   </TableCell>
-//                 </TableRow>
-//               )}
-//             </TableBody>
-//           </Table>
-//         </div>
-//       </CardContent>
-
-//       <div className="p-4 bg-slate-50 border-t flex justify-between items-center print:hidden">
-//         <p className="text-xs font-medium text-slate-500 italic">
-//           * Red highlighted marks indicate failure in that subject.
-//         </p>
-//         <p className="text-xs font-bold text-slate-700">
-//           Showing {filteredResults.length} records
-//         </p>
-//       </div>
-//     </Card>
-//   );
-// }
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
@@ -289,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import * as XLSX from "xlsx";
 import {
   Select,
   SelectContent,
@@ -318,43 +35,70 @@ import {
   RotateCcw,
   Trophy,
   User,
-  ExternalLink,
+  ArrowUpRight,
+  TrendingUp,
+  AlertCircle,
+  Users,
 } from "lucide-react";
+
+const printStyles = `
+  @media print {
+    @page { size: A4; margin: 10mm; }
+    body * { visibility: hidden; }
+    #section-to-print, #section-to-print * { visibility: visible; }
+    #section-to-print { position: absolute; left: 0; top: 0; width: 100%; }
+    .page-break { page-break-after: always; border-bottom: 2px dashed #ccc; padding-bottom: 20px; margin-bottom: 20px; }
+  }
+`;
 
 export function PrincipalMasterLedger({
   results = [],
   classes = [],
   exams = [],
 }) {
-  // 1. PERSISTENT STATES
-  const [selectedClass, setSelectedClass] = useState(() =>
-    typeof window !== "undefined"
-      ? localStorage.getItem("p_ledger_class") || "all"
-      : "all",
-  );
-  const [selectedExam, setSelectedExam] = useState(() =>
-    typeof window !== "undefined"
-      ? localStorage.getItem("p_ledger_exam") || "all"
-      : "all",
-  );
-  const [sortBy, setSortBy] = useState(() =>
-    typeof window !== "undefined"
-      ? localStorage.getItem("p_ledger_sort") || "rank"
-      : "rank",
-  );
+  // --- 1. STATE WITH LOCAL STORAGE PERSISTENCE ---
+
+  // Lazy initialization to avoid SSR issues and read saved filters
+  const [selectedClass, setSelectedClass] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("ledger_class") || "all";
+    }
+    return "all";
+  });
+
+  const [selectedExam, setSelectedExam] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("ledger_exam") || "all";
+    }
+    return "all";
+  });
+
+  const [sortBy, setSortBy] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("ledger_sort") || "rank";
+    }
+    return "rank";
+  });
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStudentResult, setSelectedStudentResult] = useState(null);
 
+  // Sync state to LocalStorage whenever they change
   useEffect(() => {
-    localStorage.setItem("p_ledger_class", selectedClass);
-    localStorage.setItem("p_ledger_exam", selectedExam);
-    localStorage.setItem("p_ledger_sort", sortBy);
-  }, [selectedClass, selectedExam, sortBy]);
+    localStorage.setItem("ledger_class", selectedClass);
+  }, [selectedClass]);
 
-  // 2. FILTERING & CALCULATION LOGIC
-  const processedResults = useMemo(() => {
-    let items = results.filter((res) => {
+  useEffect(() => {
+    localStorage.setItem("ledger_exam", selectedExam);
+  }, [selectedExam]);
+
+  useEffect(() => {
+    localStorage.setItem("ledger_sort", sortBy);
+  }, [sortBy]);
+
+  // --- 2. LOGIC: DATA TRANSFORMATION ---
+  const processedData = useMemo(() => {
+    let filtered = results.filter((res) => {
       const matchClass =
         selectedClass === "all" ||
         res.classId?._id === selectedClass ||
@@ -369,141 +113,223 @@ export function PrincipalMasterLedger({
       return matchClass && matchExam && matchSearch;
     });
 
-    // Map calculated fields
-    let mapped = items.map((r) => {
+    const mapped = filtered.map((r) => {
       const totalMax =
         r.subjects?.reduce((acc, s) => acc + (s.totalMarks || 0), 0) || 0;
       const totalObtained =
         r.subjects?.reduce((acc, s) => acc + (s.obtainedMarks || 0), 0) || 0;
       const percentage = totalMax > 0 ? (totalObtained / totalMax) * 100 : 0;
+
+      const isFailed = r.subjects?.some(
+        (s) => s.obtainedMarks / s.totalMarks < 0.33,
+      );
+
       return {
         ...r,
         calculatedPerc: percentage,
         calculatedObtained: totalObtained,
         totalMax,
+        status: isFailed ? "Failed" : "Passed",
       };
     });
 
-    // Handle Sorting
     return mapped.sort((a, b) => {
       if (sortBy === "rank") return b.calculatedPerc - a.calculatedPerc;
       if (sortBy === "rollNumber")
         return (a.student?.rollNumber || "").localeCompare(
           b.student?.rollNumber || "",
         );
-      if (sortBy === "name")
-        return (a.student?.name || "").localeCompare(b.student?.name || "");
-      return 0;
+      return (a.student?.name || "").localeCompare(b.student?.name || "");
     });
   }, [results, selectedClass, selectedExam, searchQuery, sortBy]);
 
+  // --- 3. LOGIC: ANALYTICS ---
+  const stats = useMemo(() => {
+    if (processedData.length === 0) return null;
+    const avg =
+      processedData.reduce((acc, curr) => acc + curr.calculatedPerc, 0) /
+      processedData.length;
+    const passCount = processedData.filter((r) => r.status === "Passed").length;
+    const topScorer = processedData[0];
+    const atRisk = processedData.filter((r) => r.calculatedPerc < 40).length;
+
+    return {
+      avg,
+      passCount,
+      passRate: (passCount / processedData.length) * 100,
+      topScorer,
+      atRisk,
+    };
+  }, [processedData]);
+
   const allSubjectNames = useMemo(() => {
     const subjects = new Set();
-    processedResults.forEach((res) =>
+    results.forEach((res) =>
       res.subjects?.forEach((s) => subjects.add(s.subject)),
     );
     return Array.from(subjects);
-  }, [processedResults]);
+  }, [results]);
 
-  const getCellHighlight = (marks, total) => {
-    if (!marks && marks !== 0) return "";
-    const perc = (marks / total) * 100;
-    if (perc >= 90) return "bg-emerald-50 text-emerald-700 font-bold";
-    if (perc < 33) return "bg-red-50 text-red-700 font-bold";
-    return "";
+  const getGradeColor = (perc) => {
+    if (perc >= 80) return "text-emerald-600 bg-emerald-50 border-emerald-100";
+    if (perc >= 60) return "text-blue-600 bg-blue-50 border-blue-100";
+    if (perc >= 40) return "text-amber-600 bg-amber-50 border-amber-100";
+    return "text-red-600 bg-red-50 border-red-100";
   };
 
-  const handlePrint = () => window.print();
+  const resetFilters = () => {
+    setSelectedClass("all");
+    setSelectedExam("all");
+    setSortBy("rank");
+    setSearchQuery("");
+  };
+
+  const handleExport = () => {
+    // 1. Prepare the data rows
+    const exportData = processedData.map((res) => {
+      // Basic student info
+      const row = {
+        "Roll Number": res.student?.rollNumber,
+        "Student Name": res.student?.name?.toUpperCase(),
+      };
+
+      // Add subject columns dynamically
+      allSubjectNames.forEach((subjName) => {
+        const score = res.subjects?.find((s) => s.subject === subjName);
+        row[subjName] = score?.obtainedMarks ?? 0;
+      });
+
+      // Add totals and percentage
+      row["Total Obtained"] = res.calculatedObtained;
+      row["Total Marks"] = res.totalMax;
+      row["Percentage"] = `${res.calculatedPerc.toFixed(2)}%`;
+      row["Result Status"] = res.status;
+
+      return row;
+    });
+
+    // 2. Create worksheet and workbook
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Academic Ledger");
+
+    // 3. Define filename based on filters
+    const className =
+      classes.find((c) => c._id === selectedClass)?.name || "All_Classes";
+    const fileName = `Ledger_${className}_${new Date().toISOString().split("T")[0]}.xlsx`;
+
+    // 4. Trigger download
+    XLSX.writeFile(workbook, fileName);
+  };
 
   return (
-    <>
-      <Card className="w-full shadow-xl border-t-4 border-t-slate-900 overflow-hidden bg-white print:border-0 print:shadow-none">
-        <CardHeader className="bg-slate-50 border-b print:hidden">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+    <div className="space-y-6 p-2 md:p-6 bg-slate-50 min-h-screen">
+      <style>{printStyles}</style>
+      {/* 1. ANALYTICS HUD */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          title="Class Average"
+          value={`${stats?.avg.toFixed(1) || 0}%`}
+          icon={<TrendingUp className="text-blue-500" />}
+          description="Mean performance of selected group"
+        />
+        <StatCard
+          title="Pass Rate"
+          value={`${stats?.passRate.toFixed(1) || 0}%`}
+          icon={<Users className="text-emerald-500" />}
+          description={`${stats?.passCount || 0} students passed`}
+        />
+        <StatCard
+          title="At Risk"
+          value={stats?.atRisk || 0}
+          icon={<AlertCircle className="text-red-500" />}
+          description="Students scoring below 40%"
+        />
+        <StatCard
+          title="Top Performer"
+          value={stats?.topScorer?.student?.name?.split(" ")[0] || "N/A"}
+          icon={<Trophy className="text-amber-500" />}
+          description={`Leading with ${stats?.topScorer?.calculatedPerc.toFixed(1) || 0}%`}
+        />
+      </div>
+
+      {/* 2. MAIN LEDGER CARD */}
+      <Card className="shadow-xl border-none overflow-hidden">
+        <CardHeader className="bg-white border-b space-y-4">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             <div className="flex items-center gap-3">
-              <div className="bg-slate-900 p-2 rounded-lg">
-                <FileSpreadsheet className="text-white h-6 w-6" />
+              <div className="bg-slate-900 p-2.5 rounded-xl shadow-lg shadow-slate-200">
+                <FileSpreadsheet className="text-white h-5 w-5" />
               </div>
               <div>
-                <CardTitle className="text-xl font-bold text-slate-900">
-                  Principal's Master Ledger
+                <CardTitle className="text-xl font-bold">
+                  Master Academic Ledger
                 </CardTitle>
-                <p className="text-xs text-muted-foreground font-medium flex items-center gap-1">
-                  <Trophy className="h-3 w-3 text-amber-500" /> Academic
-                  Performance Records
+                <p className="text-xs text-muted-foreground">
+                  Session 2025-2026 • Live Data
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                onClick={() => {
-                  setSelectedClass("all");
-                  setSelectedExam("all");
-                  setSortBy("rank");
-                }}
+                onClick={resetFilters}
+                className="text-slate-500 hover:text-red-600"
               >
                 <RotateCcw className="h-4 w-4 mr-2" /> Reset
               </Button>
-              <Button variant="outline" size="sm" onClick={handlePrint}>
-                <Printer className="h-4 w-4 mr-2" /> Print
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.print()}
+                className="bg-white border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+              >
+                <Printer className="h-4 w-4 mr-2" /> Bulk Print (
+                {processedData.length})
               </Button>
               <Button
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                className="bg-slate-900 hover:bg-slate-800 text-white shadow-md"
                 size="sm"
+                onClick={handleExport} // Add this line
               >
-                <Download className="h-4 w-4 mr-2" /> Export CSV
+                <Download className="h-4 w-4 mr-2" /> Export Excel
               </Button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-6">
-            <Select value={selectedClass} onValueChange={setSelectedClass}>
-              <SelectTrigger className="bg-white">
-                <SelectValue placeholder="Class" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Entire School</SelectItem>
-                {classes?.map((c) => (
-                  <SelectItem key={c._id} value={c._id}>
-                    {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={selectedExam} onValueChange={setSelectedExam}>
-              <SelectTrigger className="bg-white">
-                <SelectValue placeholder="Exam" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Exams</SelectItem>
-                {exams?.map((e) => (
-                  <SelectItem key={e._id} value={e._id}>
-                    {e.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="bg-white font-medium border-indigo-200">
-                <SelectValue placeholder="Sort By" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="rank">Sort: Rank (High to Low)</SelectItem>
-                <SelectItem value="rollNumber">Sort: Roll Number</SelectItem>
-                <SelectItem value="name">Sort: Student Name</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <div className="md:col-span-1 lg:col-span-2 relative">
+          {/* FILTERS */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-2">
+            <FilterSelect
+              label="Class"
+              value={selectedClass}
+              onChange={setSelectedClass}
+              options={classes}
+              placeholder="All Classes"
+            />
+            <FilterSelect
+              label="Exam"
+              value={selectedExam}
+              onChange={setSelectedExam}
+              options={exams}
+              placeholder="All Exams"
+            />
+            <FilterSelect
+              label="Sort"
+              value={sortBy}
+              onChange={setSortBy}
+              options={[
+                { _id: "rank", name: "Rank" },
+                { _id: "rollNumber", name: "Roll No" },
+                { _id: "name", name: "Name" },
+              ]}
+            />
+            <div className="lg:col-span-2 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <Input
-                placeholder="Search name or roll..."
-                className="pl-9 bg-white"
+                placeholder="Search student identity..."
+                className="pl-9 h-10 border-slate-200 bg-slate-50/50 focus:bg-white transition-all"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -511,79 +337,75 @@ export function PrincipalMasterLedger({
           </div>
         </CardHeader>
 
-        <CardContent className="p-0">
-          <div className="overflow-x-auto max-h-[70vh] relative">
-            <Table>
-              <TableHeader className="sticky top-0 z-30 bg-slate-100 shadow-sm">
-                <TableRow>
-                  <TableHead className="w-[80px] font-bold text-slate-800 border-r bg-slate-100 sticky left-0 z-40">
-                    Roll
+        <CardContent className="p-4">
+          <div className="overflow-x-auto relative">
+            <Table className="border-collapse">
+              <TableHeader className="bg-slate-100/80 backdrop-blur-sm sticky top-0 z-10">
+                <TableRow className="hover:bg-transparent border-b-2 border-slate-200">
+                  <TableHead className="w-[100px] font-bold text-slate-700 sticky left-0 bg-slate-100 z-20 border-r">
+                    Roll No
                   </TableHead>
-                  <TableHead className="w-[200px] font-bold text-slate-800 border-r bg-slate-100 sticky left-[80px] z-40">
+                  <TableHead className="w-[220px] font-bold text-slate-700 sticky left-[100px] bg-slate-100 z-20 border-r">
                     Student Name
                   </TableHead>
                   {allSubjectNames.map((subj) => (
                     <TableHead
                       key={subj}
-                      className="text-center font-bold text-slate-700 border-r min-w-[100px] text-[11px] uppercase"
+                      className="text-center font-semibold text-slate-600 border-r min-w-[90px] text-[10px] uppercase tracking-wider"
                     >
                       {subj}
                     </TableHead>
                   ))}
-                  <TableHead className="text-center font-bold text-slate-900 bg-slate-200 border-r">
-                    Total
+                  <TableHead className="text-center font-bold text-slate-900 bg-slate-200/50 border-r">
+                    Obtained
                   </TableHead>
-                  <TableHead className="text-center font-bold text-slate-900 bg-slate-200">
-                    Score %
+                  <TableHead className="text-center font-bold text-slate-900 bg-slate-200/50">
+                    Result
                   </TableHead>
                 </TableRow>
               </TableHeader>
-
               <TableBody>
-                {processedResults.map((res) => (
-                  <TableRow key={res._id} className="hover:bg-slate-50 group">
-                    <TableCell className="font-mono text-xs border-r bg-white group-hover:bg-slate-50 sticky left-0 z-20">
+                {processedData.map((res) => (
+                  <TableRow
+                    key={res._id}
+                    className="group hover:bg-indigo-50/30 transition-colors"
+                  >
+                    <TableCell className="font-mono text-xs border-r sticky left-0 bg-white group-hover:bg-slate-50 z-10">
                       {res.student?.rollNumber}
                     </TableCell>
                     <TableCell
-                      className="font-bold text-indigo-600 cursor-pointer hover:underline border-r bg-white group-hover:bg-slate-50 sticky left-[80px] z-20"
+                      className="font-semibold text-slate-800 border-r sticky left-[100px] bg-white group-hover:bg-slate-50 z-10 cursor-pointer"
                       onClick={() => setSelectedStudentResult(res)}
                     >
-                      <div className="flex items-center gap-2">
+                      <div className="flex uppercase items-center justify-between">
                         {res.student?.name}
-                        <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <ArrowUpRight className="h-3 w-3 text-slate-300 group-hover:text-indigo-500 opacity-0 group-hover:opacity-100 transition-all" />
                       </div>
                     </TableCell>
-
                     {allSubjectNames.map((subjName) => {
                       const subject = res.subjects?.find(
                         (s) => s.subject === subjName,
                       );
+                      const isFail =
+                        subject?.obtainedMarks / subject?.totalMarks < 0.33;
                       return (
                         <TableCell
                           key={subjName}
-                          className={`text-center border-r text-sm ${getCellHighlight(subject?.obtainedMarks, subject?.totalMarks || 100)}`}
+                          className={`text-center border-r font-medium ${isFail ? "text-red-500 bg-red-50/30" : "text-slate-600"}`}
                         >
                           {subject?.obtainedMarks ?? "-"}
                         </TableCell>
                       );
                     })}
-
                     <TableCell className="text-center font-bold text-slate-900 bg-slate-50/50 border-r">
                       {res.calculatedObtained}
                     </TableCell>
-                    <TableCell className="text-center bg-slate-50/50">
-                      <div className="flex flex-col items-center">
-                        <span className="font-black text-xs text-slate-800">
-                          {res.calculatedPerc.toFixed(1)}%
-                        </span>
-                        <div className="w-10 h-1 bg-slate-200 rounded-full mt-1">
-                          <div
-                            className={`h-full rounded-full ${res.calculatedPerc >= 33 ? "bg-indigo-500" : "bg-red-500"}`}
-                            style={{ width: `${res.calculatedPerc}%` }}
-                          />
-                        </div>
-                      </div>
+                    <TableCell className="text-center bg-slate-50/50 p-1">
+                      <Badge
+                        className={`rounded-md px-2 py-0.5 text-[10px] uppercase ${getGradeColor(res.calculatedPerc)}`}
+                      >
+                        {res.calculatedPerc.toFixed(1)}%
+                      </Badge>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -593,104 +415,230 @@ export function PrincipalMasterLedger({
         </CardContent>
       </Card>
 
-      {/* DETAILED STUDENT SIDE PANEL */}
+      {/* 3. STUDENT DETAIL SHEET */}
       <Sheet
         open={!!selectedStudentResult}
         onOpenChange={() => setSelectedStudentResult(null)}
       >
-        <SheetContent className="sm:max-w-md p-4 overflow-y-auto">
-          <SheetHeader className="pb-6 border-b">
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-full bg-slate-900 flex items-center justify-center text-white">
-                <User size={24} />
-              </div>
-              <div>
-                <SheetTitle className="text-xl">
-                  {selectedStudentResult?.student?.name}
-                </SheetTitle>
-                <p className="text-sm text-muted-foreground">
-                  Roll No: {selectedStudentResult?.student?.rollNumber}
-                </p>
-              </div>
-            </div>
-          </SheetHeader>
-
-          <div id="student-card-content" className="py-6 space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 bg-slate-50 rounded-lg border">
-                <p className="text-xs text-slate-500 uppercase font-bold">
-                  Total Marks
-                </p>
-                <p className="text-2xl font-black">
-                  {selectedStudentResult?.calculatedObtained} /{" "}
-                  {selectedStudentResult?.totalMax}
-                </p>
-              </div>
-              <div className="p-4 bg-slate-50 rounded-lg border">
-                <p className="text-xs text-slate-500 uppercase font-bold">
-                  Percentage
-                </p>
-                <p className="text-2xl font-black text-indigo-600">
-                  {selectedStudentResult?.calculatedPerc.toFixed(2)}%
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <h4 className="font-bold text-sm flex items-center gap-2">
-                <FileSpreadsheet size={16} /> Subject Breakdown
-              </h4>
-              {selectedStudentResult?.subjects?.map((s, i) => (
-                <div
-                  key={i}
-                  className="flex justify-between items-center p-3 border rounded-md hover:bg-slate-50 transition-colors"
-                >
-                  <span className="font-medium">{s.subject}</span>
-                  <div className="flex items-center gap-3">
-                    <span className="font-bold">
-                      {s.obtainedMarks} / {s.totalMarks}
-                    </span>
-                    <Badge
-                      variant={
-                        s.obtainedMarks / s.totalMarks >= 0.33
-                          ? "secondary"
-                          : "destructive"
-                      }
-                    >
-                      {Math.round((s.obtainedMarks / s.totalMarks) * 100)}%
-                    </Badge>
+        <SheetContent className="w-full p-4 sm:max-w-lg overflow-y-auto border-l-4 border-indigo-500">
+          {selectedStudentResult && (
+            <div className="space-y-8 pt-4">
+              <SheetHeader>
+                <div className="flex items-center gap-4">
+                  <div className="h-14 w-14 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg">
+                    <User size={28} />
+                  </div>
+                  <div>
+                    <SheetTitle className="text-2xl font-black">
+                      {selectedStudentResult.student?.name}
+                    </SheetTitle>
+                    <p className="text-indigo-600 font-medium tracking-wide">
+                      ROLL # {selectedStudentResult.student?.rollNumber}
+                    </p>
                   </div>
                 </div>
-              ))}
+              </SheetHeader>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-slate-900 rounded-2xl text-white">
+                  <p className="text-[10px] uppercase opacity-60 font-bold">
+                    Aggregate Score
+                  </p>
+                  <p className="text-3xl font-black">
+                    {selectedStudentResult.calculatedPerc.toFixed(1)}%
+                  </p>
+                </div>
+                <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
+                  <p className="text-[10px] uppercase text-indigo-400 font-bold">
+                    School Rank
+                  </p>
+                  <p className="text-3xl font-black text-indigo-700">
+                    #
+                    {processedData.findIndex(
+                      (r) => r._id === selectedStudentResult._id,
+                    ) + 1}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <FileSpreadsheet size={14} /> Subject Analysis
+                </h4>
+                {selectedStudentResult.subjects?.map((s, i) => (
+                  <div
+                    key={i}
+                    className="flex justify-between items-center p-4 rounded-xl border border-slate-100 bg-white hover:border-indigo-200 transition-all shadow-sm"
+                  >
+                    <div>
+                      <p className="font-bold text-slate-800">{s.subject}</p>
+                      <p className="text-xs text-slate-400">Term Assessment</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-black text-slate-900">
+                        {s.obtainedMarks} / {s.totalMarks}
+                      </p>
+                      <div className="w-24 h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden">
+                        <div
+                          className={`h-full transition-all ${s.obtainedMarks / s.totalMarks > 0.33 ? "bg-indigo-500" : "bg-red-500"}`}
+                          style={{
+                            width: `${(s.obtainedMarks / s.totalMarks) * 100}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <Button className="w-full h-12 bg-slate-900 text-white rounded-xl shadow-lg">
+                <Printer className="mr-2 h-4 w-4" /> Print Marksheet
+              </Button>
             </div>
-          </div>
-          {/* Print-specific Styles */}
-          <style jsx global>{`
-            @media print {
-              body * {
-                visibility: hidden;
-              }
-              #student-card-content,
-              #student-card-content * {
-                visibility: visible;
-              }
-              #student-card-content {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-              }
-            }
-          `}</style>
-          <Button
-            className="w-full bg-slate-900 hover:bg-slate-800 text-white"
-            onClick={() => window.print()}
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Download Result PDF
-          </Button>
+          )}
         </SheetContent>
       </Sheet>
-    </>
+
+      {/* 4. HIDDEN PRINT SECTION (Only visible to printer) */}
+      <div id="section-to-print" className="hidden print:block text-black">
+        {processedData.map((res, index) => (
+          <div
+            key={res._id}
+            className="page-break p-8 bg-white border-2 border-slate-900 rounded-lg"
+          >
+            {/* Board Header Style */}
+            <div className="text-center border-b-2 border-slate-900 pb-4 mb-6">
+              <h1 className="text-2xl font-black uppercase">
+                Academic Progress Report
+              </h1>
+              <p className="text-sm font-bold">Session 2025-2026</p>
+            </div>
+
+            {/* Student Bio */}
+            <div className="grid grid-cols-2 gap-6 mb-8 bg-slate-50 p-4 rounded-md border border-slate-200">
+              <div>
+                <p className="text-[10px] uppercase text-slate-500 font-bold">
+                  Student Name
+                </p>
+                <p className="text-lg font-black uppercase">
+                  {res.student?.name}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] uppercase text-slate-500 font-bold">
+                  Roll Number
+                </p>
+                <p className="text-lg font-mono font-bold">
+                  {res.student?.rollNumber}
+                </p>
+              </div>
+            </div>
+
+            {/* Marks Table */}
+            <table className="w-full border-collapse border-2 border-slate-900 mb-8">
+              <thead>
+                <tr className="bg-slate-900 text-white">
+                  <th className="border border-slate-900 p-2 text-left">
+                    Subject
+                  </th>
+                  <th className="border border-slate-900 p-2 text-center">
+                    Total
+                  </th>
+                  <th className="border border-slate-900 p-2 text-center">
+                    Obtained
+                  </th>
+                  <th className="border border-slate-900 p-2 text-center">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {res.subjects?.map((s, i) => (
+                  <tr key={i} className="border-b border-slate-300">
+                    <td className="p-2 font-bold">{s.subject}</td>
+                    <td className="p-2 text-center">{s.totalMarks}</td>
+                    <td className="p-2 text-center font-bold">
+                      {s.obtainedMarks}
+                    </td>
+                    <td className="p-2 text-center text-xs">
+                      {s.obtainedMarks / s.totalMarks >= 0.33 ? "PASS" : "FAIL"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="bg-slate-100 font-black">
+                  <td className="p-2 border-t-2 border-slate-900">
+                    GRAND TOTAL
+                  </td>
+                  <td className="p-2 border-t-2 border-slate-900 text-center">
+                    {res.totalMax}
+                  </td>
+                  <td className="p-2 border-t-2 border-slate-900 text-center">
+                    {res.calculatedObtained}
+                  </td>
+                  <td className="p-2 border-t-2 border-slate-900 text-center">
+                    {res.calculatedPerc.toFixed(1)}%
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+
+            {/* Footer Signatures */}
+            <div className="flex justify-between mt-20 px-4">
+              <div className="text-center border-t border-slate-900 pt-2 w-40">
+                <p className="text-xs font-bold">Class Teacher</p>
+              </div>
+              <div className="text-center border-t border-slate-900 pt-2 w-40">
+                <p className="text-xs font-bold">Principal Signature</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// --- SUB-COMPONENTS ---
+
+function StatCard({ title, value, icon, description }) {
+  return (
+    <Card className="border-none shadow-md hover:shadow-lg transition-shadow">
+      <CardContent className="p-5">
+        <div className="flex justify-between items-start">
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-slate-500">{title}</p>
+            <p className="text-2xl font-bold text-slate-900 tracking-tight">
+              {value}
+            </p>
+          </div>
+          <div className="p-2 bg-slate-50 rounded-lg">{icon}</div>
+        </div>
+        <p className="text-[11px] text-slate-400 mt-3 flex items-center gap-1">
+          {description}
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function FilterSelect({ label, value, onChange, options, placeholder }) {
+  return (
+    <div className="space-y-1">
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="bg-slate-50 border-slate-200 h-10 font-medium">
+          <SelectValue placeholder={placeholder} />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">{placeholder || "All"}</SelectItem>
+          {options?.map((opt) => (
+            <SelectItem key={opt._id} value={opt._id}>
+              {opt.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 }
