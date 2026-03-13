@@ -5,7 +5,7 @@ import Result from "@/models/Result";
 export async function GET(req, { params }) {
   try {
     await connectDB();
-    const id = await params;
+    const { id } = await params;
     // Populate only necessary fields for public view
     const result = await Result.findById(id)
       .populate("student", "name rollNumber photo")

@@ -1,23 +1,23 @@
 "use client";
 
-import { useParams } from "next/navigation";
 import useSWR from "swr";
 import { ShieldCheck, XCircle, GraduationCap, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { use } from "react";
+import React from "react";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
-export default function VerificationPage() {
-   const params = use(useParams());
-   const id = params?.id;
+export default function VerificationPage({ params }) {
+  console.log("page");
+  const { id } = React.use(params);
+
+  console.log(id);
   const {
     data: result,
     error,
     isLoading,
   } = useSWR(`/api/verify/${id}`, fetcher);
 
-  console.log(id);
   console.log(result);
 
   if (isLoading)
