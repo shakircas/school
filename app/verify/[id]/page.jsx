@@ -8,7 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
 export default function VerificationPage() {
-  const { id } = useParams();
+   const params = use(useParams());
+   const id = params?.id;
   const {
     data: result,
     error,
