@@ -21,7 +21,7 @@ export async function GET(req, { params }) {
     const result = await Result.findById(id)
       .populate("student", "name rollNumber fatherName")
       .populate("classId", "name")
-      .populate("examId", "name");
+      .populate("exam", "name");
 
     if (!result) {
       return NextResponse.json({ error: "Result not found" }, { status: 404 });
