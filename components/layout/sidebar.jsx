@@ -143,6 +143,7 @@ const navigation = [
       { name: "Result Cards", href: "/results/result-cards" },
       { name: "Results", href: "/exams/results" },
       { name: "DMC", href: "/exams/dmc" },
+      { name: "Bulk DMC", href: "/exams/bulk-dmc" },
       { name: "Print Result Cards", href: "/results/print" },
       { name: "Sudents Sujects Result", href: "/results/result-ledger" },
     ],

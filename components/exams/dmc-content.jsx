@@ -30,8 +30,8 @@ export function DMCContent() {
 
   const [examId, setExamId] = useState("");
   const [classId, setClassId] = useState("");
-  const [sectionId, setSectionId] = useState("");
-  const [studentId, setStudentId] = useState("A");
+  const [sectionId, setSectionId] = useState("A");
+  const [studentId, setStudentId] = useState("");
 
   /* ---------------- API ---------------- */
   const { data: examsRes } = useSWR("/api/exams", fetcher);
@@ -41,8 +41,6 @@ export function DMCContent() {
     ? `/api/students?classId=${classId}&sectionId=${sectionId}`
     : null;
   const { data: studentsRes } = useSWR(studentsUrl, fetcher);
-
- 
 
   const resultsUrl = useMemo(() => {
     if (!examId || !classId) return null;
@@ -351,7 +349,10 @@ export function DMCContent() {
                 </div>
               </div>
               <div className="flex flex-col items-end">
-                <QRCodeSVG value={`verify-${result._id}`} size={60} />
+                <QRCodeSVG
+                  value={`https://https://school-six-tau.vercel.app/verify/${result._id}`}
+                  size={60}
+                />
                 <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">
                   Scan to Verify Result
                 </p>
