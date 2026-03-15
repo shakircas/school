@@ -508,14 +508,14 @@ export async function POST(req) {
         temperature: 0.5,
       });
       text = completion.choices[0]?.message?.content || "";
-      providerUsed = "Groq";
+      providerUsed = "Groq";e
     } catch (error) {
       console.warn("Groq failed, falling back to Gemini:", error.message);
 
       // --- Fallback to Gemini using @google/genai ---
       const googleAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
       const response = await googleAI.models.generateContent({
-        model: "gemini-1.5-flash",
+        model: "gemini-2.5-flash",
         contents: [{ role: "user", parts: [{ text: prompt }] }],
       });
       text = response?.candidates?.[0]?.content?.parts?.[0]?.text || "";
