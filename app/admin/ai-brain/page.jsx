@@ -110,16 +110,41 @@ export default function AISchoolBrain() {
   // --- Voice Recognition Logic ---
   const [isListening, setIsListening] = useState(false);
 
+  // const startListening = () => {
+  //   const SpeechRecognition =
+  //     window.SpeechRecognition || window.webkitSpeechRecognition;
+  //   if (!SpeechRecognition) {
+  //     alert("Voice recognition is not supported in this browser.");
+  //     return;
+  //   }
+
+  //   const recognition = new SpeechRecognition();
+  //   recognition.lang = "en-US"; // Change to "ur-PK" for Urdu support
+
+  //   recognition.onstart = () => setIsListening(true);
+  //   recognition.onend = () => setIsListening(false);
+
+  //   recognition.onresult = (event) => {
+  //     const transcript = event.results[0][0].transcript;
+  //     setQuestion(transcript);
+  //     askAI(transcript); // Automatically trigger the search
+  //   };
+
+  //   recognition.start();
+  // };
+
+
+  const [activeLang, setActiveLang] = useState("en-US"); // Default to English
+
   const startListening = () => {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert("Voice recognition is not supported in this browser.");
-      return;
-    }
+    if (!SpeechRecognition) return;
 
     const recognition = new SpeechRecognition();
-    recognition.lang = "en-US"; // Change to "ur-PK" for Urdu support
+
+    // Dynamically set based on teacher's choice
+    recognition.lang = activeLang;
 
     recognition.onstart = () => setIsListening(true);
     recognition.onend = () => setIsListening(false);
@@ -127,7 +152,7 @@ export default function AISchoolBrain() {
     recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript;
       setQuestion(transcript);
-      askAI(transcript); // Automatically trigger the search
+      askAI(transcript);
     };
 
     recognition.start();
@@ -190,7 +215,7 @@ export default function AISchoolBrain() {
   }
 
   return (
-    <div className="flex flex-col max-w-5xl mx-auto bg-slate-50 rounded-2xl border shadow-xl overflow-hidden">
+    <div className="flex mt-10 mb-10 flex-col max-w-5xl mx-auto bg-slate-50 rounded-2xl border shadow-xl overflow-hidden">
       {/* 1. Header */}
       <header className="bg-white border-b px-6 py-4 flex items-center justify-between z-20">
         <div className="flex items-center gap-3">
@@ -339,7 +364,7 @@ export default function AISchoolBrain() {
             />
 
             {/* VOICE BUTTON */}
-            <button
+            {/* <button
               type="button"
               onClick={startListening}
               className={`absolute right-4 bottom-4 p-2 rounded-xl transition-all ${
@@ -349,7 +374,45 @@ export default function AISchoolBrain() {
               }`}
             >
               {isListening ? <MicOff size={20} /> : <Mic size={20} />}
-            </button>
+            </button> */}
+
+            {/* Language Toggle + Voice Button Container */}
+            <div className="absolute right-4 bottom-4 flex items-center gap-2">
+              <div className="flex bg-slate-200/50 p-1 rounded-lg border border-slate-200">
+                <button
+                  onClick={() => setActiveLang("en-US")}
+                  className={`px-2 py-1 text-[10px] font-bold rounded-md transition-all ${
+                    activeLang === "en-US"
+                      ? "bg-white text-indigo-600 shadow-sm"
+                      : "text-slate-500"
+                  }`}
+                >
+                  ENG
+                </button>
+                <button
+                  onClick={() => setActiveLang("ur-PK")}
+                  className={`px-2 py-1 text-[10px] font-bold rounded-md transition-all ${
+                    activeLang === "ur-PK"
+                      ? "bg-white text-emerald-600 shadow-sm"
+                      : "text-slate-500"
+                  }`}
+                >
+                  اردو
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={startListening}
+                className={`p-2 rounded-xl transition-all ${
+                  isListening
+                    ? "bg-red-500 text-white animate-pulse"
+                    : "text-slate-400 hover:bg-slate-100 hover:text-indigo-600"
+                }`}
+              >
+                {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+              </button>
+            </div>
           </div>
           <Button
             onClick={() => askAI()}
