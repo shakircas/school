@@ -2,7 +2,7 @@ export async function POST(req) {
   try {
     const { question } = await req.json();
 
-    const res = await fetch("http://localhost:8000/ai/ask", {
+    const res = await fetch(`${process.env.AIBRAIN_API_URL}/api/ai/ask`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
