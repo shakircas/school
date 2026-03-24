@@ -464,7 +464,7 @@ export default function AISchoolBrain() {
                         variant="outline"
                         size="xs"
                         onClick={() => speak(msg.text)}
-                        className="w-fit h-7 text-[10px] gap-1.5 text-slate-600"
+                        className="bg-primary text-white w-fit h-7 p-2 text-[10px] gap-1.5 text-white"
                       >
                         <Volume2 size={12} /> Narrate Response
                       </Button>
@@ -473,7 +473,7 @@ export default function AISchoolBrain() {
                         variant="outline"
                         size="xs"
                         onClick={() => exportPDF(msg)}
-                        className="w-fit h-7 text-[10px] gap-1.5 text-indigo-600"
+                        className="w-fit h-7 p-2 text-[10px] gap-1.5 text-indigo-600 bg-white text-primary"
                       >
                         <FileText size={12} /> Download PDF Summary
                       </Button>
