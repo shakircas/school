@@ -3,7 +3,7 @@ export async function POST(req) {
     const { question } = await req.json();
 
     const res = await fetch(
-      `${process.env.AIBRAIN_API_URL || "ai-brain-production-60c0.up.railway.app"}/ai/ask`,
+      `${process.env.AIBRAIN_API_URL || "https://ai-brain-production-60c0.up.railway.app"}/ai/ask`,
       {
         method: "POST",
         headers: {
