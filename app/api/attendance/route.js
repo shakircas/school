@@ -6,6 +6,7 @@ import Class from "@/models/Class";
 import Teacher from "@/models/Teacher";
 import Student from "@/models/Student";
 import mongoose from "mongoose";
+import { auth } from "@/auth";
 
 /* -------------------------------------------------
    HELPERS
@@ -81,188 +82,16 @@ export async function GET(req) {
   }
 }
 
-
-// Add this helper to your route.js
-
-// /* -------------------------------------------------
-//    POST — Mark attendance (BYPASS CLASS FOR TEACHERS)
-// ------------------------------------------------- */
-// export async function POST(req) {
-//   await connectDB();
-
-//   try {
-//     const body = await req.json();
-
-//     const {
-//       date,
-//       type, // "Student" or "Teacher"
-//       classId,
-//       sectionId,
-//       records = [],
-//       markedBy,
-//     } = body;
-
-//     if (!date || !type) return error("Date and type are required");
-
-//     console.log(type);
-
-//     // --- BYPASS LOGIC START ---
-//     const isTeacher = type === "Teacher";
-
-//     if (type === "Student") {
-//       if (!classId || !sectionId) {
-//         return error("classId and section are required for student attendance");
-//       }
-//       if (!isValidObjectId(classId)) return error("Invalid classId");
-//     }
-
-//     // Only validate Class existence if it's NOT a teacher
-//     if (!isTeacher && classId) {
-//       const cls = await Class.findById(classId);
-//       if (!cls) return error("Class not found");
-//     }
-//     // --- BYPASS LOGIC END ---
-
-//     if (markedBy && !isValidObjectId(markedBy)) {
-//       return error("Invalid markedBy teacher ID");
-//     }
-
-//     /* ---- Validate records ---- */
-//     if (!Array.isArray(records) || !records.length) {
-//       return error("Attendance records are required");
-//     }
-
-//     for (const r of records) {
-//       if (!isValidObjectId(r.personId)) {
-//         return error("Invalid personId in records");
-//       }
-//       if (!r.status) return error("Attendance status required");
-//     }
-
-//     /* ---- Prevent duplicate attendance per day ---- */
-//     const start = new Date(date);
-//     start.setHours(0, 0, 0, 0);
-//     const end = new Date(date);
-//     end.setHours(23, 59, 59, 999);
-
-//     // Filter criteria: For teachers, classId and sectionId are null
-//     const findQuery = {
-//       date: { $gte: start, $lte: end },
-//       type,
-//       classId: isTeacher ? null : classId,
-//       sectionId: isTeacher ? "Staff" : sectionId,
-//     };
-
-//     const existing = await Attendance.findOne(findQuery);
-
-//     if (existing) {
-//       existing.records = records;
-//       existing.markedAt = new Date();
-//       if (markedBy) existing.markedBy = markedBy;
-//       await existing.save();
-//       return NextResponse.json({ data: existing });
-//     }
-
-//     const attendance = await Attendance.create({
-//       date,
-//       type,
-//       // If teacher, bypass by providing null or a specific flag
-//       classId: isTeacher ? undefined : classId,
-//       sectionId: isTeacher ? "Staff" : sectionId,
-//       records,
-//       markedBy: markedBy || null,
-//     });
-
-//     return NextResponse.json({ data: attendance }, { status: 201 });
-//   } catch (err) {
-//     console.error("POST attendance error", err);
-//     return error(err.message || "Failed to mark attendance");
-//   }
-// }
-
-// /* -------------------------------------------------
-//    POST — Mark attendance (WITH PRE-ADMISSION GUARD)
-// ------------------------------------------------- */
-// export async function POST(req) {
-//   await connectDB();
-
-//   try {
-//     const body = await req.json();
-//     const { date, type, classId, sectionId, records = [], markedBy } = body;
-
-//     if (!date || !type) return error("Date and type are required");
-
-//     const markingDate = new Date(date);
-//     const isTeacher = type === "Teacher";
-
-//     // 1️⃣ Logic to filter out students not yet admitted
-//     let filteredRecords = records;
-
-//     if (type === "Student") {
-//       // Fetch admission dates for all students in this batch
-//       const personIds = records.map(r => r.personId);
-//       const students = await Student.find({ _id: { $in: personIds } }).select("_id createdAt");
-      
-//       const studentAdmissionMap = {};
-//       students.forEach(s => {
-//         studentAdmissionMap[s._id.toString()] = s.createdAt;
-//       });
-
-//       // Filter records: Keep only if admissionDate <= markingDate
-//       filteredRecords = records.filter(r => {
-//         const admissionDate = studentAdmissionMap[r.personId.toString()];
-//         // If we don't have a date, default to allowing it, or strictly disallow
-//         return admissionDate ? admissionDate <= markingDate : true;
-//       });
-//     }
-
-//     if (!filteredRecords.length) {
-//       return error("No valid students to mark for this date (check admission dates)");
-//     }
-
-//     /* ---- Prevent duplicate attendance per day ---- */
-//     const start = new Date(date);
-//     start.setHours(0, 0, 0, 0);
-//     const end = new Date(date);
-//     end.setHours(23, 59, 59, 999);
-
-//     const findQuery = {
-//       date: { $gte: start, $lte: end },
-//       type,
-//       classId: isTeacher ? null : classId,
-//       sectionId: isTeacher ? "Staff" : sectionId,
-//     };
-
-//     const existing = await Attendance.findOne(findQuery);
-
-//     if (existing) {
-//       existing.records = filteredRecords; // Use filtered records
-//       existing.markedAt = new Date();
-//       if (markedBy) existing.markedBy = markedBy;
-//       await existing.save();
-//       return NextResponse.json({ data: existing });
-//     }
-
-//     const attendance = await Attendance.create({
-//       date,
-//       type,
-//       classId: isTeacher ? undefined : classId,
-//       sectionId: isTeacher ? "Staff" : sectionId,
-//       records: filteredRecords, // Use filtered records
-//       markedBy: markedBy || null,
-//     });
-
-//     return NextResponse.json({ data: attendance }, { status: 201 });
-//   } catch (err) {
-//     console.error("POST attendance error", err);
-//     return error(err.message || "Failed to mark attendance");
-//   }
-// }
-
 /* -------------------------------------------------
    POST — Mark attendance (WITH HOLIDAY & ADMISSION GUARD)
 ------------------------------------------------- */
 export async function POST(req) {
+  const session = await auth();
+
+  if (!session || !["admin", "teacher"].includes(session.user.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   await connectDB();
 
   try {
@@ -272,19 +101,21 @@ export async function POST(req) {
     if (!date || !type) return error("Date and type are required");
 
     const markingDate = new Date(date);
-    
+
     // 🚩 1️⃣ HOLIDAY & SUNDAY GUARD
     const HOLIDAYS = ["2026-01-26", "2026-03-23", "2026-02-05"];
-    
+
     // Format date to YYYY-MM-DD for comparison
-    const dateString = markingDate.toISOString().split('T')[0];
+    const dateString = markingDate.toISOString().split("T")[0];
     const isSunday = markingDate.getDay() === 0;
     const isHoliday = HOLIDAYS.includes(dateString);
 
     if (isSunday || isHoliday) {
       return NextResponse.json(
-        { error: `Attendance cannot be marked on ${isSunday ? 'Sundays' : 'Holidays'}.` }, 
-        { status: 400 }
+        {
+          error: `Attendance cannot be marked on ${isSunday ? "Sundays" : "Holidays"}.`,
+        },
+        { status: 400 },
       );
     }
 
@@ -294,22 +125,26 @@ export async function POST(req) {
     let filteredRecords = records;
 
     if (type === "Student") {
-      const personIds = records.map(r => r.personId);
-      const students = await Student.find({ _id: { $in: personIds } }).select("_id createdAt");
-      
+      const personIds = records.map((r) => r.personId);
+      const students = await Student.find({ _id: { $in: personIds } }).select(
+        "_id createdAt",
+      );
+
       const studentAdmissionMap = {};
-      students.forEach(s => {
+      students.forEach((s) => {
         studentAdmissionMap[s._id.toString()] = s.createdAt;
       });
 
-      filteredRecords = records.filter(r => {
+      filteredRecords = records.filter((r) => {
         const admissionDate = studentAdmissionMap[r.personId.toString()];
         return admissionDate ? new Date(admissionDate) <= markingDate : true;
       });
     }
 
     if (!filteredRecords.length) {
-      return error("No valid students found for this date (check admission dates)");
+      return error(
+        "No valid students found for this date (check admission dates)",
+      );
     }
 
     /* ---- Duplicate Check & Save Logic ---- */
@@ -385,7 +220,9 @@ export async function DELETE(req) {
       return error("No attendance record found to delete", 404);
     }
 
-    return NextResponse.json({ message: "Attendance record deleted successfully" });
+    return NextResponse.json({
+      message: "Attendance record deleted successfully",
+    });
   } catch (err) {
     console.error("DELETE attendance error", err);
     return error("Failed to delete attendance", 500);
