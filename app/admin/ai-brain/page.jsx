@@ -38,6 +38,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MainLayout } from "@/components/layout/main-layout";
 
 // --- Sub-Component: Dynamic Result Chart ---
 function ResultChart({ data }) {
@@ -315,250 +316,256 @@ export default function AISchoolBrain() {
   }
 
   return (
-    <div className="flex flex-col h-[100dvh] w-full max-w-5xl mx-auto bg-white sm:bg-slate-50 sm:h-[90vh] sm:my-5 sm:rounded-2xl border shadow-2xl overflow-hidden relative">
-      {/* Settings Modal Overlay */}
-      {showSettings && (
-        <div className="absolute inset-0 z-[100] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 animate-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                <Settings size={18} /> Voice Settings
-              </h3>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowSettings(false)}
-              >
-                <X size={20} />
-              </Button>
-            </div>
-            <div className="space-y-6">
-              <div>
-                <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">
-                  Voice Choice
-                </label>
-                <select
-                  value={selectedVoice}
-                  onChange={(e) => setSelectedVoice(e.target.value)}
-                  className="w-full bg-slate-50 border p-2 rounded-xl text-xs"
+    <MainLayout>
+      <div className="flex flex-col h-[100dvh] w-full max-w-5xl mx-auto bg-white sm:bg-slate-50 sm:h-[80vh] sm:my-5 sm:rounded-2xl border shadow-2xl overflow-hidden relative">
+        {/* Settings Modal Overlay */}
+        {showSettings && (
+          <div className="absolute inset-0 z-[100] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 animate-in zoom-in-95 duration-200">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                  <Settings size={18} /> Voice Settings
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowSettings(false)}
                 >
-                  {availableVoices.map((v) => (
-                    <option key={v.name} value={v.name}>
-                      {v.name} ({v.lang})
-                    </option>
-                  ))}
-                </select>
+                  <X size={20} />
+                </Button>
               </div>
-              <div>
-                <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">
-                  Reading Speed ({voiceRate}x)
-                </label>
-                <input
-                  type="range"
-                  min="0.5"
-                  max="2"
-                  step="0.1"
-                  value={voiceRate}
-                  onChange={(e) => setVoiceRate(e.target.value)}
-                  className="w-full accent-indigo-600"
-                />
-              </div>
-              <Button
-                className="w-full bg-indigo-600 rounded-xl"
-                onClick={() => setShowSettings(false)}
-              >
-                Apply Changes
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Header */}
-      <header className="bg-white border-b px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between shrink-0 z-30 shadow-sm">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="bg-indigo-600 p-2 rounded-lg sm:rounded-xl shadow-lg">
-            <Bot className="text-white h-4 w-4 sm:h-5 sm:w-5" />
-          </div>
-          <h1 className="text-sm sm:text-lg font-black text-slate-900 truncate">
-            School Brain AI
-          </h1>
-        </div>
-        <div className="flex gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsMuted(!isMuted)}
-            className={isMuted ? "text-red-400" : "text-slate-400"}
-          >
-            {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowSettings(true)}
-            className="text-slate-400"
-          >
-            <Settings size={18} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setChatHistory([])}
-            className="text-slate-400 hover:text-red-500"
-          >
-            <RotateCcw className="h-4 w-4" />
-          </Button>
-        </div>
-      </header>
-
-      {/* Main Chat */}
-      <main
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 bg-slate-50/30"
-      >
-        {chatHistory.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-center space-y-6 px-4">
-            <div className="bg-white p-6 sm:p-10 rounded-[2rem] shadow-xl border border-slate-100 max-w-sm">
-              <Database className="h-8 w-8 text-indigo-500 mx-auto mb-4" />
-              <h2 className="text-xl font-black text-slate-800 tracking-tight">
-                Portal Insight
-              </h2>
-              <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                Query attendance or results in real-time.
-              </p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-xl">
-              {suggestedPrompts.map((p, i) => (
-                <button
-                  key={i}
-                  onClick={() => askAI(p)}
-                  className="text-left p-3 sm:p-4 bg-white border rounded-xl hover:border-indigo-400 transition-all text-xs font-semibold text-slate-600"
+              <div className="space-y-6">
+                <div>
+                  <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">
+                    Voice Choice
+                  </label>
+                  <select
+                    value={selectedVoice}
+                    onChange={(e) => setSelectedVoice(e.target.value)}
+                    className="w-full bg-slate-50 border p-2 rounded-xl text-xs"
+                  >
+                    {availableVoices.map((v) => (
+                      <option key={v.name} value={v.name}>
+                        {v.name} ({v.lang})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">
+                    Reading Speed ({voiceRate}x)
+                  </label>
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="2"
+                    step="0.1"
+                    value={voiceRate}
+                    onChange={(e) => setVoiceRate(e.target.value)}
+                    className="w-full accent-indigo-600"
+                  />
+                </div>
+                <Button
+                  className="w-full bg-indigo-600 rounded-xl"
+                  onClick={() => setShowSettings(false)}
                 >
-                  {p}
-                </button>
-              ))}
+                  Apply Changes
+                </Button>
+              </div>
             </div>
           </div>
-        ) : (
-          chatHistory.map((msg, idx) => (
-            <div
-              key={idx}
-              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+        )}
+
+        {/* Header */}
+        <header className="bg-white border-b px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between shrink-0 z-30 shadow-sm">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="bg-indigo-600 p-2 rounded-lg sm:rounded-xl shadow-lg">
+              <Bot className="text-white h-4 w-4 sm:h-5 sm:w-5" />
+            </div>
+            <h1 className="text-sm sm:text-lg font-black text-slate-900 truncate">
+              School Brain AI
+            </h1>
+          </div>
+          <div className="flex gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsMuted(!isMuted)}
+              className={isMuted ? "text-red-400" : "text-slate-400"}
             >
+              {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowSettings(true)}
+              className="text-slate-400"
+            >
+              <Settings size={18} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setChatHistory([])}
+              className="text-slate-400 hover:text-red-500"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+          </div>
+        </header>
+
+        {/* Main Chat */}
+        <main
+          ref={scrollRef}
+          className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 bg-slate-50/30"
+        >
+          {chatHistory.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-center space-y-6 px-4">
+              <div className="bg-white p-6 sm:p-10 rounded-[2rem] shadow-xl border border-slate-100 max-w-sm">
+                <Database className="h-8 w-8 text-indigo-500 mx-auto mb-4" />
+                <h2 className="text-xl font-black text-slate-800 tracking-tight">
+                  Portal Insight
+                </h2>
+                <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                  Query attendance or results in real-time.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-xl">
+                {suggestedPrompts.map((p, i) => (
+                  <button
+                    key={i}
+                    onClick={() => askAI(p)}
+                    className="text-left p-3 sm:p-4 bg-white border rounded-xl hover:border-indigo-400 transition-all text-xs font-semibold text-slate-600"
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            chatHistory.map((msg, idx) => (
               <div
-                className={`flex gap-3 max-w-[95%] sm:max-w-[85%] ${msg.role === "user" ? "flex-row-reverse" : ""}`}
+                key={idx}
+                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`h-8 w-8 sm:h-9 sm:w-9 rounded-xl flex items-center justify-center shrink-0 shadow-md ${msg.role === "user" ? "bg-slate-200" : "bg-indigo-600 text-white"}`}
+                  className={`flex gap-3 max-w-[95%] sm:max-w-[85%] ${msg.role === "user" ? "flex-row-reverse" : ""}`}
                 >
-                  {msg.role === "user" ? <User size={16} /> : <Bot size={16} />}
-                </div>
-                <div className="p-4 rounded-2xl shadow-sm border text-sm bg-white">
-                  <SmartRenderer content={msg.text} />
+                  <div
+                    className={`h-8 w-8 sm:h-9 sm:w-9 rounded-xl flex items-center justify-center shrink-0 shadow-md ${msg.role === "user" ? "bg-slate-200" : "bg-indigo-600 text-white"}`}
+                  >
+                    {msg.role === "user" ? (
+                      <User size={16} />
+                    ) : (
+                      <Bot size={16} />
+                    )}
+                  </div>
+                  <div className="p-4 rounded-2xl shadow-sm border text-sm bg-white">
+                    <SmartRenderer content={msg.text} />
 
-                  {msg.role === "ai" && (
-                    <div className="mt-4 pt-4 border-t flex flex-wrap gap-3">
-                      {/* New Manual Narrate Button */}
-                      <Button
-                        variant="outline"
-                        size="xs"
-                        onClick={() => speak(msg.text)}
-                        className="bg-primary text-white w-fit h-7 p-2 text-[10px] gap-1.5 text-white"
-                      >
-                        <Volume2 size={12} /> Narrate Response
-                      </Button>
+                    {msg.role === "ai" && (
+                      <div className="mt-4 pt-4 border-t flex flex-wrap gap-3">
+                        {/* New Manual Narrate Button */}
+                        <Button
+                          variant="outline"
+                          size="xs"
+                          onClick={() => speak(msg.text)}
+                          className="bg-primary text-white w-fit h-7 p-2 text-[10px] gap-1.5 text-white"
+                        >
+                          <Volume2 size={12} /> Narrate Response
+                        </Button>
 
-                      <Button
-                        variant="outline"
-                        size="xs"
-                        onClick={() => exportPDF(msg)}
-                        className="w-fit h-7 p-2 text-[10px] gap-1.5 text-indigo-600 bg-white text-primary"
-                      >
-                        <FileText size={12} /> Download PDF Summary
-                      </Button>
+                        <Button
+                          variant="outline"
+                          size="xs"
+                          onClick={() => exportPDF(msg)}
+                          className="w-fit h-7 p-2 text-[10px] gap-1.5 text-indigo-600 bg-white text-primary"
+                        >
+                          <FileText size={12} /> Download PDF Summary
+                        </Button>
 
-                      {msg.rawData?.length > 1 && (
-                        <ResultChart data={msg.rawData} />
-                      )}
+                        {msg.rawData?.length > 1 && (
+                          <ResultChart data={msg.rawData} />
+                        )}
 
-                      {msg.rawData?.length > 0 && (
-                        <details className="group">
-                          <summary className="flex items-center gap-2 text-[10px] font-bold text-indigo-500 cursor-pointer list-none">
-                            <Database size={12} /> INSPECT RECORDS
-                            <ChevronDown
-                              size={12}
-                              className="group-open:rotate-180 transition-transform ml-auto"
+                        {msg.rawData?.length > 0 && (
+                          <details className="group">
+                            <summary className="flex items-center gap-2 text-[10px] font-bold text-indigo-500 cursor-pointer list-none">
+                              <Database size={12} /> INSPECT RECORDS
+                              <ChevronDown
+                                size={12}
+                                className="group-open:rotate-180 transition-transform ml-auto"
+                              />
+                            </summary>
+                            <DataPreview
+                              data={msg.rawData}
+                              title={msg.collection}
                             />
-                          </summary>
-                          <DataPreview
-                            data={msg.rawData}
-                            title={msg.collection}
-                          />
-                        </details>
-                      )}
-                    </div>
-                  )}
+                          </details>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
-        )}
-        {loading && (
-          <Skeleton className="h-20 w-3/4 rounded-2xl mx-auto sm:mx-0" />
-        )}
-      </main>
+            ))
+          )}
+          {loading && (
+            <Skeleton className="h-20 w-3/4 rounded-2xl mx-auto sm:mx-0" />
+          )}
+        </main>
 
-      {/* Footer */}
-      <footer className="bg-white border-t p-3 sm:p-5">
-        <div className="max-w-4xl mx-auto flex items-end gap-2">
-          <div className="relative flex-1 bg-slate-50 border rounded-2xl overflow-hidden focus-within:border-indigo-300 transition-all">
-            <textarea
-              ref={textareaRef}
-              rows={1}
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  askAI();
-                }
-              }}
-              className="w-full bg-transparent pl-4 pr-24 py-3 sm:py-4 text-sm outline-none resize-none min-h-[48px] max-h-[120px]"
-              placeholder="Query the school ledger..."
-            />
-            <div className="absolute right-2 bottom-2 flex items-center gap-1">
-              <div className="flex bg-white/80 p-0.5 rounded-lg border shadow-sm">
+        {/* Footer */}
+        <footer className="bg-white border-t p-3 sm:p-5">
+          <div className="max-w-4xl mx-auto flex items-end gap-2">
+            <div className="relative flex-1 bg-slate-50 border rounded-2xl overflow-hidden focus-within:border-indigo-300 transition-all">
+              <textarea
+                ref={textareaRef}
+                rows={1}
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    askAI();
+                  }
+                }}
+                className="w-full bg-transparent pl-4 pr-24 py-3 sm:py-4 text-sm outline-none resize-none min-h-[48px] max-h-[120px]"
+                placeholder="Query the school ledger..."
+              />
+              <div className="absolute right-2 bottom-2 flex items-center gap-1">
+                <div className="flex bg-white/80 p-0.5 rounded-lg border shadow-sm">
+                  <button
+                    onClick={() => setActiveLang("en-US")}
+                    className={`px-1.5 py-0.5 text-[9px] font-bold rounded ${activeLang === "en-US" ? "bg-indigo-600 text-white" : "text-slate-400"}`}
+                  >
+                    EN
+                  </button>
+                  <button
+                    onClick={() => setActiveLang("ur-PK")}
+                    className={`px-1.5 py-0.5 text-[9px] font-bold rounded ${activeLang === "ur-PK" ? "bg-emerald-600 text-white" : "text-slate-400"}`}
+                  >
+                    اردو
+                  </button>
+                </div>
                 <button
-                  onClick={() => setActiveLang("en-US")}
-                  className={`px-1.5 py-0.5 text-[9px] font-bold rounded ${activeLang === "en-US" ? "bg-indigo-600 text-white" : "text-slate-400"}`}
+                  onClick={startListening}
+                  className={`p-2 rounded-xl ${isListening ? "bg-red-500 text-white animate-pulse" : "text-slate-400 hover:text-indigo-600"}`}
                 >
-                  EN
-                </button>
-                <button
-                  onClick={() => setActiveLang("ur-PK")}
-                  className={`px-1.5 py-0.5 text-[9px] font-bold rounded ${activeLang === "ur-PK" ? "bg-emerald-600 text-white" : "text-slate-400"}`}
-                >
-                  اردو
+                  {isListening ? <MicOff size={18} /> : <Mic size={18} />}
                 </button>
               </div>
-              <button
-                onClick={startListening}
-                className={`p-2 rounded-xl ${isListening ? "bg-red-500 text-white animate-pulse" : "text-slate-400 hover:text-indigo-600"}`}
-              >
-                {isListening ? <MicOff size={18} /> : <Mic size={18} />}
-              </button>
             </div>
+            <Button
+              onClick={() => askAI()}
+              disabled={loading || !question.trim()}
+              className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl bg-indigo-600 hover:bg-indigo-700 shadow-xl shrink-0"
+            >
+              <Send className="h-5 w-5" />
+            </Button>
           </div>
-          <Button
-            onClick={() => askAI()}
-            disabled={loading || !question.trim()}
-            className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl bg-indigo-600 hover:bg-indigo-700 shadow-xl shrink-0"
-          >
-            <Send className="h-5 w-5" />
-          </Button>
-        </div>
-      </footer>
-    </div>
+        </footer>
+      </div>
+    </MainLayout>
   );
 }
