@@ -37,54 +37,23 @@ import { cn } from "@/lib/utils";
 import { EmptyState } from "../ui/empty-state";
 import { LoadingSpinner } from "../ui/loading-spinner";
 import Link from "next/link";
+import { on } from "events";
 
 // Sub-components like LoadingSpinner and EmptyState are assumed to be defined in your project
 
 export default function StudentTable({
   students,
-  studentsLoading,
-  clearFilters,
-  handleDelete,
+  isLoading,
+  onClearFilters,
+  // handleDelete,
+  onDelete,
 }) {
   const router = useRouter();
 
   return (
     <div className="w-full bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
       <div className="border-t border-slate-100">
-        {/* {studentsLoading ? (
-          <div className="flex flex-col items-center justify-center py-32 space-y-4 animate-in fade-in duration-500">
-            <div className="relative">
-              <div className="h-12 w-12 rounded-full border-4 border-indigo-50 border-t-indigo-600 animate-spin" />
-            </div>
-            <div className="text-center">
-              <p className="text-base font-semibold text-slate-900">
-                Syncing Database
-              </p>
-              <p className="text-sm text-slate-500">
-                Fetching the latest student records...
-              </p>
-            </div>
-          </div>
-        ) : students.length === 0 ? (
-          <div className="py-24 px-6 text-center animate-in zoom-in-95 duration-300">
-            <div className="mx-auto w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-4">
-              <GraduationCap className="h-8 w-8 text-slate-400" />
-            </div>
-            <h3 className="text-lg font-bold text-slate-900">
-              No students found
-            </h3>
-            <p className="text-slate-500 max-w-xs mx-auto mb-6">
-              We couldn't find any records matching your current filters.
-            </p>
-            <Button
-              onClick={clearFilters}
-              variant="outline"
-              className="rounded-full px-6"
-            >
-              Reset All Filters
-            </Button>
-          </div> */}
-        {studentsLoading ? (
+        {isLoading ? (
           <div className="flex flex-col items-center justify-center py-24 space-y-4">
             <LoadingSpinner size="lg" className="text-indigo-600" />
             <p className="text-sm text-slate-500 font-medium">
@@ -98,7 +67,7 @@ export default function StudentTable({
               title="No students found"
               description="Adjust your filters or add a new student to the system."
               action={
-                <Button onClick={clearFilters} variant="outline">
+                <Button onClick={onClearFilters} variant="outline">
                   Clear All Filters
                 </Button>
               }
@@ -167,7 +136,7 @@ export default function StudentTable({
                         <StudentActions
                           student={student}
                           router={router}
-                          handleDelete={handleDelete}
+                          handleDelete={onDelete}
                         />
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -357,7 +326,7 @@ export default function StudentTable({
                             <StudentActions
                               student={student}
                               router={router}
-                              handleDelete={handleDelete}
+                              handleDelete={onDelete}
                             />
                           </DropdownMenuContent>
                         </DropdownMenu>

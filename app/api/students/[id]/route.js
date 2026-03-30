@@ -30,7 +30,7 @@ export async function GET(request, { params }) {
 export async function PUT(request, { params }) {
   const session = await auth();
 
-  if (!session || !["admin", "teacher"].includes(session.user.role)) {
+  if (!session || !["student", "teacher"].includes(session.user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   try {
@@ -62,7 +62,7 @@ export async function PUT(request, { params }) {
 export async function DELETE(request, { params }) {
   const session = await auth();
 
-  if (!session || !["admin", "teacher"].includes(session.user.role)) {
+  if (!session || !["student", "teacher"].includes(session.user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   try {

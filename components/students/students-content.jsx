@@ -153,21 +153,27 @@ export function StudentsContent() {
 
   const handleDelete = async (id) => {
     if (!confirm("Are you sure you want to delete this student?")) return;
+
     try {
       const response = await fetch(`/api/students/${id}`, { method: "DELETE" });
+
+      // 1. Parse the JSON body from the backend
+      const data = await response.json();
+
       if (response.ok) {
         toast({
-          title: "Student deleted",
-          description: "Records updated successfully.",
+          title: "Success",
+          description: data.message || "Records updated successfully.",
         });
-        mutate();
+        mutate(); // Refresh the SWR/Data cache
       } else {
-        throw new Error("Failed to delete");
+        // 2. Extract the specific error message from the backend (e.g., "Forbidden")
+        throw new Error(data.error || "Failed to delete student");
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to delete student.",
+        title: "Action Failed",
+        description: error.message, // This will now show "Forbidden" or "Student not found"
         variant: "destructive",
       });
     }
