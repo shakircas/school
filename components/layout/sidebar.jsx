@@ -52,6 +52,7 @@ const navigation = [
       { name: "Users", href: "/admin/users" },
       { name: "Risk Dashboard", href: "/dashboard/risk" },
       { name: "Marks Prediction", href: "/ml" },
+      { name: "Ai Brain", href: "/admin/ai-brain" },
       { name: "Analytics", href: "/analytics" },
       { name: "Academic Year", href: "/admin/academic-year" },
     ],
