@@ -25,15 +25,15 @@ import { useClasses } from "../hooks/useClasses";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
-const formatBoardRollNo = (student, className, section) => {
+const formatBoardRollNo = (student, className, rollNumber ) => {
   if (student.rollNumber && String(student.rollNumber).length > 4)
     return student.rollNumber;
   const year = new Date().getFullYear().toString().slice(-2);
   const cleanClass = className.replace(/\D/g, "");
   const paddedId = String(student.id || student._id)
-    .slice(-3)
-    .padStart(3, "0");
-  return `${year}-${cleanClass}${section}-${paddedId}`.toUpperCase();
+    .slice(-2)
+    .padStart(1, "0");
+  return `${year}${cleanClass}${rollNumber}`.toUpperCase();
 };
 
 export function RollSlipsContent() {
@@ -235,7 +235,8 @@ export function RollSlipsContent() {
                       {formatBoardRollNo(
                         student,
                         currentClass?.name || "00",
-                        selectedSection,
+                        // selectedSection,
+                        student.rollNumber
                       )}
                     </div>
                   </div>
