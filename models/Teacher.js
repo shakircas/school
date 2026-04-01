@@ -1,50 +1,51 @@
+import { ACADEMIC_QUALIFICATIONS, KP_DESIGNATIONS, PROFESSIONAL_QUALIFICATIONS } from "@/lib/constants";
 import mongoose from "mongoose";
 
-const KP_DESIGNATIONS = [
-  "PST (Primary School Teacher)",
-  "CT (Certified Teacher)",
-  "AT (Arabic Teacher)",
-  "DM (Drawing Master)",
-  "PET (Physical Education Teacher)",
+// const KP_DESIGNATIONS = [
+//   "PST (Primary School Teacher)",
+//   "CT (Certified Teacher)",
+//   "AT (Arabic Teacher)",
+//   "DM (Drawing Master)",
+//   "PET (Physical Education Teacher)",
 
-  "SST (General)",
-  "SST (Biology)",
-  "SST (Physics)",
-  "SST (Chemistry)",
-  "SST (Mathematics)",
-  "SST (English)",
-  "SST (Urdu)",
-  "SST (Islamiyat)",
-  "SST (Computer Science)",
+//   "SST (General)",
+//   "SST (Biology)",
+//   "SST (Physics)",
+//   "SST (Chemistry)",
+//   "SST (Mathematics)",
+//   "SST (English)",
+//   "SST (Urdu)",
+//   "SST (Islamiyat)",
+//   "SST (Computer Science)",
 
-  "Head Teacher (HT)",
-  "Head Master (HM)",
-  "Principal",
-  "Vice Principal",
-];
+//   "Head Teacher (HT)",
+//   "Head Master (HM)",
+//   "Principal",
+//   "Vice Principal",
+// ];
 
-const ACADEMIC_QUALIFICATIONS = [
-  "Matric",
-  "Intermediate",
-  "BA",
-  "BSc",
-  "BS",
-  "MA",
-  "MSc",
-  "B.Ed",
-  "M.Ed",
-  "MPhil",
-  "PhD",
-];
+// const ACADEMIC_QUALIFICATIONS = [
+//   "Matric",
+//   "Intermediate",
+//   "BA",
+//   "BSc",
+//   "BS",
+//   "MA",
+//   "MSc",
+//   "B.Ed",
+//   "M.Ed",
+//   "MPhil",
+//   "PhD",
+// ];
 
-const PROFESSIONAL_QUALIFICATIONS = [
-  "PTC",
-  "CT",
-  "ADE",
-  "B.Ed",
-  "M.Ed",
-  "Teaching Diploma",
-];
+// const PROFESSIONAL_QUALIFICATIONS = [
+//   "PTC",
+//   "CT",
+//   "ADE",
+//   "B.Ed",
+//   "M.Ed",
+//   "Teaching Diploma",
+// ];
 
 const genders = ["Male", "Female", "Other"];
 
