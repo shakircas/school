@@ -5,6 +5,9 @@ import {
 } from "@/lib/constants";
 import mongoose from "mongoose";
 
+const academicQualifications = Object.values(ACADEMIC_QUALIFICATIONS);
+const kpDesignations = Object.values(KP_DESIGNATIONS);
+const professionalQualifications = Object.values(PROFESSIONAL_QUALIFICATIONS);
 const genders = ["Male", "Female", "Other"];
 
 const teacherSchema = new mongoose.Schema(
@@ -52,7 +55,8 @@ const teacherSchema = new mongoose.Schema(
     },
     gender: {
       type: String,
-      enum: ["Male", "Female", "Other"],
+      // enum: ["Male", "Female", "Other"],
+      enum: genders,
       required: true,
     },
     address: {
