@@ -32,6 +32,8 @@ export default function PredictionClientWrapper({ stats }) {
   );
   const [simulatedMidterm, setSimulatedMidterm] = useState(features.midterm);
 
+  // console.log(features);
+
   // Calculate Simulated Prediction
   // Formula: Original Prediction + (New Value - Original Value) * (Impact / Original Value)
   const calcSimulatedScore = () => {
@@ -121,7 +123,7 @@ export default function PredictionClientWrapper({ stats }) {
 
   return (
     <div className="relative">
-      <div className="mx-auto w-full max-w-3xl p-4 sm:p-8 mt-4 sm:mt-10 bg-white shadow-xl sm:shadow-2xl rounded-3xl sm:rounded-[2rem] border border-gray-100 print-hidden">
+      <div className="mx-auto w-full max-w-5xl p-4 sm:p-8 mt-4 sm:mt-10 bg-white shadow-xl sm:shadow-2xl rounded-3xl sm:rounded-[2rem] border border-gray-100 print-hidden">
         {/* Header - Stack on mobile */}
         <header className="flex flex-col sm:flex-row justify-between items-start gap-4 border-b pb-6 mb-8">
           <div>
